@@ -35,3 +35,4 @@ Packaged: 2014-12-16 14:21:06 UTC; gbonte
 Suggests:
     knitr
 VignetteBuilder: knitr
+RoxygenNote: 5.0.1
