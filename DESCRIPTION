@@ -1,0 +1,37 @@
+Package: D2C
+Type: Package
+Title: Predicting Causal Direction from Dependency Features
+Version: 1.2.1
+Date: 2015-01-14
+Author: Gianluca Bontempi, Catharina Olsen, Maxime Flauder
+Maintainer: Catharina Olsen <colsen@ulb.ac.be>
+Description: The relationship between statistical dependency and causality lies
+    at the heart of all statistical approaches to causal inference. The D2C
+    package implements a supervised machine learning approach to infer the
+    existence of a directed causal link between two variables in multivariate
+    settings with n>2 variables. The approach relies on the asymmetry of some
+    conditional (in)dependence relations between the members of the Markov
+    blankets of two variables causally connected. The D2C algorithm predicts
+    the existence of a direct causal link between two variables in a
+    multivariate setting by (i) creating a set of of features of the
+    relationship based on asymmetric descriptors of the multivariate dependency
+    and (ii) using a classifier to learn a mapping between the features and the
+    presence of a causal link
+License: Artistic-2.0
+Depends:
+    R(>= 2.10.0),
+    randomForest
+Imports:
+    gRbase,
+    lazy,
+    RBGL,
+    MASS,
+    corpcor,
+    methods,
+    Rgraphviz,
+    foreach
+LazyData: true
+Packaged: 2014-12-16 14:21:06 UTC; gbonte
+Suggests:
+    knitr
+VignetteBuilder: knitr

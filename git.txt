@@ -1,0 +1,4 @@
+git remote add origin https://github.com/gbonte/D2C.git
+git config remote.origin.url git@github.com:gbonte/D2C.git
+git pull -u origin master
+git push -u origin master
