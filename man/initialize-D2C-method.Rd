@@ -7,7 +7,7 @@
 \usage{
 \S4method{initialize}{D2C}(.Object, sDAG, descr = new("D2C.descriptor"),
   verbose = TRUE, ratioMissingNode = 0, ratioEdges = 1,
-  max.features = 20, goParallel = FALSE)
+  max.features = 20, goParallel = FALSE, type = "is.parent")
 }
 \arguments{
 \item{.Object}{: the D2C object}

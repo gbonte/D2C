@@ -5,7 +5,8 @@
 \title{compute descriptor}
 \usage{
 descriptor(D, ca, ef, ns = min(4, NCOL(D) - 2), lin = FALSE, acc = TRUE,
-  struct = TRUE, pq = c(0.1, 0.25, 0.5, 0.75, 0.9), bivariate = FALSE)
+  struct = TRUE, pq = c(0.1, 0.25, 0.5, 0.75, 0.9), bivariate = FALSE,
+  mimr = TRUE)
 }
 \arguments{
 \item{D}{:  the observed data matrix of size [N,n], where N is the number of samples and n is the number of nodes}

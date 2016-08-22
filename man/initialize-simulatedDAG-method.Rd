@@ -8,7 +8,7 @@
 \S4method{initialize}{simulatedDAG}(.Object, NDAG = 1,
   noNodes = sample(10:20, size = 1), functionType = "linear",
   quantize = FALSE, verbose = TRUE, N = sample(100:500, size = 1),
-  seed = 1234, sdn = 0.5, goParallel = FALSE)
+  seed = 1234, sdn = 0.5, goParallel = FALSE, additive = FALSE)
 }
 \arguments{
 \item{.Object}{: simulatedDAG object}
@@ -17,9 +17,10 @@
 
 \item{noNodes}{: number of Nodes of the DAGs. If it is a two-valued vector , the value of Nodes is randomly sampled in the interval}
 
-\item{functionType}{: type of the dependency. It is of class "character" and is one of  ("linear", "quadratic","sigmoid")
+\item{functionType}{: type of the dependency. It is of class "character" and is one of  ("linear", "quadratic","sigmoid","kernel")
 @param quantize  : if TRUE it discretize the observations into two bins. If it is a two-valued vector [a,b], the value of quantize is randomly sampled in the interval [a,b]
-@param goParallel : if TRUE it uses parallelism}
+@param goParallel : if TRUE it uses parallelism
+@param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs.}
 
 \item{verbose}{: if TRUE it prints out the state of progress}
 
