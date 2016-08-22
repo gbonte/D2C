@@ -1,4 +1,34 @@
 
+is.parent<-function(DAG,n1,n2){
+  
+  shortest.paths(DAG,n1,n2,"out")==1
+  
+}
+
+is.child<-function(DAG,n1,n2){
+  
+  shortest.paths(DAG,n1,n2,"in")==1
+  
+}
+
+is.ancestor<-function(DAG,n1,n2){
+  
+  shortest.paths(DAG,n1,n2,"out")>=1
+  
+}
+
+is.descendant<-function(DAG,n1,n2){
+  
+  shortest.paths(DAG,n1,n2,"in")>=1
+  
+}
+
+is.mb<-function(DAG,n1,n2){
+  
+  is.child(DAG,n1,n2)||is.parent(DAG,n1,n2)
+  
+}
+
 rankrho<-function(X,Y,nmax=5,regr=FALSE,first=NULL){
   ## mutual information ranking
   ## 17/10/11
@@ -48,12 +78,37 @@ H_sigmoid <- function(n=2)
   }
   return(Vectorize(f))
 }
+
+
+
 H_Rn <- function(n){
   a = runif(n+1,min = -1,max = 1)
   f <- function(x)
   {
     X  = x^(0:n)
     return ( sum(X * a))
+  }
+  return(Vectorize(f))
+}
+
+
+kernel.fct<- function(X,knl=anovadot(sigma=runif(1,0.5,2),degree=sample(1:2,1)),lambda=0.01){
+  require(kernlab)
+  require(MASS)
+  N<-NROW(X)
+  Y<-rnorm(N,sd=1)
+  K<-kernelMatrix(knl,X)
+  Yhat<-K%*%ginv(K+lambda*N*diag(N))%*%Y
+ 
+}
+
+H_kernel <- function()
+{
+  
+  f <- function(x)
+  {
+  
+    return (kernel.fct(x))
   }
   return(Vectorize(f))
 }
@@ -404,6 +459,83 @@ mimr<-function(X,Y,nmax=5,
   
 }
 
+
+mrmr<-function(X,Y,nmax=5,first=NULL,all=FALSE,back=FALSE,lambda=1,categ=FALSE){
+  ## mRMR filter
+  # 17/10/11
+  
+ 
+  n<-NCOL(X)
+  N<-NROW(X)
+  m<-NCOL(Y)
+ 
+  if (categ && is.factor(Y)){
+    Iy<-numeric(n)
+    Ix<-array(0,c(n,n))
+    for (i in 1:(n-1)){
+      for (j in (i+1):n){
+        Ix[i,j]<-mean(c(mutinf(factor(X[,i]),factor(X[,j])),
+                        mutinf(factor(X[,j]),factor(X[,i]))))
+      }
+      Iy[i]<-mutinf(factor(X[,i]),Y)
+    }
+  }else {
+    
+    X<-scale(X)
+    Iy<-cor2I2(corXY(X,Y))
+    
+    CCx<-cor(X,use="pairwise.complete.obs")
+    Ix<-cor2I2(CCx)
+    
+  }
+
+  subs<-which.max(Iy)
+  for (j in length(subs):min(n-1,nmax)){
+    mrmr<-numeric(n)-Inf
+    if (length(subs)<(n-1)){
+      if (length(subs)>1){
+        mrmr[-subs]<- Iy[-subs]+lambda*apply(-Ix[subs,-subs],2,mean)
+      } else {
+        
+        mrmr[-subs]<- Iy[-subs]+lambda*(-Ix[subs,-subs])
+        
+      }
+    } else {
+      mrmr[-subs]<-Inf
+    }
+    
+    s<-which.max(mrmr)
+    sortmrmr<-sort(mrmr,decreas=TRUE,index=TRUE)$ix[1:(n-length(subs))]
+    allfs<-c(subs,sortmrmr)	    
+subs<-c(subs,s)
+    
+  }
+
+  
+  if (back){  ## backward reordering based on linear regression
+    nsubs<-NULL
+    while (length(subs)>1){
+      pd<-numeric(length(subs))
+      
+      for (ii in 1:length(subs))
+        pd[ii]<-regrlin(X[,setdiff(subs,subs[ii])],Y)$MSE.emp
+      
+      nsubs<-c(subs[which.min(pd)],nsubs)
+      subs<-setdiff(subs,subs[which.min(pd)])
+      
+      
+    }
+    subs<-c(subs,nsubs)
+  }
+  
+
+  if (all){
+   return(allfs)
+} else {
+  return(subs[1:nmax])
+      }
+  
+}
 
 assoc <-function(x,y){
   c(abs(cor(x,y)),cor.test(x,y)$p.value)

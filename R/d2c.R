@@ -17,7 +17,7 @@ npred<-function(X,Y,lin=TRUE){
   if (lin)
     return(max(1e-3,regrlin(X,Y)$MSE.loo/var(Y)))
   X<-scale(X)
-  e<-Y-lazy.pred(X,Y,X,conPar=c(5,10),
+  e<-Y-lazy.pred(X,Y,X,conPar=c(10,20),
                  linPar=NULL,class=FALSE,cmbPar=10)
   nmse<-mean(e^2)/var(Y) 
   max(1e-3,nmse)
@@ -42,11 +42,11 @@ npred<-function(X,Y,lin=TRUE){
 descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      lin=FALSE,acc=TRUE,struct=TRUE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
-                     bivariate=FALSE ){
+                     bivariate=FALSE,mimr=TRUE ){
   if (bivariate)
-    return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq),D2C.2(D[,ca],D[,ef])))
+    return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,mimr=mimr),D2C.2(D[,ca],D[,ef])))
   else
-    return(c(NCOL(D),NROW(D),D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq)))
+    return(c(NROW(D),NCOL(D)/NROW(D),D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,mimr=mimr)))
 }
 
 
@@ -65,7 +65,7 @@ norminf<-function(y,x1,x2,lin=TRUE){
 
 D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                 lin=FALSE,acc=TRUE,struct=TRUE,
-                pq= c(0.1,0.25,0.5,0.75,0.9)){
+                pq= c(0.1,0.25,0.5,0.75,0.9),mimr=TRUE){
   ## is i cause oj j
   n<-NCOL(D)
   N<-NROW(D)
@@ -76,15 +76,20 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   ind<-setdiff(1:n,ca)
   
   ind<-ind[rankrho(D[,ind],D[,ca],nmax=min(length(ind),50))]
-  
-  MBca<-ind[mimr(D[,ind],D[,ca],nmax=ns,init=TRUE)]
+
+  if (mimr)
+    MBca<-ind[mimr(D[,ind],D[,ca],nmax=ns,init=TRUE)]
+  else
+    MBca<-ind[mrmr(D[,ind],D[,ca],nmax=ns)]
   
   #### creation of the Markov Blanket of ef (denoted MBef)
   ind<-setdiff(1:n,ef)
   ind<-ind[rankrho(D[,ind],D[,ef],nmax=min(length(ind),50))]
   
-  MBef<-ind[mimr(D[,ind],D[,ef],nmax=ns,init=TRUE)]
-  
+  if (mimr)
+    MBef<-ind[mimr(D[,ind],D[,ef],nmax=ns,init=TRUE)]
+  else
+    MBef<-ind[mrmr(D[,ind],D[,ef],nmax=ns)]
   
   
   namesx<-NULL 
@@ -140,18 +145,24 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     ca.ef<-npred(D[,ca],D[,ef],lin=lin)
     ## relevance of ef for ca
     ef.ca<-npred(D[,ef],D[,ca],lin=lin)
-    
-    
-    ## relevance of ca for ef given MBef
-    np<-npred(D[,MBef],D[,ef],lin=lin)
 
-    delta<- (npred(D[,c(MBef,ca)],D[,ef],lin=lin)-np)/np
-    
-    
-    ## relevance of ef for ca given MBca
-    np<-npred(D[,MBca],D[,ca],lin=lin)
-    delta2<- (npred(D[,c(MBca,ef)],D[,ca],lin=lin)-np)/np
-    
+
+      delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin)
+
+     delta2<- norminf(D[,ca],D[,ef],D[,MBca],lin=lin)
+
+
+ 
+    ## relevance of ca for ef given MBef
+    delta.i<-NULL
+    for (m in MBef)
+      delta.i<- c(delta.i,norminf(D[,ef],D[,ca],D[,m],lin=lin))
+   
+delta2.i<-NULL
+    for (m in MBca)
+      delta2.i<- c(delta2.i,norminf(D[,ca],D[,ef],D[,m],lin=lin))
+
+ 
     
     I1.i<-NULL
     ## Information of Mbef on ca 
@@ -196,12 +207,15 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     
     
     
-    x<-c(x,delta,delta2,ca.ef,ef.ca,
+    x<-c(x,delta,delta2,quantile(delta.i,probs=pq,na.rm=TRUE),
+         quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
          quantile(I2.i,probs=pq,na.rm=TRUE),quantile(I2.j,probs=pq,na.rm=TRUE),
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE))
     
-    namesx<-c(namesx,"delta","delta2","ca.ef","ef.ca",
+    namesx<-c(namesx,"delta","delta2",paste("delta",1:length(pq)),
+              paste("delta2",1:length(pq)),
+             "ca.ef","ef.ca",
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)))
