@@ -8,7 +8,7 @@ N<-c(20,100)
 ## range of number of samples
 
 
-NDAG.test=200
+NDAG.test=50
 
 sdev<-c(0.2,1)
 
