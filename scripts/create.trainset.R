@@ -12,10 +12,12 @@ N<-c(20,100)
 NDAG=50
 ## number of DAGs to be created and simulated
 
+type="is.parent"
+
 sdev<-c(0.2,1)
 savefile<-TRUE
 seed<-0
-namefile<-paste("./data/trainD2C",NDAG,"RData",sep=".")
+namefile<-paste("./data/trainD2C",NDAG,type,"RData",sep=".")
 
 trainDAG<-new("simulatedDAG",NDAG=NDAG, N=N, noNodes=noNodes,
               functionType = c("linear","quadratic","sigmoid"),
