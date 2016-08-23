@@ -40,7 +40,7 @@ require(foreach)
 descr=new("D2C.descriptor")
 descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=3,acc=TRUE)
 trainDAG<-new("simulatedDAG",NDAG=10, N=c(50,100),noNodes=c(15,40),
-             functionType = "linear", seed=0,sdn=c(0.45,0.75)) 
+             functionType = "linear", seed=0,sdn=c(0.45,0.75))
 }
 \references{
 Gianluca Bontempi, Maxime Flauder (2014) From dependency to causality: a machine learning approach. Under submission

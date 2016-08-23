@@ -25,6 +25,8 @@
 \item{max.features}{: maximum number of features used by the Random Forest classifier \link[randomForest]{randomForest}. The features are selected by the importance returned by the function \link[randomForest]{importance}.}
 
 \item{goParallel}{: if TRUE it uses parallelism}
+
+\item{type}{: type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}}
 }
 \description{
 creation of a D2C object which preprocesses the list of DAGs and observations contained in sDAG and fits a  Random Forest classifier
@@ -36,10 +38,10 @@ require(gRbase)
 descr=new("D2C.descriptor")
 descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=3,acc=TRUE)
 trainDAG<-new("simulatedDAG",NDAG=2, N=50,noNodes=10,
-             functionType = "linear", seed=0,sdn=0.5) 
+             functionType = "linear", seed=0,sdn=0.5)
 example<-new("D2C",sDAG=trainDAG, descr=descr.example)
 }
 \references{
-Gianluca Bontempi, Maxime Flauder (2014) From dependency to causality: a machine learning approach. Under submission
+Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 }
 

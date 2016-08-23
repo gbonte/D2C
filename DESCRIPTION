@@ -29,7 +29,9 @@ Imports:
     corpcor,
     methods,
     Rgraphviz,
-    foreach
+    foreach,
+    igraph,
+    graph
 LazyData: true
 Packaged: 2014-12-16 14:21:06 UTC; gbonte
 Suggests:

@@ -23,7 +23,6 @@ list with  response and prob of the prediction
 predict if there is a connection between node i and node j
 }
 \examples{
- 
 require(RBGL)
 require(gRbase)
 require(foreach)
@@ -33,7 +32,7 @@ testDAG<-new("simulatedDAG",NDAG=1, N=50,noNodes=5,
            functionType = "linear", seed=1,sdn=c(0.25,0.5))
 ## creates a simulatedDAG object for testing
 plot(testDAG@list.DAGs[[1]])
-## plot the topology of the simulatedDAG 
+## plot the topology of the simulatedDAG
 predict(example,1,2, testDAG@list.observationsDAGs[[1]])
 ## predict if the edge 1->2 exists
 predict(example,4,3, testDAG@list.observationsDAGs[[1]])

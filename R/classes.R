@@ -1,4 +1,4 @@
-#' @import RBGL gRbase randomForest Rgraphviz methods foreach kernlab MASS igraph
+#' @import RBGL gRbase randomForest Rgraphviz methods foreach kernlab MASS igraph graph
 
 
 #########################################
@@ -11,7 +11,7 @@ setClass("D2C.descriptor",
                       struct="logical",pq="numeric",
                       bivariate="logical",ns="numeric"))
 
-##' creation of a D2C.descriptor 
+##' creation of a D2C.descriptor
 ##' @param .Object : the D2C.descriptor object
 ##' @param lin :	TRUE OR FALSE: if TRUE it uses a linear model to assess a dependency, otherwise a local learning algorithm
 ##' @param acc : TRUE OR FALSE: if TRUE it uses the accuracy of the regression as a descriptor
@@ -19,14 +19,14 @@ setClass("D2C.descriptor",
 ##'  @param pq :a vector of quantiles used to compute the descriptors
 ##'  @param bivariate :TRUE OR FALSE: if TRUE it includes also the descriptors of the bivariate dependence
 ##'  @param ns : size of the Markov Blanket returned by the mIMR algorithm
-##' @references Gianluca Bontempi, Maxime Flauder (2014) From dependency to causality: a machine learning approach. Under submission
+##' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 ##' @examples
 ##' require(RBGL)
 ##' require(gRbase)
 ##' require(foreach)
 ##'descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=3,acc=TRUE)
 ##'trainDAG<-new("simulatedDAG",NDAG=2, N=50,noNodes=10,
-##'              functionType = "linear", seed=0,sdn=0.5) 
+##'              functionType = "linear", seed=0,sdn=0.5)
 ##'
 ##' @export
 setMethod("initialize",
@@ -35,7 +35,7 @@ setMethod("initialize",
                    struct=TRUE,pq=c(0.1, 0.25, 0.5, 0.75, 0.9),
                    bivariate=FALSE,ns=4)
           {
-            
+
             .Object@lin <- lin
             .Object@acc <- acc
             .Object@struct <- struct
@@ -64,10 +64,10 @@ setClass("DAG.network",  slots = list(network = "graph",additive="logical"))
 
 ##' creation of a DAG.network
 ##' @param .Object : DAG.network object
-##' @param sdn : standard deviation of aditive noise. 
+##' @param sdn : standard deviation of aditive noise.
 ##' @param sigma : function returning the additive noise
-##' @param H : function describing the type of the dependency. 
-##' @param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs. 
+##' @param H : function describing the type of the dependency.
+##' @param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs.
 ##' @param network : object of class "igraph"
 ##' @export
 setMethod("initialize", signature="DAG.network",
@@ -89,11 +89,11 @@ setMethod("initialize", signature="DAG.network",
               for( edge in edgeList(DAG)){
                 edgeData(DAG, from=edge[1], to=edge[2], attr="weight") <- runif(1,0.5,1)*sample(c(-1,1),1)
                 edgeData(DAG, from=edge[1], to=edge[2],attr="H") <- H()
-                
-              }     
-            }   	 
+
+              }
+            }
             .Object@network <- DAG
-            
+
             return(.Object)
           }
 )
@@ -114,20 +114,20 @@ setMethod("compute", signature="DAG.network", function(object,N=50)
 {
   if(!is.numeric(N))
     stop("N is not numeric")
-  
+
   DAG = object@network
   nNodes <- numNodes(DAG)
   topologicalOrder <-tsort(DAG)
-  
+
   D <- matrix(NA,nrow=N,ncol=nNodes)
-  colnames(D) <- topologicalOrder  
-  
-  
-  for (i in topologicalOrder){   
-    bias = nodeData(DAG,n=i,attr="bias")[[1]] 
-    sigma = nodeData(DAG,n=i,attr="sigma")[[1]] 
+  colnames(D) <- topologicalOrder
+
+
+  for (i in topologicalOrder){
+    bias = nodeData(DAG,n=i,attr="bias")[[1]]
+    sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
     inEdg <-  inEdges(node=i,object=DAG)[[1]]
-    
+
     if (length(inEdg)==0){
       D[,i]<-bias + replicate(N,sigma())
     } else  {
@@ -138,7 +138,7 @@ setMethod("compute", signature="DAG.network", function(object,N=50)
       {
         inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
         H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
-        
+
         if (object@additive){
           D[,i]<- D[,i] + H(D[,j]) *  inputWeight
         }else{
@@ -151,11 +151,11 @@ setMethod("compute", signature="DAG.network", function(object,N=50)
         D[,i]<- kernel.fct(Xin)
       }
       D[,i] <- scale(D[,i]) + replicate(N,sigma())
-    }    
+    }
   }
   col.numeric<-as(colnames(D),"numeric")
   D<-D[,topologicalOrder[order(col.numeric)]]
-  
+
   return(D)
 })
 
@@ -166,8 +166,8 @@ setMethod("compute", signature="DAG.network", function(object,N=50)
 
 ##' An S4 class to store a list of DAGs and associated observations
 ##' @param list.DAGs : list of stored DAGs
-##' @param list.observationsDAGs : list of observed datasets, each sampled from the corresponding member of list.DAGs 
-##' @param NDAG  : number of DAGs. 
+##' @param list.observationsDAGs : list of observed datasets, each sampled from the corresponding member of list.DAGs
+##' @param NDAG  : number of DAGs.
 ##' @param functionType : type of the dependency. It is of class "character" and is one of  ("linear", "quadratic","sigmoid")
 ##' @param seed : random seed
 setClass("simulatedDAG",
@@ -178,10 +178,10 @@ setClass("simulatedDAG",
 
 
 
-##' creation of a "simulatedDAG" containing a list of DAGs and associated observations 
+##' creation of a "simulatedDAG" containing a list of DAGs and associated observations
 ##' @param .Object : simulatedDAG object
 ##' @param NDAG : number of DAGs to be created and simulated
-#' @param noNodes  : number of Nodes of the DAGs. If it is a two-valued vector , the value of Nodes is randomly sampled in the interval 
+#' @param noNodes  : number of Nodes of the DAGs. If it is a two-valued vector , the value of Nodes is randomly sampled in the interval
 #' @param N  : number of sampled observations for each DAG. If it is a two-valued vector [a,b], the value of N is randomly sampled in the interval [a,b]
 #' @param sdn : standard deviation of aditive noise. If it is a two-valued vector, the value of N is randomly sampled in the interval
 #' @param seed : random seed
@@ -189,8 +189,8 @@ setClass("simulatedDAG",
 #' @param functionType : type of the dependency. It is of class "character" and is one of  ("linear", "quadratic","sigmoid","kernel")
 #'  @param quantize  : if TRUE it discretize the observations into two bins. If it is a two-valued vector [a,b], the value of quantize is randomly sampled in the interval [a,b]
 #'  @param goParallel : if TRUE it uses parallelism
-#'  @param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs. 
-#' @references Gianluca Bontempi, Maxime Flauder (2014) From dependency to causality: a machine learning approach. Under submission
+#'  @param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs.
+#' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @examples
 #' require(RBGL)
 #' require(gRbase)
@@ -198,10 +198,10 @@ setClass("simulatedDAG",
 #' descr=new("D2C.descriptor")
 #'descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=3,acc=TRUE)
 #'trainDAG<-new("simulatedDAG",NDAG=10, N=c(50,100),noNodes=c(15,40),
-#'              functionType = "linear", seed=0,sdn=c(0.45,0.75)) 
+#'              functionType = "linear", seed=0,sdn=c(0.45,0.75))
 #' @export
-#' 
-#' 
+#'
+#'
 setMethod("initialize",
           "simulatedDAG",
           function(.Object, NDAG=1,
@@ -210,15 +210,15 @@ setMethod("initialize",
                    verbose=TRUE,N=sample(100:500,size=1),
                    seed=1234,sdn=0.5, goParallel=FALSE,additive=FALSE)
           {
-            
+
             ##generate a training set
             ## NDAG the number of network to use
             ##functionType example : "R1" "R2" "sigmoid1"
-            
-            
-            
+
+
+
             `%op%` <- if (goParallel) `%dopar%` else `%do%`
-            
+
             .Object@functionType=functionType
             .Object@seed=seed
             X=NULL
@@ -227,56 +227,56 @@ setMethod("initialize",
             list.observationsDAGs=NULL
             if (NDAG<=0)
               return(.Object)
-            
-            
-            
-            FF<-foreach (i=1:NDAG) %op%{         
-              ##  for (i in 1:NDAG){  
-              set.seed(seed+i)                
+
+
+
+            FF<-foreach (i=1:NDAG) %op%{
+              ##  for (i in 1:NDAG){
+              set.seed(seed+i)
               N.i<-N
               if (length(N)>1)
                 N.i<-sample(N[1]:N[2],1)
-              
+
               quantize.i<-quantize
               if (length(quantize)>1)
                 quantize.i<-sample(quantize,1)
-              
+
               noNodes.i<-noNodes
               if (length(noNodes)>1)
                 noNodes.i<-sample(noNodes[1]:noNodes[2],1)
-              
+
               sdn.i<-sdn
               if (length(sdn)>1)
                 sdn.i<-runif(1,sdn[1],sdn[2])
-              
+
               functionType.i<-functionType
               if (length(functionType.i)>1)
                 functionType.i<-sample(functionType,1)
-              
+
               additive.i<-additive
               if (length(additive)>1)
                 additive.i<-sample(additive,1)
-              
-              
+
+
               V=1:noNodes.i
-              
+
               maxpar = sample(3:round(noNodes.i/3),size=1)
-              
-              
+
+
               if(functionType.i=="linear"){
                 H = function() return(H_Rn(1))
-                
+
               }else if(functionType.i=="quadratic"){
                 H = function() return(H_Rn(2))
-                
+
               }else if(functionType.i=="sigmoid"){
                 H = function() return(H_sigmoid(1))
-                
+
               } else if(functionType.i=="kernel"){
                 H = function() return(H_kernel())
-                
+
               }
-              
+
               wgt = runif(n = 1,min = 0.65,max = 0.85)
               netwDAG<-random_dag(V,maxpar = maxpar,wgt)
               cnt<-2
@@ -284,31 +284,31 @@ setMethod("initialize",
                 netwDAG<-random_dag(V,maxpar = maxpar,wgt)
                 wgt = runif(n = 1,min = 0.65/cnt,max = 0.85)
                 cnt<-cnt+1
-                
+
               }
-              
-              
+
+
               DAG = new("DAG.network",
                         network=netwDAG,H=H,additive=additive.i,sdn=sdn.i)
-              
-              
+
+
               observationsDAG = compute(DAG,N=N.i)
               if (quantize.i)
                 observationsDAG<-apply(observationsDAG,2,quantization)
-              
+
               if (verbose){
-               
-                cat("simulatedDAG: DAG number:",i,"generated: #nodes=", length(V), 
+
+                cat("simulatedDAG: DAG number:",i,"generated: #nodes=", length(V),
                     "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", N.i, "\n")
-           
+
               }
-              
-              
-              
+
+
+
               list(observationsDAG=observationsDAG,netwDAG=netwDAG)
             } ## foreach
-            
-            
+
+
             .Object@list.DAGs=lapply(FF,"[[",2)
             .Object@list.observationsDAGs=lapply(FF,"[[",1)
             to.remove=which(unlist(lapply(lapply(.Object@list.DAGs,edgeList),length))==0)
@@ -317,7 +317,7 @@ setMethod("initialize",
               .Object@list.observationsDAGs=.Object@list.observationsDAGs[-to.remove]
             }
             .Object@NDAG=length(.Object@list.DAGs)
-            
+
             .Object
           }
 )
@@ -327,10 +327,10 @@ setMethod("initialize",
 
 setGeneric("update", def=function(object,...) {standardGeneric("update")})
 
-#' update of a "simulatedDAG" with a list of DAGs and associated observations 
+#' update of a "simulatedDAG" with a list of DAGs and associated observations
 #' @param object :  simulatedDAG to be updated
 #' @param list.DAGs : list of stored DAGs
-#' @param list.observationsDAGs : list of observed datasets, each sampled from the corresponding member of list.DAGs 
+#' @param list.observationsDAGs : list of observed datasets, each sampled from the corresponding member of list.DAGs
 #' @export
 setMethod(f="update",
           signature="simulatedDAG",
@@ -341,7 +341,7 @@ setMethod(f="update",
             object@list.observationsDAGs=c(object@list.observationsDAGs,list.observationsDAGs)
             object@NDAG=length(object@list.DAGs)
             object
-            
+
           }
 )
 
@@ -354,7 +354,7 @@ setOldClass("randomForest")
 
 #' An S4 class to store the RF model trained on the basis of the descriptors of NDAG DAGs
 setClass("D2C",
-         slots = list(mod="randomForest", X="matrix",Y="numeric",                    
+         slots = list(mod="randomForest", X="matrix",Y="numeric",
                       descr="D2C.descriptor",features="numeric",rank="numeric",
                       allEdges="list",ratioMissingNode="numeric",ratioEdges="numeric",
                       max.features="numeric",type="character"
@@ -369,8 +369,8 @@ setClass("D2C",
 #' @param ratioMissingNode  : percentage of existing nodes which are not considered. This is used to emulate latent variables.
 #' @param goParallel : if TRUE it uses parallelism
 #' @param verbose  : if TRUE it prints the state of progress
-#' @parame type : type of dependency. It takes values in {is.parent, is.child, is.ancestor, is.descendant, is.mb}
-#' @references Gianluca Bontempi, Maxime Flauder (2014) From dependency to causality: a machine learning approach. Under submission
+#' @param type : type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}
+#' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @examples
 #' require(RBGL)
 #' require(gRbase)
@@ -378,24 +378,24 @@ setClass("D2C",
 #' descr=new("D2C.descriptor")
 #'descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=3,acc=TRUE)
 #'trainDAG<-new("simulatedDAG",NDAG=2, N=50,noNodes=10,
-#'              functionType = "linear", seed=0,sdn=0.5) 
+#'              functionType = "linear", seed=0,sdn=0.5)
 #' example<-new("D2C",sDAG=trainDAG, descr=descr.example)
 #' @export
 setMethod("initialize",
           "D2C",
-          function(.Object, sDAG, 
+          function(.Object, sDAG,
                    descr=new("D2C.descriptor"),
-                   verbose=TRUE, 
+                   verbose=TRUE,
                    ratioMissingNode=0,
-                   ratioEdges=1,max.features=20, 
+                   ratioEdges=1,max.features=20,
                    goParallel=FALSE,
                    type="is.parent") {
-            
+
             #generate a training set
             # NDAG the number of network to use
             #functionType example : "R1" "R2" "sigmoid1"
             `%op%` <- if (goParallel) `%dopar%` else `%do%`
-            
+
             .Object@descr=descr
             .Object@ratioMissingNode= ratioMissingNode
             .Object@ratioEdges= ratioEdges
@@ -405,49 +405,49 @@ setMethod("initialize",
             Y=NULL
             allEdges=NULL
             FF<-NULL
-            
+
             FF<-foreach (i=1:sDAG@NDAG) %op%{
               set.seed(i)
               DAG = sDAG@list.DAGs[[i]]
               observationsDAG =sDAG@list.observationsDAGs[[i]]
-              
+
               Nodes = nodes(DAG)
-              
+
               sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
               keepNode = sort(sample(Nodes,
                                      size = sz ,
-                                     replace = F))  
-              
+                                     replace = F))
+
               DAG2 =subGraph(keepNode, DAG)
               iDAG2=graph.adjacency(as(DAG2,"matrix"))
-              
-              
+
+
               ##choose which edge to train / predict and find the right label
               nEdge = length(edgeList(DAG))
               sz=min(max(1,round(nEdge*ratioEdges)),20)
-              
-              edges = matrix(unlist(sample(edgeList(DAG2),
+
+              edgesM = matrix(unlist(sample(edgeList(DAG2),
                 size = sz,replace = F)),
-                ncol=2,byrow = TRUE)  
-              edges = rbind(edges,t(replicate(n =sz ,
+                ncol=2,byrow = TRUE)
+              edgesM = rbind(edgesM,t(replicate(n =sz ,
                 sample(keepNode,size=2,replace = FALSE))))
-              
-              nEdges =  NROW(edges)
+
+              nEdges =  NROW(edgesM)
 
               rev<-TRUE
               if (rev)
                 labelEdge = numeric(2*nEdges)
               else
                  labelEdge = numeric(nEdges)
-              
-              ##compute the descriptor for the edges 
+
+              ##compute the descriptor for the edges
               X.out = NULL
-              
+
               if (rev){
                 for(j in 1:nEdges){
-                  I =as(edges[j,1],"numeric") ; 
-                  J =as(edges[j,2],"numeric") ; 
-                  
+                  I =as(edgesM[j,1],"numeric") ;
+                  J =as(edgesM[j,2],"numeric") ;
+
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
@@ -457,29 +457,29 @@ setMethod("initialize",
                                   struct=descr@struct,bivariate=descr@bivariate,
                                   pq=descr@pq,ns=descr@ns)
                   }
-                 
+
                   if (type=="is.parent")
-                    if (is.parent(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[(2*j)-1] =1
                   if (type=="is.child")
-                    if (is.child(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[(2*j)-1] =1
                   if (type=="is.ancestor")
-                    if (is.ancestor(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[(2*j)-1] =1
                   if (type=="is.descendant")
-                    if (is.descendant(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[(2*j)-1] =1
                   if (type=="is.mb")
-                    if (is.mb(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[(2*j)-1] =1
                   X.out = rbind(X.out,d)
 
                   ## reverse edge
-                  I =as(edges[j,2],"numeric") ;
-                  J =as(edges[j,1],"numeric") ;
-                  
-                  
+                  I =as(edgesM[j,2],"numeric") ;
+                  J =as(edgesM[j,1],"numeric") ;
+
+
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
@@ -489,77 +489,77 @@ setMethod("initialize",
                                   struct=descr@struct,bivariate=descr@bivariate,
                                   pq=descr@pq,ns=descr@ns)
                   }
-                  
+
                   if (type=="is.parent")
-                    if (is.parent(iDAG2,edges[j,2],edges[j,1]))
+                    if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
                       labelEdge[2*j] =1
                   if (type=="is.child")
-                    if (is.child(iDAG2,edges[j,2],edges[j,1]))
+                    if (is.child(iDAG2,edgesM[j,2],edgesM[j,1]))
                       labelEdge[2*j] =1
                   if (type=="is.ancestor")
-                    if (is.ancestor(iDAG2,edges[j,2],edges[j,1]))
+                    if (is.ancestor(iDAG2,edgesM[j,2],edgesM[j,1]))
                       labelEdge[2*j] =1
                   if (type=="is.descendant")
-                    if (is.descendant(iDAG2,edges[j,2],edges[j,1]))
+                    if (is.descendant(iDAG2,edgesM[j,2],edgesM[j,1]))
                       labelEdge[2*j] =1
                   if (type=="is.mb")
-                    if (is.mb(iDAG2,edges[j,2],edges[j,1]))
+                    if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1]))
                       labelEdge[2*j] =1
                   X.out = rbind(X.out,d)
-                  
-                  
+
+
                 }
               } else {
                 for(j in 1:nEdges){
-                  I =as(edges[j,1],"numeric") ; 
-                  J =as(edges[j,2],"numeric") ; 
-                  
+                  I =as(edgesM[j,1],"numeric") ;
+                  J =as(edgesM[j,2],"numeric") ;
+
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
                                   pq=descr@pq,ns=descr@ns,mimr=FALSE)
                   } else {
-                    
+
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
                                   pq=descr@pq,ns=descr@ns)
-                    
-                    
-                    
+
+
+
                   }
-                  
+
                   labelEdge[j] =0
                   if (type=="is.parent")
-                    if (is.parent(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[j] =1
                   if (type=="is.child")
-                    if (is.child(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[j] =1
                   if (type=="is.ancestor")
-                    if (is.ancestor(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[j] =1
                   if (type=="is.descendant")
-                    if (is.descendant(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[j] =1
                   if (type=="is.mb")
-                    if (is.mb(iDAG2,edges[j,1],edges[j,2]))
+                    if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[j] =1
                   X.out = rbind(X.out,d)
-                  
+
                 }
               }
               if (verbose)
                 cat("D2C:  DAG", i, " processed \n")
-              
-              list(X=X.out,Y=labelEdge,edges=edges)
-              
+
+              list(X=X.out,Y=labelEdge,edges=edgesM)
+
             } ## foreach
-            
+
             X<-do.call(rbind,lapply(FF,"[[",1))
             Y<-do.call(c,lapply(FF,"[[",2))
             allEdges<-lapply(FF,"[[",3)
-            
-            
+
+
             features<-1:NCOL(X)
             wna<-which(apply(X,2,sd)<0.01)
             if (length(wna)>0)
@@ -573,8 +573,8 @@ setMethod("initialize",
              if (length(w1)>length(w0))
               w1<-sample(w1,length(w0))
             X<-X[c(w0,w1),]
-            Y<-Y[c(w0,w1)]           
- 
+            Y<-Y[c(w0,w1)]
+
             X<-scale(X[,features])
             .Object@features=features
             .Object@X=X
@@ -584,10 +584,10 @@ setMethod("initialize",
             IM<-importance(RF)[,"MeanDecreaseAccuracy"]
             rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(X))]
             RF <- randomForest(x =X[,rank] ,y = factor(Y))
-            
+
             .Object@rank=rank
             .Object@mod=RF
-            
+
             .Object
           }
 )
@@ -597,63 +597,63 @@ setMethod("initialize",
 #' @docType methods
 setGeneric("updateD2C", def=function(object,...) {standardGeneric("updateD2C")})
 
-#' update of a "D2C" with a list of DAGs and associated observations 
+#' update of a "D2C" with a list of DAGs and associated observations
 #' @param object :  D2C to be updated
 #' @param sDAG : simulatedDAG object to update D2C
 #' @param verbose : TRUE or FALSE
-#' @param goParallel : if TRUE it uses  parallelism  
+#' @param goParallel : if TRUE it uses  parallelism
 #' @export
 setMethod(f="updateD2C",
           signature="D2C",
-          definition=function(object,sDAG,           
+          definition=function(object,sDAG,
                               verbose=TRUE, goParallel= FALSE){
-            
+
             `%op%` <- if (goParallel) `%dopar%` else `%do%`
             ratioMissingNode=object@ratioMissingNode
             ratioEdges=object@ratioEdges
             descr=object@descr
             FF<-foreach (i=1:sDAG@NDAG) %op%{
-              
+
               set.seed(i)
               DAG = sDAG@list.DAGs[[i]]
               observationsDAG =sDAG@list.observationsDAGs[[i]]
-              
+
               Nodes = nodes(DAG)
-              
+
               sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
               keepNode = sort(sample(Nodes,
                                      size = sz ,
-                                     replace = F))  
-              
+                                     replace = F))
+
               DAG2 =subGraph(keepNode, DAG)
-              
-              
+
+
               ##choose wich edge to train / predict and find the right label
               nEdge = length(edgeList(DAG))
               sz=max(1,round(nEdge*ratioEdges))
-              
-              edges = matrix(unlist(sample(edgeList(DAG2),
-                                           size = sz,replace = F)),ncol=2,byrow = TRUE)  
-              edges = rbind(edges,t(replicate(n =sz ,
+
+              edgesM = matrix(unlist(sample(edgeList(DAG2),
+                                           size = sz,replace = F)),ncol=2,byrow = TRUE)
+              edgesM = rbind(edgesM,t(replicate(n =sz ,
                                               sample(keepNode,size=2,replace = FALSE))))
-              
-              nEdges =  NROW(edges)
+
+              nEdges =  NROW(edgesM)
               labelEdge = numeric(nEdges)
               for(j in 1:nEdges){
-                I =edges[j,1] ; 
-                J =edges[j,2] ;
+                I =edgesM[j,1] ;
+                J =edgesM[j,2] ;
                 labelEdge[j] = as.numeric(I %in% inEdges(node = J,DAG2)[[1]])
-              } 
-              
-              
-              ##compute the descriptor for the edges 
+              }
+
+
+              ##compute the descriptor for the edges
               nNodes = length(labelEdge)
-              
+
               X.out = NULL
               for(j in 1:nNodes){
-                I =as(edges[j,1],"numeric") ; 
-                J =as(edges[j,2],"numeric") ; 
-                
+                I =as(edgesM[j,1],"numeric") ;
+                J =as(edgesM[j,2],"numeric") ;
+
                 if (object@type=="is.mb"){
                   d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                 struct=descr@struct,bivariate=descr@bivariate,
@@ -664,26 +664,26 @@ setMethod(f="updateD2C",
                                 pq=descr@pq,ns=descr@ns,mimr=TRUE)
                 }
 
-                 
-                  
-                
+
+
+
                 X.out = rbind(X.out,d)
               }
               if (verbose)
                 cat("D2C:  DAG", i, " processed \n")
-              
-              list(X=X.out,Y=labelEdge,edges=edges)
-              
+
+              list(X=X.out,Y=labelEdge,edges=edgesM)
+
             }
-            
+
             X<-do.call(rbind,lapply(FF,"[[",1))
             Y<-do.call(c,lapply(FF,"[[",2))
             allEdges<-lapply(FF,"[[",3)
-            
-            
-            
+
+
+
             X<-scale(X[,object@features],attr(object@X,"scaled:center"),attr(object@X,"scaled:scale"))
-            
+
             object@X=rbind(object@X,X)
             object@Y=c(object@Y,Y)
             object@allEdges=c(object@allEdges,allEdges)
@@ -693,19 +693,19 @@ setMethod(f="updateD2C",
             RF <- randomForest(x =object@X[,rank] ,y = factor(object@Y))
             object@rank=rank
             object@mod=RF
-            
-            object  
-            
+
+            object
+
           }
 )
 
-#' predict if there is a connection between node i and node j 
-#' @param object : a D2C object 
+#' predict if there is a connection between node i and node j
+#' @param object : a D2C object
 #' @param i :  index of putative cause (\eqn{1 \le i \le n})
 #' @param j  : index of putative effect (\eqn{1 \le j \le n})
-#' @param data : dataset of observations from the DAG    
+#' @param data : dataset of observations from the DAG
 #' @return list with  response and prob of the prediction
-#' @examples  
+#' @examples
 #' require(RBGL)
 #' require(gRbase)
 #' require(foreach)
@@ -715,20 +715,20 @@ setMethod(f="updateD2C",
 #'            functionType = "linear", seed=1,sdn=c(0.25,0.5))
 #' ## creates a simulatedDAG object for testing
 #' plot(testDAG@@list.DAGs[[1]])
-#' ## plot the topology of the simulatedDAG 
+#' ## plot the topology of the simulatedDAG
 #' predict(example,1,2, testDAG@@list.observationsDAGs[[1]])
 #' ## predict if the edge 1->2 exists
 #' predict(example,4,3, testDAG@@list.observationsDAGs[[1]])
 #' ## predict if the edge 4->3 exists
 #' predict(example,4,1, testDAG@@list.observationsDAGs[[1]])
 #' ## predict if the edge 4->1 exists
-#' @references Gianluca Bontempi, Maxime Flauder (2014) From dependency to causality: a machine learning approach. Under submission
+#' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @export
 setMethod("predict", signature="D2C",
           function(object,i,j,data)
           {
-            out = list() 
-            
+            out = list()
+
             if (any(apply(data,2,sd)<0.01))
               stop("Error in D2C::predict: Remove constant variables from dataset. ")
 
@@ -745,19 +745,19 @@ setMethod("predict", signature="D2C",
             }
             if (any(is.infinite(X_descriptor)))
               stop("Error in D2C::predict: infinite value ")
-            
+
             X_descriptor=X_descriptor[object@features]
-            
-            
+
+
             X_descriptor=scale(array(X_descriptor,c(1,length(X_descriptor))),
                                attr(object@X,"scaled:center"),attr(object@X,"scaled:scale"))
             if (any(is.infinite(X_descriptor[,object@rank])))
               stop("error in D2C::predict")
             out[["response"]] = predict(object@mod, X_descriptor[,object@rank], type="response")
             out[["prob"]] = predict(object@mod, X_descriptor[,object@rank], type="prob")
-            
-            
-            return(out)  
+
+
+            return(out)
           })
 
 

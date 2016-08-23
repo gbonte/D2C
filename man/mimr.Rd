@@ -39,7 +39,7 @@ Z1<-Y+rnorm(N,sd=0.5)
 Z2<-2*Y+rnorm(N,sd=0.5)
 ## effect 2
 most.probable.causes<-mimr(cbind(X,Z1,Z2),Y,nmax=3,init=TRUE,spouse=FALSE,lambda=1)
-## causes are in the first three columns of the feature dataset 
+## causes are in the first three columns of the feature dataset
 most.probable.effects<-mimr(cbind(X,Z1,Z2),Y,nmax=3,init=TRUE,spouse=FALSE,lambda=1,caus=-1)
 ## effects are in the last two columns of the feature dataset
 }
