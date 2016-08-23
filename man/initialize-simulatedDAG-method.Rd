@@ -43,6 +43,6 @@ trainDAG<-new("simulatedDAG",NDAG=10, N=c(50,100),noNodes=c(15,40),
              functionType = "linear", seed=0,sdn=c(0.45,0.75))
 }
 \references{
-Gianluca Bontempi, Maxime Flauder (2014) From dependency to causality: a machine learning approach. Under submission
+Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 }
 

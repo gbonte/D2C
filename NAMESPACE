@@ -7,6 +7,12 @@ export(mimr)
 export(H_Rn)
 exportMethods(initialize)
 exportMethods(predict)
+export(is.parent)
+export(is.child)
+export(is.ancestor)
+export(is.descendant)
+export(is.mb)
+
 
 
 import(MASS)
@@ -21,5 +27,6 @@ import(gRbase)
 import(lazy)
 import(methods)
 import(igraph)
+import(graph)
 import(randomForest)
 

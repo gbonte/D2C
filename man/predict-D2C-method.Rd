@@ -41,6 +41,6 @@ predict(example,4,1, testDAG@list.observationsDAGs[[1]])
 ## predict if the edge 4->1 exists
 }
 \references{
-Gianluca Bontempi, Maxime Flauder (2014) From dependency to causality: a machine learning approach. Under submission
+Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 }
 

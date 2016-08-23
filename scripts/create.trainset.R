@@ -9,7 +9,7 @@ noNodes<-c(20,100)
 N<-c(20,100)
 ## range of number of samples
 
-NDAG=50
+NDAG=500
 ## number of DAGs to be created and simulated
 
 type="is.parent"

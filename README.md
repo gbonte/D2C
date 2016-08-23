@@ -10,9 +10,11 @@ Details in http://jmlr.org/papers/v16/bontempi15a.html
 
 To use it in your R code
 
-* library(devtools)
-* install_github("gbonte/D2C")
-* require(D2C)
+- library(devtools)
+
+- install_github("gbonte/D2C")
+
+- require(D2C)
 
 —-----------------------
 

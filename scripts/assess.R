@@ -1,7 +1,9 @@
 rm(list=ls())
 
-
-
+library(bnlearn)
+library(igraph)
+library(graph)
+type="is.mb"
 is.what<-function(iDAG,i,j){
   if (type=="is.mb")
     return(as.numeric(is.mb(iDAG,i,j)))
@@ -21,8 +23,8 @@ is.what<-function(iDAG,i,j){
 
 
 
-load("./data/trainD2C.500.is.mb.RData")
-load("./data/testD2C.50.RData")
+load(paste("./data/trainD2C.500",type,"RData",sep="."))
+load("./data/testDAG.50.RData")
 
 
 BER.D2C<-NULL
@@ -43,7 +45,7 @@ for ( r in 1:testDAG@NDAG){
 
   ## inference of networks with bnlearn package
 
- ## Ahat.GS<-(amat(gs(data.frame(observedData))))
+  ## Ahat.GS<-(amat(gs(data.frame(observedData))))
   Ahat.IAMB<-(amat(iamb(data.frame(observedData),alpha=0.01)))
   Ahat.PC<-(amat(si.hiton.pc(data.frame(observedData),alpha=0.01)))
   Ahat.GS<-Ahat.IAMB
@@ -83,7 +85,7 @@ for ( r in 1:testDAG@NDAG){
   BER.IAMB<-BER(Ytrue,Yhat.IAMB)
   BER.GS<-BER(Ytrue,Yhat.GS)
   BER.PC<-BER(Ytrue,Yhat.PC)
-  cat("\n r=",r," BER.D2C=",mean(BER.D2C), "BER.IAMB=",mean(BER.IAMB),
+  cat("\n nDAG=",r," BER.D2C=",mean(BER.D2C), "BER.IAMB=",mean(BER.IAMB),
       "BER.GS=",mean(BER.GS),"BER.PC=",mean(BER.PC),"#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
 
 }
