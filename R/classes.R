@@ -15,10 +15,10 @@ setClass("D2C.descriptor",
 ##' @param .Object : the D2C.descriptor object
 ##' @param lin :	TRUE OR FALSE: if TRUE it uses a linear model to assess a dependency, otherwise a local learning algorithm
 ##' @param acc : TRUE OR FALSE: if TRUE it uses the accuracy of the regression as a descriptor
-##'  @param struct	: TRUE or FALSE to use the ranking in the markov blanket as a descriptor
-##'  @param pq :a vector of quantiles used to compute the descriptors
-##'  @param bivariate :TRUE OR FALSE: if TRUE it includes also the descriptors of the bivariate dependence
-##'  @param ns : size of the Markov Blanket returned by the mIMR algorithm
+##' @param struct	: TRUE or FALSE to use the ranking in the markov blanket as a descriptor
+##' @param pq :a vector of quantiles used to compute the descriptors
+##' @param bivariate :TRUE OR FALSE: if TRUE it includes also the descriptors of the bivariate dependence
+##' @param ns : size of the Markov Blanket returned by the mIMR algorithm
 ##' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 ##' @examples
 ##' require(RBGL)
@@ -64,18 +64,20 @@ setClass("DAG.network",  slots = list(network = "graph",additive="logical"))
 
 ##' creation of a DAG.network
 ##' @param .Object : DAG.network object
-##' @param sdn : standard deviation of aditive noise.
+##' @param network : object of class "igraph"
+##' ##' @param sdn : standard deviation of aditive noise.
 ##' @param sigma : function returning the additive noise
 ##' @param H : function describing the type of the dependency.
-##' @param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs.
-##' @param network : object of class "igraph"
+##' @param additive : if TRUE the output is the sum of the H transformation of the inputs, otherwise it is the H transformation of the sum of the inputs.
+##' @param weights : [lower,upper], lower and upper bound of the values of the linear weights
 ##' @export
 setMethod("initialize", signature="DAG.network",
           function(.Object, network,
                    sdn=0.5,
                    sigma=function(x) return(rnorm(n = 1,sd = sdn)),
                    H=function(x) return(H_Rn(1)),
-                   additive= TRUE)
+                   additive= TRUE,
+                   weights=c(0.8,2))
           {
             DAG = network
             .Object@additive=additive
@@ -87,7 +89,8 @@ setMethod("initialize", signature="DAG.network",
               nodeDataDefaults(DAG,"sigma") <-sigma
               edgeDataDefaults(DAG,"H") <- function(x) return(x)
               for( edge in edgeList(DAG)){
-                edgeData(DAG, from=edge[1], to=edge[2], attr="weight") <- runif(1,0.5,1)*sample(c(-1,1),1)
+                edgeData(DAG, from=edge[1], to=edge[2], attr="weight") <- runif(1,weights[1],weights[2])*sample(c(-1,1),1)
+                ## setting of random linear weights within the specified bounds
                 edgeData(DAG, from=edge[1], to=edge[2],attr="H") <- H()
 
               }
@@ -150,7 +153,8 @@ setMethod("compute", signature="DAG.network", function(object,N=50)
         ##D[,i]<-  H(D[,i])
         D[,i]<- kernel.fct(Xin)
       }
-      D[,i] <- scale(D[,i]) + replicate(N,sigma())
+      D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
+
     }
   }
   col.numeric<-as(colnames(D),"numeric")
@@ -278,7 +282,7 @@ setMethod("initialize",
               }
 
               wgt = runif(n = 1,min = 0.65,max = 0.85)
-              netwDAG<-random_dag(V,maxpar = maxpar,wgt)
+              netwDAG<-random_dag(V,maxpar = maxpar,wgt)  ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
               cnt<-2
               while (sum(unlist(lapply(edges(netwDAG),length)))<3 & cnt<100){
                 netwDAG<-random_dag(V,maxpar = maxpar,wgt)
@@ -418,27 +422,30 @@ setMethod("initialize",
                                      size = sz ,
                                      replace = F))
 
-              DAG2 =subGraph(keepNode, DAG)
-              iDAG2=graph.adjacency(as(DAG2,"matrix"))
+              DAG2 =subGraph(keepNode, DAG) ## subGraph {graph}
 
+
+              iDAG2=graph.adjacency(as(DAG2,"matrix"))  ## as(DAG2,"matrix"): adjacency matrix of graphNEL DAG
+              ##  transforms the graphNEL adjacency matrix into igraph object
+              # Use as_graphnel to transform an igraph into graphNEL
 
               ##choose which edge to train / predict and find the right label
               nEdge = length(edgeList(DAG))
               sz=min(max(1,round(nEdge*ratioEdges)),20)
 
               edgesM = matrix(unlist(sample(edgeList(DAG2),
-                size = sz,replace = F)),
-                ncol=2,byrow = TRUE)
+                                            size = sz,replace = F)),
+                              ncol=2,byrow = TRUE)
               edgesM = rbind(edgesM,t(replicate(n =sz ,
-                sample(keepNode,size=2,replace = FALSE))))
+                                                sample(keepNode,size=2,replace = FALSE))))
 
               nEdges =  NROW(edgesM)
 
-              rev<-TRUE
+              rev<-TRUE  ### if TRUE, it uses both directions of the edge to train the learner (i.e. if i is parent of j, it is also true that j is a child of i)
               if (rev)
                 labelEdge = numeric(2*nEdges)
               else
-                 labelEdge = numeric(nEdges)
+                labelEdge = numeric(nEdges)
 
               ##compute the descriptor for the edges
               X.out = NULL
@@ -461,55 +468,55 @@ setMethod("initialize",
                   if (type=="is.parent")
                     if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[(2*j)-1] =1
-                  if (type=="is.child")
-                    if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[(2*j)-1] =1
-                  if (type=="is.ancestor")
-                    if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[(2*j)-1] =1
-                  if (type=="is.descendant")
-                    if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[(2*j)-1] =1
-                  if (type=="is.mb")
-                    if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[(2*j)-1] =1
-                  X.out = rbind(X.out,d)
+                    if (type=="is.child")
+                      if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[(2*j)-1] =1
+                      if (type=="is.ancestor")
+                        if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
+                          labelEdge[(2*j)-1] =1
+                        if (type=="is.descendant")
+                          if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
+                            labelEdge[(2*j)-1] =1
+                          if (type=="is.mb")
+                            if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
+                              labelEdge[(2*j)-1] =1
+                            X.out = rbind(X.out,d)
 
-                  ## reverse edge
-                  I =as(edgesM[j,2],"numeric") ;
-                  J =as(edgesM[j,1],"numeric") ;
+                            ## reverse edge
+                            I =as(edgesM[j,2],"numeric") ;
+                            J =as(edgesM[j,1],"numeric") ;
 
 
-                  if (type=="is.mb"){
-                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                  struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,mimr=FALSE)
-                  } else {
-                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                  struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns)
-                  }
+                            if (type=="is.mb"){
+                              d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                            struct=descr@struct,bivariate=descr@bivariate,
+                                            pq=descr@pq,ns=descr@ns,mimr=FALSE)
+                            } else {
+                              d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                            struct=descr@struct,bivariate=descr@bivariate,
+                                            pq=descr@pq,ns=descr@ns)
+                            }
 
-                  if (type=="is.parent")
-                    if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  if (type=="is.child")
-                    if (is.child(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  if (type=="is.ancestor")
-                    if (is.ancestor(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  if (type=="is.descendant")
-                    if (is.descendant(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  if (type=="is.mb")
-                    if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  X.out = rbind(X.out,d)
+                            if (type=="is.parent")
+                              if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
+                                labelEdge[2*j] =1
+                            if (type=="is.child")
+                              if (is.child(iDAG2,edgesM[j,2],edgesM[j,1]))
+                                labelEdge[2*j] =1
+                            if (type=="is.ancestor")
+                              if (is.ancestor(iDAG2,edgesM[j,2],edgesM[j,1]))
+                                labelEdge[2*j] =1
+                            if (type=="is.descendant")
+                              if (is.descendant(iDAG2,edgesM[j,2],edgesM[j,1]))
+                                labelEdge[2*j] =1
+                            if (type=="is.mb")
+                              if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1]))
+                                labelEdge[2*j] =1
+                            X.out = rbind(X.out,d)
 
 
                 }
-              } else {
+              } else {    ### if rev
                 for(j in 1:nEdges){
                   I =as(edgesM[j,1],"numeric") ;
                   J =as(edgesM[j,2],"numeric") ;
@@ -547,7 +554,7 @@ setMethod("initialize",
                   X.out = rbind(X.out,d)
 
                 }
-              }
+              } ## if rev
               if (verbose)
                 cat("D2C:  DAG", i, " processed \n")
 
@@ -566,11 +573,11 @@ setMethod("initialize",
               features<-setdiff(features,wna)
 
             w0<-which(Y==0)
-	    w1<-which(Y==1)
+            w1<-which(Y==1)
             if (length(w0)>length(w1))
               w0<-sample(w0,length(w1))
 
-             if (length(w1)>length(w0))
+            if (length(w1)>length(w0))
               w1<-sample(w1,length(w0))
             X<-X[c(w0,w1),]
             Y<-Y[c(w0,w1)]
@@ -633,9 +640,9 @@ setMethod(f="updateD2C",
               sz=max(1,round(nEdge*ratioEdges))
 
               edgesM = matrix(unlist(sample(edgeList(DAG2),
-                                           size = sz,replace = F)),ncol=2,byrow = TRUE)
+                                            size = sz,replace = F)),ncol=2,byrow = TRUE)
               edgesM = rbind(edgesM,t(replicate(n =sz ,
-                                              sample(keepNode,size=2,replace = FALSE))))
+                                                sample(keepNode,size=2,replace = FALSE))))
 
               nEdges =  NROW(edgesM)
               labelEdge = numeric(nEdges)
@@ -733,15 +740,15 @@ setMethod("predict", signature="D2C",
               stop("Error in D2C::predict: Remove constant variables from dataset. ")
 
             if (object@type=="is.mb"){
-            X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
-                                      acc = object@descr@acc,ns=object@descr@ns,
-                                      struct = object@descr@struct,
-                                      pq = object@descr@pq, bivariate =object@descr@bivariate,mimr=FALSE)
+              X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
+                                        acc = object@descr@acc,ns=object@descr@ns,
+                                        struct = object@descr@struct,
+                                        pq = object@descr@pq, bivariate =object@descr@bivariate,mimr=FALSE)
             }else {
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
-                                      acc = object@descr@acc,ns=object@descr@ns,
-                                      struct = object@descr@struct,
-                                      pq = object@descr@pq, bivariate =object@descr@bivariate)
+                                        acc = object@descr@acc,ns=object@descr@ns,
+                                        struct = object@descr@struct,
+                                        pq = object@descr@pq, bivariate =object@descr@bivariate)
             }
             if (any(is.infinite(X_descriptor)))
               stop("Error in D2C::predict: infinite value ")

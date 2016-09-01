@@ -24,7 +24,7 @@ is.what<-function(iDAG,i,j){
 
 
 load(paste("./data/trainD2C.500",type,"RData",sep="."))
-load("./data/testDAG.50.RData")
+load("./data/testDAG.500.RData")
 
 
 BER.D2C<-NULL
@@ -40,7 +40,7 @@ for ( r in 1:testDAG@NDAG){
   set.seed(r)
   observedData<-testDAG@list.observationsDAGs[[r]]
   trueDAG<-testDAG@list.DAGs[[r]]
-
+  browser()
   cat("Dim test dataset"=dim(observedData),"\n")
 
   ## inference of networks with bnlearn package

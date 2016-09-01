@@ -5,6 +5,8 @@ export(descriptor)
 export(BER)
 export(mimr)
 export(H_Rn)
+export(H_sigmoid)
+export(H_kernel)
 exportMethods(initialize)
 exportMethods(predict)
 export(is.parent)
@@ -12,7 +14,7 @@ export(is.child)
 export(is.ancestor)
 export(is.descendant)
 export(is.mb)
-
+exportMethods(compute)
 
 
 import(MASS)

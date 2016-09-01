@@ -14,11 +14,15 @@
 
 \item{lin}{:    TRUE OR FALSE: if TRUE it uses a linear model to assess a dependency, otherwise a local learning algorithm}
 
-\item{acc}{: TRUE OR FALSE: if TRUE it uses the accuracy of the regression as a descriptor
-@param struct    : TRUE or FALSE to use the ranking in the markov blanket as a descriptor
-@param pq :a vector of quantiles used to compute the descriptors
-@param bivariate :TRUE OR FALSE: if TRUE it includes also the descriptors of the bivariate dependence
-@param ns : size of the Markov Blanket returned by the mIMR algorithm}
+\item{acc}{: TRUE OR FALSE: if TRUE it uses the accuracy of the regression as a descriptor}
+
+\item{struct}{: TRUE or FALSE to use the ranking in the markov blanket as a descriptor}
+
+\item{pq}{:a vector of quantiles used to compute the descriptors}
+
+\item{bivariate}{:TRUE OR FALSE: if TRUE it includes also the descriptors of the bivariate dependence}
+
+\item{ns}{: size of the Markov Blanket returned by the mIMR algorithm}
 }
 \description{
 creation of a D2C.descriptor

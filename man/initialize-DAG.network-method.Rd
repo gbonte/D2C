@@ -7,20 +7,21 @@
 \usage{
 \S4method{initialize}{DAG.network}(.Object, network, sdn = 0.5,
   sigma = function(x) return(rnorm(n = 1, sd = sdn)), H = function(x)
-  return(H_Rn(1)), additive = TRUE)
+  return(H_Rn(1)), additive = TRUE, weights = c(0.8, 2))
 }
 \arguments{
 \item{.Object}{: DAG.network object}
 
-\item{network}{: object of class "igraph"}
-
-\item{sdn}{: standard deviation of aditive noise.}
+\item{network}{: object of class "igraph"
+##' @param sdn : standard deviation of aditive noise.}
 
 \item{sigma}{: function returning the additive noise}
 
 \item{H}{: function describing the type of the dependency.}
 
-\item{additive}{: if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs.}
+\item{additive}{: if TRUE the output is the sum of the H transformation of the inputs, otherwise it is the H transformation of the sum of the inputs.}
+
+\item{weights}{: [lower,upper], lower and upper bound of the values of the linear weights}
 }
 \description{
 creation of a DAG.network
