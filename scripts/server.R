@@ -1,19 +1,23 @@
 ## I still keep load these two package for stand alone shiny apps
+options(shiny.maxRequestSize=250*1024^2)
+rm(list=ls())
 library(shiny)
 library(graph)
 library(igraph)
 library(readxl)
 library(gRbase)
 library(D2C)
-
+library(ROCR)
 G<-NULL
 observationsDAG<-NULL
+maxpar<-0
+#load(paste("/Users/bontempi/Dropbox/bontempi_office/Rlang/d2c/D2C/data/trainD2C.500","is.mb","RData",sep="."))
+#trainD2C.mb<- trainD2C
 
-load(paste("/Users/gbonte/Dropbox/bontempi_office/Rlang/d2c/D2C/data/trainD2C.500","is.mb","RData",sep="."))
-trainD2C.mb<- trainD2C
 
+#load(paste("/Users/bontempi/Dropbox/bontempi_office/Rlang/d2c/D2C/data/trainD2C.1000","is.parent","RData",sep="."))
+trainD2C<-NULL
 
-load(paste("/Users/gbonte/Dropbox/bontempi_office/Rlang/d2c/D2C/data/trainD2C.200","is.parent","RData",sep="."))
 
 
 shinyServer(function(input, output) {
@@ -30,21 +34,37 @@ shinyServer(function(input, output) {
 
   plotGraph <- function(){
 
-    wgt = runif(n = 1,min = 0.65,max = 0.95)
-    if (is.null(G) || length(V(G)) != input$nNode){
-      g<-random_dag(1:input$nNode,maxpar=4,wgt)
-      G<<-graph.adjacency(as(g,"matrix"))
+    wgt = 0.9
+    if (is.null(G) || length(V(G)) != input$nNode || maxpar != input$maxPar){
+      g<-random_dag(1:input$nNode,maxpar=min(input$nNode,input$maxPar),wgt)
 
+      cnt<-2
+
+      while (sum(unlist(lapply(graph::edges(g),length)))<input$nNode & cnt<100){
+        g<-random_dag(1:input$nNode,maxpar =min(input$nNode,input$maxPar),wgt)
+        cnt<-cnt+1
+
+      }
+      G<<-graph.adjacency(as(g,"matrix"))
+      maxpar<<-input$maxPar
+      output$nEdges<-renderText({
+        if (!is.null(G))
+          paste("nEdges=",length(E(G)))
+      })
     }
 
 
-    if (input$nSamples != NROW(observationsDAG)){
+    if (input$nSamples != NROW(observationsDAG) || input$nNode != NCOL(observationsDAG)){
 
       H = function() return(H_sigmoid(1))
+      H = function() return(H_Rn(1))
 
       DAG = new("DAG.network",
                 network=as_graphnel(G),H=H,additive=TRUE,sdn=0.2)
+
       observationsDAG <<- compute(DAG,N=input$nSamples)
+
+
       print(dim(observationsDAG))
 
     }
@@ -68,35 +88,68 @@ shinyServer(function(input, output) {
     suppressWarnings(plotGraph())
   })
 
-  observeEvent(input$do, {
 
-    if (input$parent == input$son){
-      output$text1 <- renderText({
-        "Son equal to parent"
-      })
-    } else {
-      if (input$parent > input$nNode ||  input$son > input$nNode){
-        output$text1 <- renderText({
-          "Too large values"
-        })
-      } else {
-        p<-predict(trainD2C,input$parent,input$son, observationsDAG)
-        p2<-predict(trainD2C,input$son,input$parent, observationsDAG)
+  output$D2C<-renderText({
+    if (!is.null(input$file1)){
+      L<-load(input$file1$datapath)
 
-        p.mb<-predict(trainD2C.mb,input$parent,input$son, observationsDAG)
-        p2.mb<-predict(trainD2C.mb,input$son,input$parent, observationsDAG)
+      paste("# descriptors=",NCOL(trainD2C@X), "\n # samples=",NROW(trainD2C@X), "\n # positives=",length(which(trainD2C@Y==1)) )
+    }
+  })
 
-        print(p$prob[1,"1"])
-        output$text1 <- renderText({
-          paste("->",p$prob[1,"1"]," <-", p2$prob[1,"1"])
-        })
+  observeEvent(input$do,  {
+    if (!is.null(input$file1)){
+      load(input$file1$datapath)
 
-        output$text2 <- renderText({
-          paste("->",p.mb$prob[1,"1"]," <-", p2.mb$prob[1,"1"])
-        })
+    }
+    if (! is.null(G) && ! is.null(trainD2C)){
+
+
+      DAG=as_graphnel(G)
+      Nodes=nodes(DAG)
+      max.edges<-length(edgeList(DAG))
+
+      subset.edges = matrix(unlist(sample(edgeList(DAG),size = max.edges,replace = F)),ncol=2,byrow = TRUE)
+      subset.edges = unique(rbind(subset.edges,t(replicate(n =3*max.edges ,sample(Nodes,size=2,replace = FALSE)))))
+
+      Yhat.D2C<-NULL
+      phat.D2C<-NULL
+      Ytrue<-NULL
+      for(jj in 1:NROW(subset.edges)){
+        i=subset.edges[jj,1]
+        j=subset.edges[jj,2]
+        I =as(subset.edges[jj,1],"numeric");
+        J =as(subset.edges[jj,2],"numeric") ;
+        pred.D2C = predict(trainD2C,I,J, observationsDAG)
+
+        Yhat.D2C<-c(Yhat.D2C,as.numeric(pred.D2C$response)  -1)
+
+        phat.D2C<-c(phat.D2C,pred.D2C$prob[1,"1"])
+        Ytrue<-c(Ytrue,is.what(G,i,j,"is.parent")) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
+
+        cat(".")
 
       }
+      output$BER<-renderText({
+        paste("BER=",round(BER(Ytrue,Yhat.D2C),2))
+      })
+
+      output$AUC<-renderText({
+        paste("AUC=",round(AUC(Ytrue,phat.D2C),2))
+      })
+      print(table(Ytrue,round(Yhat.D2C)))
+      output$table <- renderTable({
+
+
+        A=table(Ytrue,round(Yhat.D2C))
+        rownames(A)=c("N","P")
+        colnames(A)=c("N'","P'")
+        A
+        #paste("BER",BER.D2C)
+      })
     }
+
+
   })
 
   ## Output of Adjacency Matrix Panel

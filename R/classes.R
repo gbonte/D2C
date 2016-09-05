@@ -12,12 +12,13 @@ setClass("D2C.descriptor",
                       bivariate="logical",ns="numeric"))
 
 ##' creation of a D2C.descriptor
+##' @name D2C descriptor
 ##' @param .Object : the D2C.descriptor object
-##' @param lin :	TRUE OR FALSE: if TRUE it uses a linear model to assess a dependency, otherwise a local learning algorithm
-##' @param acc : TRUE OR FALSE: if TRUE it uses the accuracy of the regression as a descriptor
-##' @param struct	: TRUE or FALSE to use the ranking in the markov blanket as a descriptor
+##' @param lin \{TRUE, FALSE\}: if TRUE it uses a linear model to assess a dependency, otherwise a local learning algorithm (lazy package)
+##' @param acc \{TRUE, FALSE\}: if TRUE it uses the accuracy of the regression as a descriptor
+##' @param struct	\{TRUE, FALSE\}: if TRUE it uses the ranking in the Markov Blanket as a descriptor
 ##' @param pq :a vector of quantiles used to compute the descriptors
-##' @param bivariate :TRUE OR FALSE: if TRUE it includes also the descriptors of the bivariate dependence
+##' @param bivariate \{TRUE, FALSE\}: if TRUE it includes also the descriptors of the bivariate dependence
 ##' @param ns : size of the Markov Blanket returned by the mIMR algorithm
 ##' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 ##' @examples
@@ -25,8 +26,6 @@ setClass("D2C.descriptor",
 ##' require(gRbase)
 ##' require(foreach)
 ##'descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=3,acc=TRUE)
-##'trainDAG<-new("simulatedDAG",NDAG=2, N=50,noNodes=10,
-##'              functionType = "linear", seed=0,sdn=0.5)
 ##'
 ##' @export
 setMethod("initialize",
@@ -61,11 +60,9 @@ setMethod("initialize",
 setClass("DAG.network",  slots = list(network = "graph",additive="logical"))
 
 
-
 ##' creation of a DAG.network
-##' @param .Object : DAG.network object
+##' @name DAG network
 ##' @param network : object of class "igraph"
-##' ##' @param sdn : standard deviation of aditive noise.
 ##' @param sigma : function returning the additive noise
 ##' @param H : function describing the type of the dependency.
 ##' @param additive : if TRUE the output is the sum of the H transformation of the inputs, otherwise it is the H transformation of the sum of the inputs.
@@ -108,7 +105,8 @@ setMethod("initialize", signature="DAG.network",
 setGeneric("compute", function(object,...) {standardGeneric("compute")})
 
 
-##' compute N samples according to the network distribution
+##' generate N samples according to the network distribution
+##' @name compute
 ##' @param N  numeric. the number of samples generated according to the network
 ##' @param object a DAG.network object
 ##' @return a N*nNodes matrix
@@ -169,6 +167,7 @@ setMethod("compute", signature="DAG.network", function(object,N=50)
 #########################################
 
 ##' An S4 class to store a list of DAGs and associated observations
+##' @name simulatedDAG
 ##' @param list.DAGs : list of stored DAGs
 ##' @param list.observationsDAGs : list of observed datasets, each sampled from the corresponding member of list.DAGs
 ##' @param NDAG  : number of DAGs.
@@ -264,7 +263,7 @@ setMethod("initialize",
 
               V=1:noNodes.i
 
-              maxpar = sample(3:round(noNodes.i/3),size=1)
+              maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
 
 
               if(functionType.i=="linear"){
@@ -284,9 +283,11 @@ setMethod("initialize",
               wgt = runif(n = 1,min = 0.65,max = 0.85)
               netwDAG<-random_dag(V,maxpar = maxpar,wgt)  ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
               cnt<-2
-              while (sum(unlist(lapply(edges(netwDAG),length)))<3 & cnt<100){
-                netwDAG<-random_dag(V,maxpar = maxpar,wgt)
-                wgt = runif(n = 1,min = 0.65/cnt,max = 0.85)
+
+              while (sum(unlist(lapply(graph::edges(netwDAG),length)))<3 & cnt<100){
+                maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
+                netwDAG<-random_dag(V,maxpar = 3,1)
+
                 cnt<-cnt+1
 
               }
@@ -297,6 +298,7 @@ setMethod("initialize",
 
 
               observationsDAG = compute(DAG,N=N.i)
+
               if (quantize.i)
                 observationsDAG<-apply(observationsDAG,2,quantization)
 
@@ -365,6 +367,7 @@ setClass("D2C",
          ))
 
 #' creation of a D2C object which preprocesses the list of DAGs and observations contained in sDAG and fits a  Random Forest classifier
+#' @name  D2C object
 #' @param .Object : the D2C object
 #' @param sDAG : simulateDAG object
 #' @param descr  : D2C.descriptor object containing the parameters of the descriptor
@@ -605,6 +608,7 @@ setMethod("initialize",
 setGeneric("updateD2C", def=function(object,...) {standardGeneric("updateD2C")})
 
 #' update of a "D2C" with a list of DAGs and associated observations
+#' @name update D2C
 #' @param object :  D2C to be updated
 #' @param sDAG : simulatedDAG object to update D2C
 #' @param verbose : TRUE or FALSE
@@ -711,7 +715,7 @@ setMethod(f="updateD2C",
 #' @param i :  index of putative cause (\eqn{1 \le i \le n})
 #' @param j  : index of putative effect (\eqn{1 \le j \le n})
 #' @param data : dataset of observations from the DAG
-#' @return list with  response and prob of the prediction
+#' @return list with binary response and probability of the existence of a directed edge
 #' @examples
 #' require(RBGL)
 #' require(gRbase)

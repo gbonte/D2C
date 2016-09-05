@@ -1,6 +1,7 @@
 
 is.parent<-function(DAG,n1,n2){
-
+  ## n1 : character name of node 1
+  ## n2 : character name of node 2
   shortest.paths(DAG,n1,n2,"out")==1
 
 }
@@ -28,6 +29,24 @@ is.mb<-function(DAG,n1,n2){
   is.child(DAG,n1,n2)||is.parent(DAG,n1,n2)
 
 }
+
+
+is.what<-function(iDAG,i,j,type){
+  if (type=="is.mb")
+    return(as.numeric(is.mb(iDAG,i,j)))
+  if (type=="is.parent")
+    return(as.numeric(is.parent(iDAG,i,j)))
+
+  if (type=="is.child")
+    return(as.numeric(is.child(iDAG,i,j)))
+  if (type=="is.descendant")
+    return(as.numeric(is.descendant(iDAG,i,j)))
+
+  if (type=="is.ancestor")
+    return(as.numeric(is.ancestor(iDAG,i,j)))
+
+}
+
 
 rankrho<-function(X,Y,nmax=5,regr=FALSE,first=NULL){
   ## mutual information ranking
@@ -569,6 +588,32 @@ BER<-function(Ytrue,Yhat){
 
 
 
+}
+
+
+#' AUC
+#' @author Gianluca Bontempi  \email{gbonte@@ulb.ac.be}
+#' @references Handbook \emph{Statistical foundations of machine learning} available in \url{http://www.ulb.ac.be/di/map/gbonte/mod_stoch/syl.pdf}
+#' @description AUC
+#' @details AUC
+#' @title AUC
+#' @name AUC
+#' @export
+#'
+#' @param  y: real value
+#' @param  yhat: predicted probability
+#' @return AUC
+#' @export
+#' @examples
+#' ## random prediction
+#' AUC(round(runif(100)),rnorm(100))
+#'
+AUC<-function(y,yhat){
+
+  p<-prediction(yhat,y)
+  p<-performance(p,"auc")
+
+  mean(unlist(slot(p,"y.values")),na.rm=T)
 }
 
 

@@ -1,22 +1,40 @@
 shiny::shinyUI(fluidPage(
-  titlePanel("igraph plot demo"),
+  titlePanel("D2C graphical demo"),
+  sidebarPanel(
+    fileInput('file1', 'Choose D2C model',
+              accept = c(
+                '.Rdata'
+              )
+    ),
+    textOutput("D2C")),
   column(9, wellPanel(
     plotOutput("graphPlot", height=450)
   )
   ),
 
-  column(4, wellPanel(
-    numericInput(inputId = "parent", label = "parent",  value = 15, min=1, max=100),
-    numericInput(inputId = "son", label = "son",  value = 15, min=1, max=100),
-    sliderInput(inputId = "nNode", label = "nNode",  value = 15, min=1, max=100),
-    sliderInput(inputId = "nSamples", label = "nSamples",  value = 15, min=10, max=200),
+  column(4,wellPanel(
+    sliderInput(inputId = "nNode", label = "nNodes",  value = 15, min=1, max=100),
+    sliderInput(inputId = "maxPar", label = "maxPar",  value = 2, min=1, max=10),
+    h3(textOutput("nEdges"))))
+  ,
+
+  column(4,wellPanel(
+    sliderInput(inputId = "nSamples", label = "nSamples",  value = 50, min=20, max=1000))
+  ),
+  column(4,wellPanel(
     sliderInput(inputId = "vertexSize", label = "Vertex Size",  value = 15, min=1, max=100),
     sliderInput(inputId = "arrowSize", label = "Arrow Size",  value = 10, min=1, max=20)
-  )),
-  column(4, wellPanel(
-    actionButton("do", "Test"),
+  ))
+  ,
+
+  column(6, wellPanel(
+    actionButton("do", "Assess D2C for this graph  "),
     textOutput("text1"),
-    textOutput("text2")
+    textOutput("text2"),
+    h3(textOutput("BER")),
+    h3(textOutput("AUC")),
+    h3(tableOutput('table'))
   ))
 
-))
+)
+)

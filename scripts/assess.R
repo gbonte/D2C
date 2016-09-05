@@ -4,21 +4,6 @@ library(bnlearn)
 library(igraph)
 library(graph)
 type="is.mb"
-is.what<-function(iDAG,i,j){
-  if (type=="is.mb")
-    return(as.numeric(is.mb(iDAG,i,j)))
-  if (type=="is.parent")
-    return(as.numeric(is.parent(iDAG,i,j)))
-
-  if (type=="is.child")
-    return(as.numeric(is.child(iDAG,i,j)))
-  if (type=="is.descendant")
-    return(as.numeric(is.descendant(iDAG,i,j)))
-
-  if (type=="is.ancestor")
-    return(as.numeric(is.ancestor(iDAG,i,j)))
-
-}
 
 
 
@@ -65,9 +50,11 @@ for ( r in 1:testDAG@NDAG){
 
 
   for(jj in 1:NROW(subset.edges)){
-    i =as(subset.edges[jj,1],"numeric");
-    j =as(subset.edges[jj,2],"numeric") ;
-    pred.D2C = predict(trainD2C,i,j, observedData)
+    i=subset.edges[jj,1]
+    j=subset.edges[jj,2]
+    I =as(subset.edges[jj,1],"numeric");
+    J =as(subset.edges[jj,2],"numeric") ;
+    pred.D2C = predict(trainD2C,I,J, observedData)
 
     Yhat.D2C<-c(Yhat.D2C,as.numeric(pred.D2C$response)  -1)
 
