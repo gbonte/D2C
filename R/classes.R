@@ -118,6 +118,7 @@ setMethod("compute", signature="DAG.network", function(object,N=50)
 
   DAG = object@network
   nNodes <- numNodes(DAG)
+  
   topologicalOrder <-tsort(DAG)
 
   D <- matrix(NA,nrow=N,ncol=nNodes)
@@ -191,6 +192,7 @@ setClass("simulatedDAG",
 #' @param verbose : if TRUE it prints out the state of progress
 #' @param functionType : type of the dependency. It is of class "character" and is one of  ("linear", "quadratic","sigmoid","kernel")
 #'  @param quantize  : if TRUE it discretize the observations into two bins. If it is a two-valued vector [a,b], the value of quantize is randomly sampled in the interval [a,b]
+#'  @param maxpar.pc  : maximum number of parents expressed as a percentage of the number of nodes
 #'  @param goParallel : if TRUE it uses parallelism
 #'  @param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs.
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
@@ -209,7 +211,7 @@ setMethod("initialize",
           "simulatedDAG",
           function(.Object, NDAG=1,
                    noNodes=sample(10:20,size=1),functionType="linear",
-                   quantize=FALSE,
+                   quantize=FALSE,maxpar.pc=0.05,
                    verbose=TRUE,N=sample(100:500,size=1),
                    seed=1234,sdn=0.5, goParallel=FALSE,additive=FALSE)
           {
@@ -263,7 +265,11 @@ setMethod("initialize",
 
               V=1:noNodes.i
 
-              maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
+              maxpar.pc.i<-pmin(0.99,maxpar.pc)
+              if (length(maxpar.pc.i)>1)
+                maxpar.pc.i<-sample(maxpar.pc,1)
+              
+              maxpar = round(maxpar.pc.i*noNodes)
 
 
               if(functionType.i=="linear"){
@@ -280,8 +286,9 @@ setMethod("initialize",
 
               }
 
-              wgt = runif(n = 1,min = 0.65,max = 0.85)
-              netwDAG<-random_dag(V,maxpar = maxpar,wgt)  ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
+              wgt = runif(n = 1,min = 0.85,max = 1)
+              netwDAG<-random_dag(V,maxpar = maxpar,wgt)  
+              ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
               cnt<-2
 
               while (sum(unlist(lapply(graph::edges(netwDAG),length)))<3 & cnt<100){

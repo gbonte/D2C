@@ -21,7 +21,7 @@ namefile<-paste("./data/trainD2C",NDAG,type,"RData",sep=".")
 
 trainDAG<-new("simulatedDAG",NDAG=NDAG, N=N, noNodes=noNodes,
               functionType = c("linear","quadratic","sigmoid","kernel"),
-              seed=seed,sdn=sdev,quantize=c(TRUE,FALSE),
+              seed=seed,sdn=sdev,quantize=c(TRUE,FALSE),maxpar.pc=c(0.05,0.3),
               additive=c(TRUE,FALSE),goParallel=FALSE)
 
 
