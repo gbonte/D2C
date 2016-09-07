@@ -3,20 +3,20 @@
 rm(list=ls())
 
 
-noNodes<-c(10,30)
+noNodes<-c(10,100)
 ## range of number of nodes
 
 N<-c(50,200)
 ## range of number of samples
 
-NDAG=200
+NDAG=50
 ## number of DAGs to be created and simulated
 
-type="is.parent"
+type="is.descendant"
 
 sdev<-c(0.2,0.5)
 savefile<-TRUE
-seed<-10
+seed<-101
 namefile<-paste("./data/trainD2C",NDAG,type,"RData",sep=".")
 
 trainDAG<-new("simulatedDAG",NDAG=NDAG, N=N, noNodes=noNodes,
@@ -28,8 +28,8 @@ trainDAG<-new("simulatedDAG",NDAG=NDAG, N=N, noNodes=noNodes,
 descr.example<-new("D2C.descriptor",bivariate=TRUE,ns=3,acc=TRUE,lin=FALSE)
 
 trainD2C<-new("D2C",sDAG=trainDAG,
-              descr=descr.example,ratioEdges=0.5,
-              max.features=10, type=type,goParallel=FALSE)
+              descr=descr.example,ratioEdges=0.6,
+              max.features=15, type=type,goParallel=FALSE)
 
 
 

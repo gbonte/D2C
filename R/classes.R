@@ -34,7 +34,7 @@ setMethod("initialize",
                    struct=TRUE,pq=c(0.1, 0.25, 0.5, 0.75, 0.9),
                    bivariate=FALSE,ns=4)
           {
-
+            
             .Object@lin <- lin
             .Object@acc <- acc
             .Object@struct <- struct
@@ -89,11 +89,11 @@ setMethod("initialize", signature="DAG.network",
                 edgeData(DAG, from=edge[1], to=edge[2], attr="weight") <- runif(1,weights[1],weights[2])*sample(c(-1,1),1)
                 ## setting of random linear weights within the specified bounds
                 edgeData(DAG, from=edge[1], to=edge[2],attr="H") <- H()
-
+                
               }
             }
             .Object@network <- DAG
-
+            
             return(.Object)
           }
 )
@@ -107,30 +107,31 @@ setGeneric("compute", function(object,...) {standardGeneric("compute")})
 
 ##' generate N samples according to the network distribution
 ##' @name compute
-##' @param N  numeric. the number of samples generated according to the network
-##' @param object a DAG.network object
+##' @param N: the number of samples generated according to the network
+##' @param knocked: the set of manipulated (e.g. knocked genes) nodes 
+##' @param object: a DAG.network object
 ##' @return a N*nNodes matrix
 ##' @export
-setMethod("compute", signature="DAG.network", function(object,N=50)
+setMethod("compute", signature="DAG.network",  function(object,N=50,knocked=NULL)
 {
   if(!is.numeric(N))
     stop("N is not numeric")
-
+  
   DAG = object@network
   nNodes <- numNodes(DAG)
   
   topologicalOrder <-tsort(DAG)
-
+  
   D <- matrix(NA,nrow=N,ncol=nNodes)
   colnames(D) <- topologicalOrder
-
-
+  
+  
   for (i in topologicalOrder){
     bias = nodeData(DAG,n=i,attr="bias")[[1]]
     sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
     inEdg <-  inEdges(node=i,object=DAG)[[1]]
-
-    if (length(inEdg)==0){
+    
+    if (length(inEdg)==0 || is.element(i,knocked)){
       D[,i]<-bias + replicate(N,sigma())
     } else  {
       D[,i]<-bias
@@ -140,7 +141,7 @@ setMethod("compute", signature="DAG.network", function(object,N=50)
       {
         inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
         H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
-
+        
         if (object@additive){
           D[,i]<- D[,i] + H(D[,j]) *  inputWeight
         }else{
@@ -153,12 +154,12 @@ setMethod("compute", signature="DAG.network", function(object,N=50)
         D[,i]<- kernel.fct(Xin)
       }
       D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
-
+      
     }
   }
   col.numeric<-as(colnames(D),"numeric")
   D<-D[,topologicalOrder[order(col.numeric)]]
-
+  
   return(D)
 })
 
@@ -215,15 +216,15 @@ setMethod("initialize",
                    verbose=TRUE,N=sample(100:500,size=1),
                    seed=1234,sdn=0.5, goParallel=FALSE,additive=FALSE)
           {
-
+            
             ##generate a training set
             ## NDAG the number of network to use
             ##functionType example : "R1" "R2" "sigmoid1"
-
-
-
+            
+            
+            
             `%op%` <- if (goParallel) `%dopar%` else `%do%`
-
+            
             .Object@functionType=functionType
             .Object@seed=seed
             X=NULL
@@ -232,96 +233,96 @@ setMethod("initialize",
             list.observationsDAGs=NULL
             if (NDAG<=0)
               return(.Object)
-
-
-
+            
+            
+            
             FF<-foreach (i=1:NDAG) %op%{
               ##  for (i in 1:NDAG){
               set.seed(seed+i)
               N.i<-N
               if (length(N)>1)
                 N.i<-sample(N[1]:N[2],1)
-
+              
               quantize.i<-quantize
               if (length(quantize)>1)
                 quantize.i<-sample(quantize,1)
-
+              
               noNodes.i<-noNodes
               if (length(noNodes)>1)
                 noNodes.i<-sample(noNodes[1]:noNodes[2],1)
-
+              
               sdn.i<-sdn
               if (length(sdn)>1)
                 sdn.i<-runif(1,sdn[1],sdn[2])
-
+              
               functionType.i<-functionType
               if (length(functionType.i)>1)
                 functionType.i<-sample(functionType,1)
-
+              
               additive.i<-additive
               if (length(additive)>1)
                 additive.i<-sample(additive,1)
-
-
+              
+              
               V=1:noNodes.i
-
+              
               maxpar.pc.i<-pmin(0.99,maxpar.pc)
               if (length(maxpar.pc.i)>1)
                 maxpar.pc.i<-sample(maxpar.pc,1)
               
               maxpar = round(maxpar.pc.i*noNodes)
-
-
+              
+              
               if(functionType.i=="linear"){
                 H = function() return(H_Rn(1))
-
+                
               }else if(functionType.i=="quadratic"){
                 H = function() return(H_Rn(2))
-
+                
               }else if(functionType.i=="sigmoid"){
                 H = function() return(H_sigmoid(1))
-
+                
               } else if(functionType.i=="kernel"){
                 H = function() return(H_kernel())
-
+                
               }
-
+              
               wgt = runif(n = 1,min = 0.85,max = 1)
               netwDAG<-random_dag(V,maxpar = maxpar,wgt)  
               ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
               cnt<-2
-
+              
               while (sum(unlist(lapply(graph::edges(netwDAG),length)))<3 & cnt<100){
                 maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
                 netwDAG<-random_dag(V,maxpar = 3,1)
-
+                
                 cnt<-cnt+1
-
+                
               }
-
-
+              
+              
               DAG = new("DAG.network",
                         network=netwDAG,H=H,additive=additive.i,sdn=sdn.i)
-
-
+              
+              
               observationsDAG = compute(DAG,N=N.i)
-
+              
               if (quantize.i)
                 observationsDAG<-apply(observationsDAG,2,quantization)
-
+              
               if (verbose){
-
+                
                 cat("simulatedDAG: DAG number:",i,"generated: #nodes=", length(V),
                     "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", N.i, "\n")
-
+                
               }
-
-
-
+              
+              
+              
               list(observationsDAG=observationsDAG,netwDAG=netwDAG)
             } ## foreach
-
-
+            
+            
             .Object@list.DAGs=lapply(FF,"[[",2)
             .Object@list.observationsDAGs=lapply(FF,"[[",1)
             to.remove=which(unlist(lapply(lapply(.Object@list.DAGs,edgeList),length))==0)
@@ -330,7 +331,7 @@ setMethod("initialize",
               .Object@list.observationsDAGs=.Object@list.observationsDAGs[-to.remove]
             }
             .Object@NDAG=length(.Object@list.DAGs)
-
+            
             .Object
           }
 )
@@ -354,7 +355,7 @@ setMethod(f="update",
             object@list.observationsDAGs=c(object@list.observationsDAGs,list.observationsDAGs)
             object@NDAG=length(object@list.DAGs)
             object
-
+            
           }
 )
 
@@ -404,12 +405,12 @@ setMethod("initialize",
                    ratioEdges=1,max.features=20,
                    goParallel=FALSE,
                    type="is.parent") {
-
+            
             #generate a training set
             # NDAG the number of network to use
             #functionType example : "R1" "R2" "sigmoid1"
             `%op%` <- if (goParallel) `%dopar%` else `%do%`
-
+            
             .Object@descr=descr
             .Object@ratioMissingNode= ratioMissingNode
             .Object@ratioEdges= ratioEdges
@@ -419,52 +420,55 @@ setMethod("initialize",
             Y=NULL
             allEdges=NULL
             FF<-NULL
-
+            
             FF<-foreach (i=1:sDAG@NDAG) %op%{
               set.seed(i)
               DAG = sDAG@list.DAGs[[i]]
               observationsDAG =sDAG@list.observationsDAGs[[i]]
-
+              
               Nodes = nodes(DAG)
-
+              
               sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
               keepNode = sort(sample(Nodes,
                                      size = sz ,
                                      replace = F))
-
+              
               DAG2 =subGraph(keepNode, DAG) ## subGraph {graph}
-
-
+              
+              
               iDAG2=graph.adjacency(as(DAG2,"matrix"))  ## as(DAG2,"matrix"): adjacency matrix of graphNEL DAG
               ##  transforms the graphNEL adjacency matrix into igraph object
               # Use as_graphnel to transform an igraph into graphNEL
-
+              
               ##choose which edge to train / predict and find the right label
               nEdge = length(edgeList(DAG))
               sz=min(max(1,round(nEdge*ratioEdges)),20)
-
-              edgesM = matrix(unlist(sample(edgeList(DAG2),
-                                            size = sz,replace = F)),
-                              ncol=2,byrow = TRUE)
-              edgesM = rbind(edgesM,t(replicate(n =sz ,
-                                                sample(keepNode,size=2,replace = FALSE))))
-
+              
+              if (type=="is.parent"){
+                edgesM = matrix(unlist(sample(edgeList(DAG2),
+                                              size = sz,replace = F)),ncol=2,byrow = TRUE)
+                edgesM = rbind(edgesM,t(replicate(n =sz ,
+                                                  sample(keepNode,size=2,replace = FALSE))))
+              } else {
+                
+                edgesM = t(replicate(n =2*sz ,sample(keepNode,size=2,replace = FALSE)))
+              }
               nEdges =  NROW(edgesM)
-
+              
               rev<-TRUE  ### if TRUE, it uses both directions of the edge to train the learner (i.e. if i is parent of j, it is also true that j is a child of i)
               if (rev)
                 labelEdge = numeric(2*nEdges)
               else
                 labelEdge = numeric(nEdges)
-
+              
               ##compute the descriptor for the edges
               X.out = NULL
-
+              
               if (rev){
                 for(j in 1:nEdges){
                   I =as(edgesM[j,1],"numeric") ;
                   J =as(edgesM[j,2],"numeric") ;
-
+                  
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
@@ -474,7 +478,7 @@ setMethod("initialize",
                                   struct=descr@struct,bivariate=descr@bivariate,
                                   pq=descr@pq,ns=descr@ns)
                   }
-
+                  
                   if (type=="is.parent")
                     if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[(2*j)-1] =1
@@ -491,12 +495,12 @@ setMethod("initialize",
                             if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
                               labelEdge[(2*j)-1] =1
                             X.out = rbind(X.out,d)
-
+                            
                             ## reverse edge
                             I =as(edgesM[j,2],"numeric") ;
                             J =as(edgesM[j,1],"numeric") ;
-
-
+                            
+                            
                             if (type=="is.mb"){
                               d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                             struct=descr@struct,bivariate=descr@bivariate,
@@ -506,7 +510,7 @@ setMethod("initialize",
                                             struct=descr@struct,bivariate=descr@bivariate,
                                             pq=descr@pq,ns=descr@ns)
                             }
-
+                            
                             if (type=="is.parent")
                               if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
                                 labelEdge[2*j] =1
@@ -523,28 +527,28 @@ setMethod("initialize",
                               if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1]))
                                 labelEdge[2*j] =1
                             X.out = rbind(X.out,d)
-
-
+                            
+                            
                 }
               } else {    ### if rev
                 for(j in 1:nEdges){
                   I =as(edgesM[j,1],"numeric") ;
                   J =as(edgesM[j,2],"numeric") ;
-
+                  
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
                                   pq=descr@pq,ns=descr@ns,mimr=FALSE)
                   } else {
-
+                    
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
                                   pq=descr@pq,ns=descr@ns)
-
-
-
+                    
+                    
+                    
                   }
-
+                  
                   labelEdge[j] =0
                   if (type=="is.parent")
                     if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
@@ -562,49 +566,50 @@ setMethod("initialize",
                     if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[j] =1
                   X.out = rbind(X.out,d)
-
+                  
                 }
               } ## if rev
               if (verbose)
                 cat("D2C:  DAG", i, " processed \n")
-
+              
               list(X=X.out,Y=labelEdge,edges=edgesM)
-
+              
             } ## foreach
-
+            
             X<-do.call(rbind,lapply(FF,"[[",1))
             Y<-do.call(c,lapply(FF,"[[",2))
             allEdges<-lapply(FF,"[[",3)
-
-
+            
+            
             features<-1:NCOL(X)
             wna<-which(apply(X,2,sd)<0.01)
             if (length(wna)>0)
               features<-setdiff(features,wna)
-
+            
             w0<-which(Y==0)
             w1<-which(Y==1)
             if (length(w0)>length(w1))
               w0<-sample(w0,length(w1))
-
+            
             if (length(w1)>length(w0))
               w1<-sample(w1,length(w0))
             X<-X[c(w0,w1),]
             Y<-Y[c(w0,w1)]
-
+            
             X<-scale(X[,features])
             .Object@features=features
             .Object@X=X
             .Object@Y=Y
             .Object@allEdges=allEdges
+           
             RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
             IM<-importance(RF)[,"MeanDecreaseAccuracy"]
             rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(X))]
             RF <- randomForest(x =X[,rank] ,y = factor(Y))
-
+            
             .Object@rank=rank
             .Object@mod=RF
-
+            
             .Object
           }
 )
@@ -625,36 +630,36 @@ setMethod(f="updateD2C",
           signature="D2C",
           definition=function(object,sDAG,
                               verbose=TRUE, goParallel= FALSE){
-
+            
             `%op%` <- if (goParallel) `%dopar%` else `%do%`
             ratioMissingNode=object@ratioMissingNode
             ratioEdges=object@ratioEdges
             descr=object@descr
             FF<-foreach (i=1:sDAG@NDAG) %op%{
-
+              
               set.seed(i)
               DAG = sDAG@list.DAGs[[i]]
               observationsDAG =sDAG@list.observationsDAGs[[i]]
-
+              
               Nodes = nodes(DAG)
-
+              
               sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
               keepNode = sort(sample(Nodes,
                                      size = sz ,
                                      replace = F))
-
+              
               DAG2 =subGraph(keepNode, DAG)
-
-
+              
+              
               ##choose wich edge to train / predict and find the right label
               nEdge = length(edgeList(DAG))
               sz=max(1,round(nEdge*ratioEdges))
-
+              
               edgesM = matrix(unlist(sample(edgeList(DAG2),
                                             size = sz,replace = F)),ncol=2,byrow = TRUE)
               edgesM = rbind(edgesM,t(replicate(n =sz ,
                                                 sample(keepNode,size=2,replace = FALSE))))
-
+              
               nEdges =  NROW(edgesM)
               labelEdge = numeric(nEdges)
               for(j in 1:nEdges){
@@ -662,16 +667,16 @@ setMethod(f="updateD2C",
                 J =edgesM[j,2] ;
                 labelEdge[j] = as.numeric(I %in% inEdges(node = J,DAG2)[[1]])
               }
-
-
+              
+              
               ##compute the descriptor for the edges
               nNodes = length(labelEdge)
-
+              
               X.out = NULL
               for(j in 1:nNodes){
                 I =as(edgesM[j,1],"numeric") ;
                 J =as(edgesM[j,2],"numeric") ;
-
+                
                 if (object@type=="is.mb"){
                   d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                 struct=descr@struct,bivariate=descr@bivariate,
@@ -681,27 +686,27 @@ setMethod(f="updateD2C",
                                 struct=descr@struct,bivariate=descr@bivariate,
                                 pq=descr@pq,ns=descr@ns,mimr=TRUE)
                 }
-
-
-
-
+                
+                
+                
+                
                 X.out = rbind(X.out,d)
               }
               if (verbose)
                 cat("D2C:  DAG", i, " processed \n")
-
+              
               list(X=X.out,Y=labelEdge,edges=edgesM)
-
+              
             }
-
+            
             X<-do.call(rbind,lapply(FF,"[[",1))
             Y<-do.call(c,lapply(FF,"[[",2))
             allEdges<-lapply(FF,"[[",3)
-
-
-
+            
+            
+            
             X<-scale(X[,object@features],attr(object@X,"scaled:center"),attr(object@X,"scaled:scale"))
-
+            
             object@X=rbind(object@X,X)
             object@Y=c(object@Y,Y)
             object@allEdges=c(object@allEdges,allEdges)
@@ -711,9 +716,9 @@ setMethod(f="updateD2C",
             RF <- randomForest(x =object@X[,rank] ,y = factor(object@Y))
             object@rank=rank
             object@mod=RF
-
+            
             object
-
+            
           }
 )
 
@@ -746,10 +751,10 @@ setMethod("predict", signature="D2C",
           function(object,i,j,data)
           {
             out = list()
-
+            
             if (any(apply(data,2,sd)<0.01))
               stop("Error in D2C::predict: Remove constant variables from dataset. ")
-
+            
             if (object@type=="is.mb"){
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
                                         acc = object@descr@acc,ns=object@descr@ns,
@@ -763,18 +768,18 @@ setMethod("predict", signature="D2C",
             }
             if (any(is.infinite(X_descriptor)))
               stop("Error in D2C::predict: infinite value ")
-
+            
             X_descriptor=X_descriptor[object@features]
-
-
+            
+            
             X_descriptor=scale(array(X_descriptor,c(1,length(X_descriptor))),
                                attr(object@X,"scaled:center"),attr(object@X,"scaled:scale"))
             if (any(is.infinite(X_descriptor[,object@rank])))
               stop("error in D2C::predict")
             out[["response"]] = predict(object@mod, X_descriptor[,object@rank], type="response")
             out[["prob"]] = predict(object@mod, X_descriptor[,object@rank], type="prob")
-
-
+            
+            
             return(out)
           })
 

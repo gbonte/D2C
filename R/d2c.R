@@ -16,6 +16,8 @@ npred<-function(X,Y,lin=TRUE){
   
   if (lin)
     return(max(1e-3,regrlin(X,Y)$MSE.loo/var(Y)))
+  
+  
   X<-scale(X)
   e<-Y-lazy.pred(X,Y,X,conPar=c(10,20),
                  linPar=NULL,class=FALSE,cmbPar=10)
@@ -54,6 +56,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
 
 
 norminf<-function(y,x1,x2,lin=TRUE){
+  ## Normalized conditional information of x1 to y given x2
   ## I(x1;y| x2)= (H(y|x1)-H(y | x1,x2))/H(y|x1)
   
   np<-npred(x1,y,lin=lin)
@@ -222,7 +225,7 @@ delta2.i<-NULL
   }
   
   if (length(names(x))!=length(namesx))
-    browser()
+    stop("error in function D2C.n!")
   names(x)<-namesx
   x
   
