@@ -19,7 +19,7 @@ maxpar<-0
 
 #load(paste("/Users/bontempi/Dropbox/bontempi_office/Rlang/d2c/D2C/data/trainD2C.1000","is.parent","RData",sep="."))
 trainD2C<-NULL
-
+knocked<-NULL
 
 
 shinyServer(function(input, output) {
@@ -37,6 +37,8 @@ shinyServer(function(input, output) {
   plotGraph <- function(){
     
     wgt = 0.9
+    if (input$nKnockeDown>0)
+      knocked<<-sample(1:input$nNode,min(input$nNode,input$nKnockeDown))
     if (is.null(G) || length(V(G)) != input$nNode || maxpar != input$maxPar){
       g<-random_dag(1:input$nNode,maxpar=min(input$nNode,input$maxPar),wgt)
       
@@ -69,7 +71,7 @@ shinyServer(function(input, output) {
       DAG = new("DAG.network",
                 network=as_graphnel(G),H=H,additive=additive,sdn=runif(1,0.2,0.5))
       
-      observationsDAG <<- compute(DAG,N=input$nSamples)
+      observationsDAG <<- compute(DAG,N=input$nSamples,knocked)
       
       
       print(dim(observationsDAG))
@@ -116,8 +118,8 @@ shinyServer(function(input, output) {
       Nodes=nodes(DAG)
       max.edges<-length(edgeList(DAG))
       
-      if (type=="is.parent"){
-        subset.edges = matrix(unlist(sample(edgeList(DAG),size = max.edges,replace = F)),ncol=2,byrow = TRUE)
+      if (input$type=="is.parent"){
+        subset.edges = matrix(unlist(edgeList(DAG)),ncol=2,byrow = TRUE)
         subset.edges = unique(rbind(subset.edges,t(replicate(n =3*max.edges ,sample(Nodes,size=2,replace = FALSE)))))
       } else {
         subset.edges = unique(t(replicate(n =4*max.edges ,sample(Nodes,size=2,replace = FALSE))))
@@ -126,19 +128,28 @@ shinyServer(function(input, output) {
       Yhat.D2C<-NULL
       phat.D2C<-NULL
       Ytrue<-NULL
+      
       for(jj in 1:NROW(subset.edges)){
         i=subset.edges[jj,1]
         j=subset.edges[jj,2]
-        I =as(subset.edges[jj,1],"numeric");
-        J =as(subset.edges[jj,2],"numeric") ;
-        pred.D2C = predict(trainD2C,I,J, observationsDAG)
+        I =as(subset.edges[jj,1],"numeric")
+        J =as(subset.edges[jj,2],"numeric") 
+        if (length(intersect(c(I,J),knocked))==0){
+          pred.D2C.rr<-NULL
+          for (rr in 1:2){
+            Irr<-sample(NROW(observationsDAG),NROW(observationsDAG)-2)
+            pred.D2C.rr =c(pred.D2C.rr, predict(trainD2C,I,J, observationsDAG[Irr,])$prob[1,"1"])
+            
+            
+          }
+          Yhat.D2C<-c(Yhat.D2C,round(mean(pred.D2C.rr)))
+          
+          phat.D2C<-c(phat.D2C,mean(pred.D2C.rr))
+          Ytrue<-c(Ytrue,is.what(G,i,j,input$type)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
+          
+          cat(".")
+        }
         
-        Yhat.D2C<-c(Yhat.D2C,as.numeric(pred.D2C$response)  -1)
-        
-        phat.D2C<-c(phat.D2C,pred.D2C$prob[1,"1"])
-        Ytrue<-c(Ytrue,is.what(G,i,j,input$type)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
-        
-        cat(".")
         
       }
       output$BER<-renderText({

@@ -103,8 +103,6 @@ setMethod("initialize", signature="DAG.network",
 
 #' @docType methods
 setGeneric("compute", function(object,...) {standardGeneric("compute")})
-
-
 ##' generate N samples according to the network distribution
 ##' @name compute
 ##' @param N: the number of samples generated according to the network
@@ -112,56 +110,58 @@ setGeneric("compute", function(object,...) {standardGeneric("compute")})
 ##' @param object: a DAG.network object
 ##' @return a N*nNodes matrix
 ##' @export
-setMethod("compute", signature="DAG.network",  function(object,N=50,knocked=NULL)
-{
-  if(!is.numeric(N))
-    stop("N is not numeric")
-  
-  DAG = object@network
-  nNodes <- numNodes(DAG)
-  
-  topologicalOrder <-tsort(DAG)
-  
-  D <- matrix(NA,nrow=N,ncol=nNodes)
-  colnames(D) <- topologicalOrder
-  
-  
-  for (i in topologicalOrder){
-    bias = nodeData(DAG,n=i,attr="bias")[[1]]
-    sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
-    inEdg <-  inEdges(node=i,object=DAG)[[1]]
-    
-    if (length(inEdg)==0 || is.element(i,knocked)){
-      D[,i]<-bias + replicate(N,sigma())
-    } else  {
-      D[,i]<-bias
-      Xin<-NULL
-      for(j in  inEdg)
-        ## it computes the linear combination of the inputs
-      {
-        inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
-        H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
-        
-        if (object@additive){
-          D[,i]<- D[,i] + H(D[,j]) *  inputWeight
-        }else{
-          Xin<-cbind(Xin,D[,j])
-          ##D[,i]<- D[,i] + (D[,j]) *  inputWeight
-        }
-      }
-      if (!object@additive){
-        ##D[,i]<-  H(D[,i])
-        D[,i]<- kernel.fct(Xin)
-      }
-      D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
-      
-    }
-  }
-  col.numeric<-as(colnames(D),"numeric")
-  D<-D[,topologicalOrder[order(col.numeric)]]
-  
-  return(D)
-})
+setMethod("compute", signature="DAG.network",  
+          function(object, N=50,
+                   knocked=NULL){
+            if(!is.numeric(N))
+              stop("N is not numeric")
+            
+            DAG = object@network
+            nNodes <- numNodes(DAG)
+            
+            topologicalOrder <-tsort(DAG)
+            
+            D <- matrix(NA,nrow=N,ncol=nNodes)
+            colnames(D) <- topologicalOrder
+            
+            
+            for (i in topologicalOrder){
+              bias = nodeData(DAG,n=i,attr="bias")[[1]]
+              sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
+              inEdg <-  inEdges(node=i,object=DAG)[[1]]
+              
+              if (length(inEdg)==0 || is.element(i,knocked)){
+                D[,i]<-bias + replicate(N,sigma())
+              } else  {
+                D[,i]<-bias
+                Xin<-NULL
+                for(j in  inEdg)
+                  ## it computes the linear combination of the inputs
+                {
+                  inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
+                  H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
+                  
+                  if (object@additive){
+                    D[,i]<- D[,i] + H(D[,j]) *  inputWeight
+                  }else{
+                    Xin<-cbind(Xin,D[,j])
+                    ##D[,i]<- D[,i] + (D[,j]) *  inputWeight
+                  }
+                }
+                if (!object@additive){
+                  ##D[,i]<-  H(D[,i])
+                  D[,i]<- kernel.fct(Xin)
+                }
+                D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
+                
+              }
+            }
+            col.numeric<-as(colnames(D),"numeric")
+            D<-D[,topologicalOrder[order(col.numeric)]]
+            
+            return(D)
+          })
+
 
 
 #########################################
@@ -222,9 +222,13 @@ setMethod("initialize",
             ##functionType example : "R1" "R2" "sigmoid1"
             
             
-            
-            `%op%` <- if (goParallel) `%dopar%` else `%do%`
-            
+            if (goParallel){
+             # cl <- makeForkCluster(10)
+            #  registerDoParallel(cl)
+              `%op%` <-  `%dopar%` 
+            }   else {
+              `%op%` <-`%do%`
+            }
             .Object@functionType=functionType
             .Object@seed=seed
             X=NULL
@@ -239,6 +243,7 @@ setMethod("initialize",
             FF<-foreach (i=1:NDAG) %op%{
               ##  for (i in 1:NDAG){
               set.seed(seed+i)
+             
               N.i<-N
               if (length(N)>1)
                 N.i<-sample(N[1]:N[2],1)
@@ -410,6 +415,7 @@ setMethod("initialize",
             # NDAG the number of network to use
             #functionType example : "R1" "R2" "sigmoid1"
             `%op%` <- if (goParallel) `%dopar%` else `%do%`
+            
             
             .Object@descr=descr
             .Object@ratioMissingNode= ratioMissingNode
@@ -601,7 +607,7 @@ setMethod("initialize",
             .Object@X=X
             .Object@Y=Y
             .Object@allEdges=allEdges
-           
+            
             RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
             IM<-importance(RF)[,"MeanDecreaseAccuracy"]
             rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(X))]

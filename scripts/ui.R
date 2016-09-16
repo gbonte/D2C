@@ -19,8 +19,8 @@ shiny::shinyUI(fluidPage(
   ,
   
   column(4,wellPanel(
-    sliderInput(inputId = "nSamples", label = "nSamples",  value = 50, min=20, max=1000))
-  ),
+    sliderInput(inputId = "nSamples", label = "nSamples",  value = 50, min=20, max=1000)),
+  sliderInput(inputId = "nKnockeDown", label = "nKnockeDown",  value = 0, min=0, max=10)),
   column(4,wellPanel(
     sliderInput(inputId = "vertexSize", label = "Vertex Size",  value = 15, min=1, max=100),
     sliderInput(inputId = "arrowSize", label = "Arrow Size",  value = 10, min=1, max=20)

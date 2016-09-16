@@ -11,12 +11,15 @@ export(H_kernel)
 exportMethods(initialize)
 exportMethods(predict)
 export(is.what)
+
 export(is.parent)
 export(is.child)
 export(kernel.fct)
 export(is.ancestor)
 export(is.descendant)
 export(is.mb)
+export(npred)
+export(norminf)
 exportMethods(compute)
 
 
@@ -26,7 +29,7 @@ import(Rgraphviz)
 
 import(corpcor)
 
-
+import(kernlab)
 import(foreach)
 import(gRbase)
 import(lazy)
