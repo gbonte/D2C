@@ -1,12 +1,14 @@
+### Script comparing D2C and ParallelPC
+
 rm(list=ls())
 
 library(bnlearn)
 library(igraph)
 library(graph)
 library(gRbase)
-library(ROCR)
+require(ROCR)
 require(pcalg)
-library(ParallelPC)
+require(ParallelPC)
 type="is.parent"
 
 
@@ -16,7 +18,7 @@ type="is.parent"
 load(url("https://dl.dropboxusercontent.com/u/15579987/D2Cdata/train.create.D2C.10000.is.parent.RData"))
 print(paste("# descriptors=",NCOL(trainD2C@X), "\n # samples=",NROW(trainD2C@X), "\n # positives=",length(which(trainD2C@Y==1)) ))
 nKnockeDown=0
-nNode=15
+
 nSamples=150
 wgt = 0.9
 cnodes=0
@@ -28,9 +30,6 @@ for (nNode in seq(20,100,by=5)){
   
   
   for (maxPar in seq(4,10,by=2)){
-    
-    
-    
     knocked<-NULL
     if (nKnockeDown>0)
       knocked<<-sample(1:nNode,min(nNode,nKnockeDown))
@@ -64,16 +63,16 @@ for (nNode in seq(20,100,by=5)){
     
     p<-ncol(observationsDAG)
     suffStat<-list(C=cor(observationsDAG),n=nrow(observationsDAG))
-    P<-igraph.from.graphNEL(pc_parallel(suffStat, indepTest=gaussCItest, p=p, skel.method="parallel", alpha=0.01, num.cores=1)@graph)
+    P<-igraph.from.graphNEL(pc_parallel(suffStat, indepTest=gaussCItest, p=p, skel.method="parallel", alpha=0.01, num.cores=2)@graph)
     
-  
+    
     DAG=as_graphnel(G)
     Nodes=nodes(DAG)
     max.edges<-length(edgeList(DAG))
     
     if (type=="is.parent"){
       subset.edges = matrix(unlist(edgeList(DAG)),ncol=2,byrow = TRUE)
-      subset.edges = unique(rbind(subset.edges,t(replicate(n =3*max.edges ,sample(Nodes,size=2,replace = FALSE)))))
+      subset.edges = unique(rbind(subset.edges,t(replicate(n =max.edges ,sample(Nodes,size=2,replace = FALSE)))))
     } else {
       subset.edges = unique(t(replicate(n =4*max.edges ,sample(Nodes,size=2,replace = FALSE))))
     }
@@ -93,13 +92,11 @@ for (nNode in seq(20,100,by=5)){
         for (rr in 1:2){
           Irr<-sample(NROW(observationsDAG),NROW(observationsDAG)-2)
           pred.D2C.rr =c(pred.D2C.rr, predict(trainD2C,I,J, observationsDAG[Irr,])$prob[1,"1"])
-          
-          
         }
         Yhat.D2C<-c(Yhat.D2C,round(mean(pred.D2C.rr)))
         
         phat.D2C<-c(phat.D2C,mean(pred.D2C.rr))
-        Ytrue<-c(Ytrue,is.what(G,i,j,type)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
+        Ytrue<-c(Ytrue,is.what(G,i,j,type)) 
         Yhat.PC<-c(Yhat.PC,is.what(P,i,j,type)) 
         cat(".")
       }

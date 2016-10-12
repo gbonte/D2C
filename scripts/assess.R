@@ -1,21 +1,22 @@
+### Script comparing inference accuracy of D2C and some "bnlearn" causal inference algorithms  (IAMB and PC)
+
 rm(list=ls())
 
 library(bnlearn)
 library(igraph)
 library(graph)
 library(gRbase)
-type="is.descendant"
-  
 
+type="is.parent"
+## kind of causal relationship  assessed
 
-
-load(paste("./data/trainD2C.50",type,"RData",sep="."))
+load(paste("./data/trainD2C.1000",type,"RData",sep="."))
 load("./data/testDAG.500.RData")
 
 
 BER.D2C<-NULL
 BER.IAMB<-NULL
-BER.GS<-NULL
+
 BER.PC<-NULL
 Yhat.D2C<-NULL
 Yhat.IAMB<-NULL
@@ -30,15 +31,13 @@ for ( r in 1:testDAG@NDAG){
   cat("Dim test dataset"=dim(observedData),"\n")
   
   ## inference of networks with bnlearn package
-  
-  ## Ahat.GS<-(amat(gs(data.frame(observedData))))
   Ahat.IAMB<-(amat(iamb(data.frame(observedData),alpha=0.01)))
   Ahat.PC<-(amat(si.hiton.pc(data.frame(observedData),alpha=0.01)))
-  Ahat.GS<-Ahat.IAMB
+ 
   colnames(Ahat.IAMB)<-colnames(observedData)
-  colnames(Ahat.GS)<-colnames(observedData)
+  
   colnames(Ahat.PC)<-colnames(observedData)
-  igraph.GS<-graph.adjacency(Ahat.GS)
+ 
   igraph.IAMB<-graph.adjacency(Ahat.IAMB)
   igraph.PC<-graph.adjacency(Ahat.PC)
   
@@ -67,9 +66,9 @@ for ( r in 1:testDAG@NDAG){
     Yhat.D2C<-c(Yhat.D2C,as.numeric(pred.D2C$response)  -1)
     
     Yhat.IAMB<-c(Yhat.IAMB,is.what(igraph.IAMB,i,j,type=type))
-    Yhat.GS<-c(Yhat.GS,is.what(igraph.GS,i,j,type=type))
+    
     Yhat.PC<-c(Yhat.PC,is.what(igraph.PC,i,j,type=type))
-    Ytrue<-c(Ytrue,is.what(igraph.TRUE,i,j,type=type)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
+    Ytrue<-c(Ytrue,is.what(igraph.TRUE,i,j,type=type)) 
     
     cat(".")
   }
@@ -78,10 +77,10 @@ for ( r in 1:testDAG@NDAG){
   ## computation of Balanced Error Rate
   BER.D2C<-BER(Ytrue,Yhat.D2C)
   BER.IAMB<-BER(Ytrue,Yhat.IAMB)
-  BER.GS<-BER(Ytrue,Yhat.GS)
+  
   BER.PC<-BER(Ytrue,Yhat.PC)
   cat("\n nDAG=",r," BER.D2C=",mean(BER.D2C), "BER.IAMB=",mean(BER.IAMB),
-      "BER.GS=",mean(BER.GS),"BER.PC=",mean(BER.PC),"#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
+      "BER.PC=",mean(BER.PC),"#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
   
 }
 
