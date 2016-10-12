@@ -24,19 +24,18 @@ To use it in your R code
 For sake of space the directory /data contains D2C models trained with small number
 of DAGs.
 
-Larger D2C models are contained in the public dropbox folder
-
-You can see the list on 
+Larger D2C models are contained (in the Rdata format) in the public dropbox folder
 
 https://www.dropbox.com/sh/t1nt236ssj7oovy/AAAVITlfRwmYVZOT6BC114-wa?dl=0
 
-You can  access them  from R with
+You can  load them from R with the command
 
 load(url("https://dl.dropboxusercontent.com/u/15579987/D2Cdata/namefile.RData"))
 
 
 
 —-----------------------
+### Author 
 
 Pr. Gianluca Bontempi
 
