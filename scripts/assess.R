@@ -5,7 +5,7 @@ library(igraph)
 library(graph)
 library(gRbase)
 type="is.descendant"
-
+  
 
 
 
