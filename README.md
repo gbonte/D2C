@@ -16,6 +16,26 @@ To use it in your R code
 
 - require(D2C)
 
+
+---------------
+
+## Trained D2C models
+
+For sake of space the directory /data contains D2C models trained with small number
+of DAGs.
+
+Larger D2C models are contained in the public dropbox folder
+
+You can see the list on 
+
+https://www.dropbox.com/sh/t1nt236ssj7oovy/AAAVITlfRwmYVZOT6BC114-wa?dl=0
+
+You can  access them  from R with
+
+load(url("https://dl.dropboxusercontent.com/u/15579987/D2Cdata/namefile.RData"))
+
+
+
 —-----------------------
 
 Pr. Gianluca Bontempi
