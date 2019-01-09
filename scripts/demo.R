@@ -1,5 +1,6 @@
 rm(list=ls())
-
+library(D2C)
+library(bnlearn)
 type="is.parent"
 
 is.what<-function(iDAG,i,j){
@@ -18,15 +19,15 @@ is.what<-function(iDAG,i,j){
 
 }
 
-noNodes<-c(20,100)
+noNodes<-c(3,10)
 ## range of number of nodes
 
 N<-c(20,100)
 ## range of number of samples
 
-NDAG=5000
+NDAG=50
 ## number of DAGs to be created and simulated
-NDAG.test=2000
+NDAG.test=20
 
 sdev<-c(0.2,1)
 
@@ -48,8 +49,9 @@ if (TRUE){
 
   trainD2C<-new("D2C",sDAG=trainDAG,
                 descr=descr.example,ratioEdges=0.5,
-                max.features=30, type=type,goParallel=goParallel)
+                max.features=30, type=type,goParallel=goParallel,verbose=TRUE)
 
+  print("done")
 
   if (savefile)
     save(file=namefile,list=c("trainD2C","trainDAG"))
@@ -100,18 +102,18 @@ for ( r in 1:testDAG@NDAG){
   Ahat.IAMB<-(amat(iamb(data.frame(observedData),alpha=0.01)))
   Ahat.PC<-(amat(si.hiton.pc(data.frame(observedData),alpha=0.01)))
   Ahat.GS<-Ahat.IAMB
-  igraph.GS<-graph.adjacency(Ahat.GS)
-  igraph.IAMB<-graph.adjacency(Ahat.IAMB)
-  igraph.PC<-graph.adjacency(Ahat.PC)
+  igraph.GS<-igraph::graph.adjacency(Ahat.GS)
+  igraph.IAMB<-igraph::graph.adjacency(Ahat.IAMB)
+  igraph.PC<-igraph::graph.adjacency(Ahat.PC)
 
 
-  graphTRUE<- as.adjMAT(trueDAG)
-  igraph.TRUE<-graph.adjacency(graphTRUE[as.character(1:NCOL(graphTRUE)),as.character(1:NCOL(graphTRUE))])
+  graphTRUE<- gRbase::as.adjMAT(trueDAG)
+  igraph.TRUE<-igraph::graph.adjacency(graphTRUE[as.character(1:NCOL(graphTRUE)),as.character(1:NCOL(graphTRUE))])
 
   ## selection of a balanced subset of edges for the assessment
-  Nodes=nodes(trueDAG)
-  max.edges<-min(30,length(edgeList(trueDAG)))
-  subset.edges = matrix(unlist(sample(edgeList(trueDAG),size = max.edges,replace = F)),ncol=2,byrow = TRUE)
+  Nodes=graph::nodes(trueDAG)
+  max.edges<-min(30,length(gRbase::edgeList(trueDAG)))
+  subset.edges = matrix(unlist(sample(gRbase::edgeList(trueDAG),size = max.edges,replace = F)),ncol=2,byrow = TRUE)
   subset.edges = rbind(subset.edges,t(replicate(n =max.edges ,sample(Nodes,size=2,replace = FALSE))))
 
 

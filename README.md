@@ -16,6 +16,11 @@ To use it in your R code
 
 - require(D2C)
 
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("graph", version = "3.8")
+BiocManager::install("Rgraphviz", version = "3.8")
+
 
 ---------------
 

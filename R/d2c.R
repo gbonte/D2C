@@ -5,7 +5,7 @@ npred<-function(X,Y,lin=TRUE){
   ## normalized mean squared error of the dependency
   N<-NROW(X)
   n<-NCOL(X)
- 
+  
   if (n>1){
     w.const<-which(apply(X,2,sd)<0.01)    
     if (length(w.const)>0){
@@ -76,24 +76,27 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   #### creation of the Markov Blanket of ca (denoted MBca)
   #### MB is obtained by first ranking the other nodes and then selecting a subset of size ns 
   #### with the mimr algorithm
-  ind<-setdiff(1:n,ca)
   
-  ind<-ind[rankrho(D[,ind],D[,ca],nmax=min(length(ind),50))]
-
-  if (mimr)
-    MBca<-ind[mimr(D[,ind],D[,ca],nmax=ns,init=TRUE)]
-  else
-    MBca<-ind[mrmr(D[,ind],D[,ca],nmax=ns)]
   
-  #### creation of the Markov Blanket of ef (denoted MBef)
-  ind<-setdiff(1:n,ef)
-  ind<-ind[rankrho(D[,ind],D[,ef],nmax=min(length(ind),50))]
-  
-  if (mimr)
-    MBef<-ind[mimr(D[,ind],D[,ef],nmax=ns,init=TRUE)]
-  else
-    MBef<-ind[mrmr(D[,ind],D[,ef],nmax=ns)]
-  
+  MBca<-setdiff(1:n,ca)
+  MBef<-setdiff(1:n,ef)
+  if (n>(ns+1)){
+    ind<-setdiff(1:n,ca)
+    ind<-ind[rankrho(D[,ind],D[,ca],nmax=min(length(ind),50))]
+    if (mimr)
+      MBca<-ind[mimr(D[,ind],D[,ca],nmax=ns,init=TRUE)]
+    else
+      MBca<-ind[mrmr(D[,ind],D[,ca],nmax=ns)]
+    
+    #### creation of the Markov Blanket of ef (denoted MBef)
+    ind<-setdiff(1:n,ef)
+    ind<-ind[rankrho(D[,ind],D[,ef],nmax=min(length(ind),50))]
+    
+    if (mimr)
+      MBef<-ind[mimr(D[,ind],D[,ef],nmax=ns,init=TRUE)]
+    else
+      MBef<-ind[mrmr(D[,ind],D[,ef],nmax=ns)]
+  }
   
   namesx<-NULL 
   x<-NULL
@@ -148,24 +151,24 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     ca.ef<-npred(D[,ca],D[,ef],lin=lin)
     ## relevance of ef for ca
     ef.ca<-npred(D[,ef],D[,ca],lin=lin)
-
-
-      delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin)
-
-     delta2<- norminf(D[,ca],D[,ef],D[,MBca],lin=lin)
-
-
- 
+    
+    
+    delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin)
+    
+    delta2<- norminf(D[,ca],D[,ef],D[,MBca],lin=lin)
+    
+    
+    
     ## relevance of ca for ef given MBef
     delta.i<-NULL
     for (m in MBef)
       delta.i<- c(delta.i,norminf(D[,ef],D[,ca],D[,m],lin=lin))
-   
-delta2.i<-NULL
+    
+    delta2.i<-NULL
     for (m in MBca)
       delta2.i<- c(delta2.i,norminf(D[,ca],D[,ef],D[,m],lin=lin))
-
- 
+    
+    
     
     I1.i<-NULL
     ## Information of Mbef on ca 
@@ -218,7 +221,7 @@ delta2.i<-NULL
     
     namesx<-c(namesx,"delta","delta2",paste("delta",1:length(pq)),
               paste("delta2",1:length(pq)),
-             "ca.ef","ef.ca",
+              "ca.ef","ef.ca",
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)))

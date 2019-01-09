@@ -252,9 +252,10 @@ setMethod("initialize",
               if (length(quantize)>1)
                 quantize.i<-sample(quantize,1)
               
-              noNodes.i<-noNodes
-              if (length(noNodes)>1)
-                noNodes.i<-sample(noNodes[1]:noNodes[2],1)
+              noNodes.i<-max(3,noNodes[1])
+              if (length(noNodes)==2)
+                noNodes.i<-sample(max(3:noNodes[1]):max(3:noNodes[2]),1)
+              
               
               sdn.i<-sdn
               if (length(sdn)>1)
@@ -297,12 +298,16 @@ setMethod("initialize",
               ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
               cnt<-2
               
-              while (sum(unlist(lapply(graph::edges(netwDAG),length)))<3 & cnt<100){
+              while (sum(unlist(lapply(graph::edges(netwDAG),length)))<2 & cnt<1000){
                 maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
                 netwDAG<-random_dag(V,maxpar = 3,1)
                 
                 cnt<-cnt+1
-                
+                if (cnt>50){
+                  netwDAG<-new("graphNEL", nodes=as.character(1:noNodes.i), edgemode="directed")
+                  netwDAG <- addEdge("1", "3", netwDAG, 1)
+                  netwDAG <- addEdge("2", "3", netwDAG, 1)
+                }
               }
               
               
@@ -428,7 +433,8 @@ setMethod("initialize",
             FF<-NULL
             
             FF<-foreach (i=1:sDAG@NDAG) %op%{
-              set.seed(i)
+            ##for (i in 1:sDAG@NDAG)  {
+            set.seed(i)
               DAG = sDAG@list.DAGs[[i]]
               observationsDAG =sDAG@list.observationsDAGs[[i]]
               
@@ -472,6 +478,7 @@ setMethod("initialize",
               
               if (rev){
                 for(j in 1:nEdges){
+                  
                   I =as(edgesM[j,1],"numeric") ;
                   J =as(edgesM[j,2],"numeric") ;
                   
@@ -480,10 +487,12 @@ setMethod("initialize",
                                   struct=descr@struct,bivariate=descr@bivariate,
                                   pq=descr@pq,ns=descr@ns,mimr=FALSE)
                   } else {
+                    
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
                                   pq=descr@pq,ns=descr@ns)
                   }
+                  
                   
                   if (type=="is.parent")
                     if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
@@ -575,12 +584,14 @@ setMethod("initialize",
                   
                 }
               } ## if rev
+              
               if (verbose)
                 cat("D2C:  DAG", i, " processed \n")
               
               list(X=X.out,Y=labelEdge,edges=edgesM)
               
             } ## foreach
+            
             
             X<-do.call(rbind,lapply(FF,"[[",1))
             Y<-do.call(c,lapply(FF,"[[",2))

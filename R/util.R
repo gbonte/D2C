@@ -422,7 +422,7 @@ mimr<-function(X,Y,nmax=5,
   if (spouse.removal){
     pv<-ppears(c(CY),N+numeric(n))
     s<-sort(pv,decreasing=TRUE,index.return=TRUE)
-    hw<-min(n-nmax,length(which(s$x>0.05)))
+    hw<-max(1,min(n-nmax,length(which(s$x>0.05))))
     spouse<-s$ix[1:hw]
     subset<-setdiff(1:n,s$ix[1:hw])
     X<-X[,subset]
