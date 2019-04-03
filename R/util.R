@@ -743,7 +743,7 @@ genTS<-function(n,NN,sd=0.5,num=1){
   
   for (j in 1:(n-max(fs))){
     for (f in fs)
-      netwDAG <- addEdge(as.character(j+f), as.character(j), netwDAG, 1)
+      netwDAG <- addEdge(as.character(j+f+1), as.character(j), netwDAG, 1)
     
   }
   
