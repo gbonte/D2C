@@ -741,7 +741,7 @@ genTS<-function(n,NN,sd=0.5,num=1){
   M=MakeEmbedded(array(Y,c(length(Y),1)),n=n,delay=0,hor=rep(1,1),w=1:1)
   netwDAG<-new("graphNEL", nodes=as.character(1:n), edgemode="directed")
   
-  for (j in 1:(n-max(fs))){
+  for (j in 1:(n-max(fs)-1)){
     for (f in fs)
       netwDAG <- addEdge(as.character(j+f+1), as.character(j), netwDAG, 1)
     
