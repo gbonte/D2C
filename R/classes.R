@@ -223,8 +223,8 @@ setMethod("initialize",
             
             
             if (goParallel){
-             # cl <- makeForkCluster(10)
-            #  registerDoParallel(cl)
+              # cl <- makeForkCluster(10)
+              #  registerDoParallel(cl)
               `%op%` <-  `%dopar%` 
             }   else {
               `%op%` <-`%do%`
@@ -243,7 +243,7 @@ setMethod("initialize",
             FF<-foreach (i=1:NDAG) %op%{
               ##  for (i in 1:NDAG){
               set.seed(seed+i)
-             
+              
               N.i<-N
               if (length(N)>1)
                 N.i<-sample(N[1]:N[2],1)
@@ -348,6 +348,168 @@ setMethod("initialize",
 
 
 
+#########################################
+########   class simulatedTS
+#########################################
+
+##' An S4 class to store a list of DAGs and associated observations
+##' @name simulatedTS
+##' @param list.DAGs : list of stored DAGs
+##' @param list.observationsDAGs : list of observed datasets, each sampled from the corresponding member of list.DAGs
+##' @param NDAG  : number of DAGs.
+##' @param functionType : type of the dependency. It is of class "character" and is one of  ("linear", "quadratic","sigmoid")
+##' @param seed : random seed
+setClass("simulatedTS",
+         slots = list(list.DAGs="list",list.observationsDAGs="list",
+                      NDAG="numeric", functionType="character",seed="numeric",
+                      additive="logical"))
+
+##' creation of a "simulatedTS" containing a list of DAGs and associated time series observations
+##' @param .Object : simulatedTS object
+##' @param NDAG : number of DAGs to be created and simulated
+#' @param noNodes  : number of Nodes of the DAGs. If it is a two-valued vector , the value of Nodes is randomly sampled in the interval
+#' @param N  : number of sampled observations for each DAG. If it is a two-valued vector [a,b], the value of N is randomly sampled in the interval [a,b]
+#' @param sdn : standard deviation of aditive noise. If it is a two-valued vector, the value of N is randomly sampled in the interval
+#' @param seed : random seed
+#' @param verbose : if TRUE it prints out the state of progress
+#' @param functionType : type of the dependency. It is of class "character" and is one of  ("linear", "quadratic","sigmoid","kernel")
+#'  @param quantize  : if TRUE it discretize the observations into two bins. If it is a two-valued vector [a,b], the value of quantize is randomly sampled in the interval [a,b]
+#'  @param maxpar.pc  : maximum number of parents expressed as a percentage of the number of nodes
+#'  @param goParallel : if TRUE it uses parallelism
+#'  @param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs.
+#' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
+#' @examples
+#' require(RBGL)
+#' require(gRbase)
+#' require(foreach)
+#' descr=new("D2C.descriptor")
+#'descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=3,acc=TRUE)
+#'trainDAG<-new("simulatedTS",NDAG=10, N=c(50,100),noNodes=c(15,40),
+#'              functionType = "linear", seed=0,sdn=c(0.45,0.75))
+#' @export
+#'
+#'
+setMethod("initialize",
+          "simulatedTS",
+          function(.Object, NDAG=1,
+                   noNodes=sample(10:20,size=1),functionType="linear",
+                   quantize=FALSE,maxpar.pc=0.05,
+                   verbose=TRUE,N=sample(100:500,size=1),
+                   seed=1234,sdn=0.5, goParallel=FALSE,additive=FALSE)
+          {
+            
+            ##generate a training set
+            ## NDAG the number of network to use
+            ##functionType example : "R1" "R2" "sigmoid1"
+            
+            
+            if (goParallel){
+              # cl <- makeForkCluster(10)
+              #  registerDoParallel(cl)
+              `%op%` <-  `%dopar%` 
+            }   else {
+              `%op%` <-`%do%`
+            }
+            .Object@functionType=functionType
+            .Object@seed=seed
+            X=NULL
+            Y=NULL
+            list.DAGs=NULL
+            list.observationsDAGs=NULL
+            if (NDAG<=0)
+              return(.Object)
+            
+            
+            
+            FF<-foreach (i=1:NDAG) %op%{
+              ##  for (i in 1:NDAG){
+              set.seed(seed+i)
+              
+              N.i<-N
+              if (length(N)>1)
+                N.i<-sample(N[1]:N[2],1)
+              
+              quantize.i<-quantize
+              if (length(quantize)>1)
+                quantize.i<-sample(quantize,1)
+              
+              noNodes.i<-max(3,noNodes[1])
+              if (length(noNodes)==2)
+                noNodes.i<-sample(max(3:noNodes[1]):max(3:noNodes[2]),1)
+              
+              
+              sdn.i<-sdn
+              if (length(sdn)>1)
+                sdn.i<-runif(1,sdn[1],sdn[2])
+              
+              functionType.i<-functionType
+              if (length(functionType.i)>1)
+                functionType.i<-sample(functionType,1)
+              
+              additive.i<-additive
+              if (length(additive)>1)
+                additive.i<-sample(additive,1)
+              
+              
+              V=1:noNodes.i
+              
+              maxpar.pc.i<-pmin(0.99,maxpar.pc)
+              if (length(maxpar.pc.i)>1)
+                maxpar.pc.i<-sample(maxpar.pc,1)
+              
+              maxpar = round(maxpar.pc.i*noNodes)
+              
+              
+              if(functionType.i=="linear"){
+                H = function() return(H_Rn(1))
+                
+              }else if(functionType.i=="quadratic"){
+                H = function() return(H_Rn(2))
+                
+              }else if(functionType.i=="sigmoid"){
+                H = function() return(H_sigmoid(1))
+                
+              } else if(functionType.i=="kernel"){
+                H = function() return(H_kernel())
+                
+              }
+              
+              wgt = runif(n = 1,min = 0.85,max = 1)
+              G<-genTS(noNodes.i,N=N.i)
+              netwDAG<-G$DAG 
+              
+              
+              observationsDAG = G$D
+              
+             
+              
+              if (verbose){
+                
+                cat("simulatedTS: TS number:",i,"generated: #nodes=", length(V),
+                    "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", N.i, "\n")
+                
+              }
+              
+              
+              
+              list(observationsDAG=observationsDAG,netwDAG=netwDAG)
+            } ## foreach
+            
+            
+            .Object@list.DAGs=lapply(FF,"[[",2)
+            .Object@list.observationsDAGs=lapply(FF,"[[",1)
+            to.remove=which(unlist(lapply(lapply(.Object@list.DAGs,edgeList),length))==0)
+            if (length(to.remove)>0){
+              .Object@list.DAGs=.Object@list.DAGs[-to.remove]
+              .Object@list.observationsDAGs=.Object@list.observationsDAGs[-to.remove]
+            }
+            .Object@NDAG=length(.Object@list.DAGs)
+            
+            .Object
+          }
+)
+
+
 
 setGeneric("update", def=function(object,...) {standardGeneric("update")})
 
@@ -433,8 +595,8 @@ setMethod("initialize",
             FF<-NULL
             
             FF<-foreach (i=1:sDAG@NDAG) %op%{
-            ##for (i in 1:sDAG@NDAG)  {
-            set.seed(i)
+              ##for (i in 1:sDAG@NDAG)  {
+              set.seed(i)
               DAG = sDAG@list.DAGs[[i]]
               observationsDAG =sDAG@list.observationsDAGs[[i]]
               
@@ -460,14 +622,17 @@ setMethod("initialize",
                 edgesM = matrix(unlist(sample(edgeList(DAG2),
                                               size = sz,replace = F)),ncol=2,byrow = TRUE)
                 edgesM = rbind(edgesM,t(replicate(n =sz ,
-                                                  sample(keepNode,size=2,replace = FALSE))))
+                                                  sample(keepNode,size=2,replace = FALSE)))) ## random edges
               } else {
                 
-                edgesM = t(replicate(n =2*sz ,sample(keepNode,size=2,replace = FALSE)))
+                edgesM = t(replicate(n =2*sz ,sample(keepNode,size=2,replace = FALSE))) ## random edges
               }
               nEdges =  NROW(edgesM)
               
-              rev<-TRUE  ### if TRUE, it uses both directions of the edge to train the learner (i.e. if i is parent of j, it is also true that j is a child of i)
+              rev<-TRUE  
+              ### if TRUE, it uses both directions of the edge to train the learner 
+              ### (i.e. if i is parent of j, it is also true that j is a child of i)
+              
               if (rev)
                 labelEdge = numeric(2*nEdges)
               else
@@ -479,8 +644,8 @@ setMethod("initialize",
               if (rev){
                 for(j in 1:nEdges){
                   
-                  I =as(edgesM[j,1],"numeric") ;
-                  J =as(edgesM[j,2],"numeric") ;
+                  I =as(edgesM[j,1],"numeric") 
+                  J =as(edgesM[j,2],"numeric") 
                   
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
@@ -497,53 +662,53 @@ setMethod("initialize",
                   if (type=="is.parent")
                     if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
                       labelEdge[(2*j)-1] =1
-                    if (type=="is.child")
-                      if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
-                        labelEdge[(2*j)-1] =1
-                      if (type=="is.ancestor")
-                        if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
-                          labelEdge[(2*j)-1] =1
-                        if (type=="is.descendant")
-                          if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
-                            labelEdge[(2*j)-1] =1
-                          if (type=="is.mb")
-                            if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
-                              labelEdge[(2*j)-1] =1
-                            X.out = rbind(X.out,d)
-                            
-                            ## reverse edge
-                            I =as(edgesM[j,2],"numeric") ;
-                            J =as(edgesM[j,1],"numeric") ;
-                            
-                            
-                            if (type=="is.mb"){
-                              d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                            struct=descr@struct,bivariate=descr@bivariate,
-                                            pq=descr@pq,ns=descr@ns,mimr=FALSE)
-                            } else {
-                              d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                            struct=descr@struct,bivariate=descr@bivariate,
-                                            pq=descr@pq,ns=descr@ns)
-                            }
-                            
-                            if (type=="is.parent")
-                              if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
-                                labelEdge[2*j] =1
-                            if (type=="is.child")
-                              if (is.child(iDAG2,edgesM[j,2],edgesM[j,1]))
-                                labelEdge[2*j] =1
-                            if (type=="is.ancestor")
-                              if (is.ancestor(iDAG2,edgesM[j,2],edgesM[j,1]))
-                                labelEdge[2*j] =1
-                            if (type=="is.descendant")
-                              if (is.descendant(iDAG2,edgesM[j,2],edgesM[j,1]))
-                                labelEdge[2*j] =1
-                            if (type=="is.mb")
-                              if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1]))
-                                labelEdge[2*j] =1
-                            X.out = rbind(X.out,d)
-                            
-                            
+                  if (type=="is.child")
+                    if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
+                      labelEdge[(2*j)-1] =1
+                  if (type=="is.ancestor")
+                    if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
+                      labelEdge[(2*j)-1] =1
+                  if (type=="is.descendant")
+                    if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
+                      labelEdge[(2*j)-1] =1
+                  if (type=="is.mb")
+                    if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
+                      labelEdge[(2*j)-1] =1
+                  X.out = rbind(X.out,d)
+                  
+                  ## reverse edge
+                  I =as(edgesM[j,2],"numeric") ;
+                  J =as(edgesM[j,1],"numeric") ;
+                  
+                  
+                  if (type=="is.mb"){
+                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                  struct=descr@struct,bivariate=descr@bivariate,
+                                  pq=descr@pq,ns=descr@ns,mimr=FALSE)
+                  } else {
+                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                  struct=descr@struct,bivariate=descr@bivariate,
+                                  pq=descr@pq,ns=descr@ns)
+                  }
+                  
+                  if (type=="is.parent")
+                    if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
+                      labelEdge[2*j] =1
+                  if (type=="is.child")
+                    if (is.child(iDAG2,edgesM[j,2],edgesM[j,1]))
+                      labelEdge[2*j] =1
+                  if (type=="is.ancestor")
+                    if (is.ancestor(iDAG2,edgesM[j,2],edgesM[j,1]))
+                      labelEdge[2*j] =1
+                  if (type=="is.descendant")
+                    if (is.descendant(iDAG2,edgesM[j,2],edgesM[j,1]))
+                      labelEdge[2*j] =1
+                  if (type=="is.mb")
+                    if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1]))
+                      labelEdge[2*j] =1
+                  X.out = rbind(X.out,d)
+                  
+                  
                 }
               } else {    ### if rev
                 for(j in 1:nEdges){
