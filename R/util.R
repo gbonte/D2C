@@ -698,39 +698,39 @@ genTS<-function(n,NN,sd=0.5,num=1){
   for (i in 1:NN){
     N=length(Y)
     if (num==1){
-      fs<-sample(0:(n-1),2)
+      fs<-sample(0:(n-2),2)
       Y=c(Y,-0.4*(3-Y[N-fs[1]]^2)/(1+Y[N-fs[1]]^2)+0.6*(3-(Y[N-fs[2]]-0.5)^3)/(1+(Y[N-fs[2]]-0.5)^4)+sd*rnorm(1))
     }
     if (num==2){
-      fs<-sample(0:(n-1),2)
+      fs<-sample(0:(n-2),2)
       Y=c(Y,(0.4-2*exp(-50*Y[N-fs[1]]^2))*Y[N-fs[1]]+(0.5-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sd*rnorm(1))
     }
     if (num==3){
-      fs<-sample(0:(n-1),3)
+      fs<-sample(0:(n-2),3)
       Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sin(pi/2*Y[N-fs[3]])+sd*rnorm(1))
     }
     if (num==4){
-      fs<-sample(0:(n-1),2)
+      fs<-sample(0:(n-2),2)
       Y=c(Y,2*exp(-0.1*Y[N-fs[1]]^2)*Y[N-fs[1]]-exp(-0.1*Y[N-fs[2]]^2)*Y[N-fs[2]]+sd*rnorm(1))
     }
     if (num==5){
-      fs<-sample(0:(n-1),1)
+      fs<-sample(0:(n-2),1)
       Y=c(Y,-2*Y[N-fs[1]]*max(0,sign(-Y[N-fs[1]]))+0.4*Y[N-fs[1]]*max(0,sign(Y[N-fs[1]]))+sd*rnorm(1))
     }
     if (num==6){
-      fs<-sample(0:(n-1),2)
+      fs<-sample(0:(n-2),2)
       Y=c(Y,0.8*log(1+3*Y[N-fs[1]]^2)-0.6*log(1+3*Y[N-fs[2]]^2)+sd*rnorm(1))
     }
     if (num==7){
-      fs<-sample(0:(n-1),2)
+      fs<-sample(0:(n-2),2)
       Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sd*rnorm(1))
     }
     if (num==8){
-      fs<-sample(0:(n-1),2)
+      fs<-sample(0:(n-2),2)
       Y=c(Y,(0.5-1.1*exp(-50*Y[N-fs[1]]^2))*Y[N]+(0.3-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sd*rnorm(1))
     }
     if (num==9){
-      fs<-sample(0:(n-1),2)
+      fs<-sample(0:(n-2),2)
       Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
     }
   }
@@ -742,9 +742,10 @@ genTS<-function(n,NN,sd=0.5,num=1){
   netwDAG<-new("graphNEL", nodes=as.character(1:n), edgemode="directed")
   
   for (j in 1:(n-max(fs)-1)){
-    for (f in fs)
+    for (f in fs){
+     
       netwDAG <- addEdge(as.character(j+f+1), as.character(j), netwDAG, 1)
-    
+    }
   }
   
   list(D=M$inp,DAG=netwDAG)
