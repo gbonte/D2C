@@ -63,11 +63,3 @@ Fax: +32 2 650.56.09
 http://mlg.ulb.ac.be
 
 
- 
-Director
-
-Interuniversity Institute of Bioinformatics in Brussels (IB)²
-
-Office Phone: +32-2-650 59 43
-
-http://ibsquare.be 

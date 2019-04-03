@@ -475,7 +475,7 @@ setMethod("initialize",
               }
               
               wgt = runif(n = 1,min = 0.85,max = 1)
-              G<-genTS(noNodes.i,N=N.i)
+              G<-genTS(noNodes.i,N=N.i,sd=sdn.i)
               netwDAG<-G$DAG 
               
               

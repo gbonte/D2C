@@ -25,13 +25,13 @@ noNodes<-c(15,20)
 N<-c(500,1000)
 ## range of number of samples
 
-NDAG=50
+NDAG=500
 ## number of DAGs to be created and simulated
-NDAG.test=20
+NDAG.test=200
 
 sdev<-c(0.2,1)
 
-goParallel=FALSE
+goParallel=TRUE
 savefile<-TRUE
 namefile<-paste("./data/trainD2C",NDAG,type,"RData",sep=".")
 if (TRUE){
