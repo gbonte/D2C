@@ -690,65 +690,65 @@ MakeEmbedded<-function(ts, n, delay,hor=1,w=1){
 
 
 
-genTS<-function(n,NN,sd=0.5,num=1){
+genTS<-function(nn,NN,sd=0.5,num=1){
   
-  num=sample(1:11,1)
-  nn=10
+  num=sample(1:12,1)
+  n=4  ## max embedding order 
   Y=rnorm(nn)
   
   for (i in 1:NN){
     N=length(Y)
     if (num==1){
-      fs<-sample(0:(n-2),2)
+      fs<-sample(0:(n),2)
       Y=c(Y,-0.4*(3-Y[N-fs[1]]^2)/(1+Y[N-fs[1]]^2)+0.6*(3-(Y[N-fs[2]]-0.5)^3)/(1+(Y[N-fs[2]]-0.5)^4)+sd*rnorm(1))
     }
     if (num==2){
-      fs<-sample(0:(n-2),2)
+      fs<-sample(0:(n),2)
       Y=c(Y,(0.4-2*exp(-50*Y[N-fs[1]]^2))*Y[N-fs[1]]+(0.5-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sd*rnorm(1))
     }
     if (num==3){
-      fs<-sample(0:(n-2),3)
+      fs<-sample(0:(n),3)
       Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sin(pi/2*Y[N-fs[3]])+sd*rnorm(1))
     }
     if (num==4){
-      fs<-sample(0:(n-2),2)
+      fs<-sample(0:(n),2)
       Y=c(Y,2*exp(-0.1*Y[N-fs[1]]^2)*Y[N-fs[1]]-exp(-0.1*Y[N-fs[2]]^2)*Y[N-fs[2]]+sd*rnorm(1))
     }
     if (num==5){
-      fs<-sample(0:(n-2),1)
+      fs<-sample(0:(n),1)
       Y=c(Y,-2*Y[N-fs[1]]*max(0,sign(-Y[N-fs[1]]))+0.4*Y[N-fs[1]]*max(0,sign(Y[N-fs[1]]))+sd*rnorm(1))
     }
     if (num==6){
-      fs<-sample(0:(n-2),2)
+      fs<-sample(0:(n),2)
       Y=c(Y,0.8*log(1+3*Y[N-fs[1]]^2)-0.6*log(1+3*Y[N-fs[2]]^2)+sd*rnorm(1))
     }
     if (num==7){
-      fs<-sample(0:(n-2),2)
+      fs<-sample(0:(n),2)
       Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sd*rnorm(1))
     }
     if (num==8){
-      fs<-sample(0:(n-2),2)
+      fs<-sample(0:(n),2)
       Y=c(Y,(0.5-1.1*exp(-50*Y[N-fs[1]]^2))*Y[N]+(0.3-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sd*rnorm(1))
     }
     if (num==9){
-      fs<-sample(0:(n-2),2)
+      fs<-sample(0:(n),2)
       Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
     }
-    if (num==100){
-      fs<-sample(0:(n-2),1)
+    if (num==10){
+      fs<-sample(0:(n),1)
       Y=c(Y,sign(Y[N-fs[1]])+sd*rnorm(1))
     }
-    if (num==10){
-      fs<-sample(0:(n-2),1)
+    if (num==11){
+      fs<-sample(0:(n),1)
       Y=c(Y,0.8*Y[N-fs[1]]-0.8*Y[N-fs[1]]/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
     }
    
-    if (num==11){
-      fs<-sample(0:(n-2),2)
+    if (num==12){
+      fs<-sample(0:(n),2)
       Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
     }
-    if (num==12){
-      fs<-sample(0:(n-2),1)
+    if (num==13){
+      fs<-sample(0:(n),1)
       Y=c(Y,0.246*Y[N-fs[1]]*(16-Y[N-fs[1]])+sd*rnorm(1))
     }
     
