@@ -19,17 +19,17 @@ is.what<-function(iDAG,i,j){
   
 }
 
-noNodes<-c(6,8)
+noNodes<-c(10,20)
 ## range of number of nodes
 
 N<-c(500,1000)
 ## range of number of samples
 
-NDAG=200
+NDAG=50
 ## number of DAGs to be created and simulated
 NDAG.test=100
 
-sdev<-c(0.2,1)
+sdev<-c(0.1,0.3)
 
 goParallel=FALSE
 savefile<-TRUE
@@ -38,23 +38,21 @@ if (TRUE){
   
   
   trainDAG<-new("simulatedTS",NDAG=NDAG, N=N, noNodes=noNodes,
-                functionType = c("linear","quadratic","sigmoid"),
-                seed=0,sdn=sdev,quantize=c(TRUE,FALSE),
-                additive=c(FALSE),goParallel=goParallel)
+                seed=10,sdn=sdev,goParallel=goParallel)
   
   
-  descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE)
+  descr.example<-new("D2C.descriptor",bivariate=TRUE,ns=3,acc=TRUE,lin=FALSE)
   
   trainD2C<-new("D2C",sDAG=trainDAG,
-                descr=descr.example,ratioEdges=0.5,
+                descr=descr.example,ratioEdges=1,
                 max.features=50, type=type,goParallel=goParallel,verbose=TRUE)
   
   
+  trainD2C@mod
+  predict(trainD2C@mod,trainD2C@X)
   
   testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
-               functionType = c("linear","quadratic","sigmoid","kernel"),
-               seed=101,sdn=sdev,quantize=c(FALSE),
-               additive=c(TRUE,FALSE),goParallel=goParallel)
+               seed=101,sdn=sdev,goParallel=goParallel)
   
   
   if (FALSE){
@@ -64,11 +62,13 @@ if (TRUE){
     
     
     
-    X<-rbind(trainD2C@X,testD2C@X)
-    Y<-c(trainD2C@Y,testD2C@Y)
+    #X<-rbind(trainD2C@X,testD2C@X)
+    #Y<-c(trainD2C@Y,testD2C@Y)
+    X<-trainD2C@X
+    Y<-trainD2C@Y
     N=NROW(X)
     Itr=1:NROW(trainD2C@X) 
-    Itr=sample(N,round(N/2))
+    Itr=sample(N,round(N/5))
     Its=setdiff(1:N,Itr)
     Xtr=X[Itr,2:50]
     Ytr=Y[Itr]
