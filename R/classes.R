@@ -400,7 +400,6 @@ setMethod("initialize",
             
             ##generate a training set
             ## NDAG the number of network to use
-            ##functionType example : "R1" "R2" "sigmoid1"
             
             
             if (goParallel){
@@ -451,47 +450,18 @@ setMethod("initialize",
                 additive.i<-sample(additive,1)
               
               
-              V=1:noNodes.i
               
-              maxpar.pc.i<-pmin(0.99,maxpar.pc)
-              if (length(maxpar.pc.i)>1)
-                maxpar.pc.i<-sample(maxpar.pc,1)
-              
-              maxpar = round(maxpar.pc.i*noNodes)
-              
-              
-              if(functionType.i=="linear"){
-                H = function() return(H_Rn(1))
-                
-              }else if(functionType.i=="quadratic"){
-                H = function() return(H_Rn(2))
-                
-              }else if(functionType.i=="sigmoid"){
-                H = function() return(H_sigmoid(1))
-                
-              } else if(functionType.i=="kernel"){
-                H = function() return(H_kernel())
-                
-              }
-              
-              wgt = runif(n = 1,min = 0.85,max = 1)
               G<-genTS(noNodes.i,N=N.i,sd=sdn.i)
               netwDAG<-G$DAG 
-              
-              
               observationsDAG = G$D
-              
-             
               
               if (verbose){
                 
-                cat("simulatedTS: TS number:",i,"generated: #nodes=", length(V),
+                cat("simulatedTS: TS number:",i,"generated: #nodes=", NCOL(observationsDAG),
                     "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", N.i, "\n")
                 
               }
-              
-              
-              
+             
               list(observationsDAG=observationsDAG,netwDAG=netwDAG)
             } ## foreach
             
@@ -594,11 +564,12 @@ setMethod("initialize",
             allEdges=NULL
             FF<-NULL
             
-            FF<-foreach (i=1:sDAG@NDAG) %op%{
-              ##for (i in 1:sDAG@NDAG)  {
-              set.seed(i)
-              DAG = sDAG@list.DAGs[[i]]
-              observationsDAG =sDAG@list.observationsDAGs[[i]]
+           FF<-foreach (ii=1:sDAG@NDAG) %op%{
+     ##         for (ii in 1:sDAG@NDAG)  {
+              set.seed(ii)
+              
+              DAG = sDAG@list.DAGs[[ii]]
+              observationsDAG =sDAG@list.observationsDAGs[[ii]]
               
               Nodes = nodes(DAG)
               
@@ -751,8 +722,11 @@ setMethod("initialize",
               } ## if rev
               
               if (verbose)
-                cat("D2C:  DAG", i, " processed \n")
+                cat("D2C:  DAG", ii, " processed \n")
               
+              #X<-rbind(X,X.out)
+              #Y<-c(Y,labelEdge)
+              #allEdges<-rbind(allEdges,edgesM)
               list(X=X.out,Y=labelEdge,edges=edgesM)
               
             } ## foreach

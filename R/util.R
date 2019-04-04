@@ -692,8 +692,9 @@ MakeEmbedded<-function(ts, n, delay,hor=1,w=1){
 
 genTS<-function(n,NN,sd=0.5,num=1){
   
-  num=sample(1:9,1)
-  Y=rnorm(n)
+  num=sample(1:11,1)
+  nn=10
+  Y=rnorm(nn)
   
   for (i in 1:NN){
     N=length(Y)
@@ -733,15 +734,34 @@ genTS<-function(n,NN,sd=0.5,num=1){
       fs<-sample(0:(n-2),2)
       Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
     }
+    if (num==100){
+      fs<-sample(0:(n-2),1)
+      Y=c(Y,sign(Y[N-fs[1]])+sd*rnorm(1))
+    }
+    if (num==10){
+      fs<-sample(0:(n-2),1)
+      Y=c(Y,0.8*Y[N-fs[1]]-0.8*Y[N-fs[1]]/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
+    }
+   
+    if (num==11){
+      fs<-sample(0:(n-2),2)
+      Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
+    }
+    if (num==12){
+      fs<-sample(0:(n-2),1)
+      Y=c(Y,0.246*Y[N-fs[1]]*(16-Y[N-fs[1]])+sd*rnorm(1))
+    }
+    
   }
   
   
-  Y=scale(Y[n:length(Y)])
+  Y=scale(Y[nn:length(Y)])
+  if (any(is.nan(Y)))
+    browser()
+  M=MakeEmbedded(array(Y,c(length(Y),1)),n=nn,delay=0,hor=rep(1,1),w=1:1)
+  netwDAG<-new("graphNEL", nodes=as.character(1:nn), edgemode="directed")
   
-  M=MakeEmbedded(array(Y,c(length(Y),1)),n=n,delay=0,hor=rep(1,1),w=1:1)
-  netwDAG<-new("graphNEL", nodes=as.character(1:n), edgemode="directed")
-  
-  for (j in 1:(n-max(fs)-1)){
+  for (j in 1:(nn-max(fs)-1)){
     for (f in fs){
      
       netwDAG <- addEdge(as.character(j+f+1), as.character(j), netwDAG, 1)
