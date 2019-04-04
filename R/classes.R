@@ -372,11 +372,7 @@ setClass("simulatedTS",
 #' @param sdn : standard deviation of aditive noise. If it is a two-valued vector, the value of N is randomly sampled in the interval
 #' @param seed : random seed
 #' @param verbose : if TRUE it prints out the state of progress
-#' @param functionType : type of the dependency. It is of class "character" and is one of  ("linear", "quadratic","sigmoid","kernel")
-#'  @param quantize  : if TRUE it discretize the observations into two bins. If it is a two-valued vector [a,b], the value of quantize is randomly sampled in the interval [a,b]
-#'  @param maxpar.pc  : maximum number of parents expressed as a percentage of the number of nodes
 #'  @param goParallel : if TRUE it uses parallelism
-#'  @param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs.
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @examples
 #' require(RBGL)
