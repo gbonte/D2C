@@ -388,10 +388,9 @@ setClass("simulatedTS",
 setMethod("initialize",
           "simulatedTS",
           function(.Object, NDAG=1,
-                   noNodes=sample(10:20,size=1),functionType="linear",
-                   quantize=FALSE,maxpar.pc=0.05,
+                   noNodes=sample(10:20,size=1),
                    verbose=TRUE,N=sample(100:500,size=1),
-                   seed=1234,sdn=0.5, goParallel=FALSE,additive=FALSE)
+                   seed=1234,sdn=0.5, goParallel=FALSE)
           {
             
             ##generate a training set
@@ -405,7 +404,7 @@ setMethod("initialize",
             }   else {
               `%op%` <-`%do%`
             }
-            .Object@functionType=functionType
+            
             .Object@seed=seed
             X=NULL
             Y=NULL
@@ -413,8 +412,6 @@ setMethod("initialize",
             list.observationsDAGs=NULL
             if (NDAG<=0)
               return(.Object)
-            
-            
             
             FF<-foreach (i=1:NDAG) %op%{
               ##  for (i in 1:NDAG){
@@ -424,10 +421,7 @@ setMethod("initialize",
               if (length(N)>1)
                 N.i<-sample(N[1]:N[2],1)
               
-              quantize.i<-quantize
-              if (length(quantize)>1)
-                quantize.i<-sample(quantize,1)
-              
+               
               noNodes.i<-max(3,noNodes[1])
               if (length(noNodes)==2)
                 noNodes.i<-sample(max(3:noNodes[1]):max(3:noNodes[2]),1)
@@ -437,17 +431,9 @@ setMethod("initialize",
               if (length(sdn)>1)
                 sdn.i<-runif(1,sdn[1],sdn[2])
               
-              functionType.i<-functionType
-              if (length(functionType.i)>1)
-                functionType.i<-sample(functionType,1)
+            
               
-              additive.i<-additive
-              if (length(additive)>1)
-                additive.i<-sample(additive,1)
-              
-              
-              
-              G<-genTS(noNodes.i,N=N.i,sd=sdn.i)
+              G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i)
               netwDAG<-G$DAG 
               observationsDAG = G$D
               
@@ -507,7 +493,7 @@ setOldClass("randomForest")
 #' An S4 class to store the RF model trained on the basis of the descriptors of NDAG DAGs
 setClass("D2C",
          slots = list(mod="randomForest", X="matrix",Y="numeric",
-                      descr="D2C.descriptor",features="numeric",rank="numeric",
+                      descr="D2C.descriptor",scaled="numeric",rank="numeric",center="numeric",
                       allEdges="list",ratioMissingNode="numeric",ratioEdges="numeric",
                       max.features="numeric",type="character"
          ))
@@ -720,9 +706,7 @@ setMethod("initialize",
               if (verbose)
                 cat("D2C:  DAG", ii, " processed \n")
               
-              #X<-rbind(X,X.out)
-              #Y<-c(Y,labelEdge)
-              #allEdges<-rbind(allEdges,edgesM)
+              
               list(X=X.out,Y=labelEdge,edges=edgesM)
               
             } ## foreach
@@ -749,22 +733,91 @@ setMethod("initialize",
             Y<-Y[c(w0,w1)]
             
             X<-scale(X[,features])
-            .Object@features=features
-            .Object@X=X
+            .Object@scaled=attr(X,"scaled:scale")
+            .Object@center=attr(X,"scaled:center")
             .Object@Y=Y
             .Object@allEdges=allEdges
             
             RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
             IM<-importance(RF)[,"MeanDecreaseAccuracy"]
             rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(X))]
-            RF <- randomForest(x =X[,rank] ,y = factor(Y))
+            X=X[,rank]
+            RF <- randomForest(x =X ,y = factor(Y))
             
-            .Object@rank=rank
+            .Object@X=X
+            .Object@rank=features[rank]
+            .Object@scaled=.Object@scaled[rank]
+            .Object@center=.Object@center[rank]
+            .Object@rank=features[rank]
             .Object@mod=RF
             
             .Object
           }
 )
+
+
+
+#' predict if there is a connection between node i and node j
+#' @param object : a D2C object
+#' @param i :  index of putative cause (\eqn{1 \le i \le n})
+#' @param j  : index of putative effect (\eqn{1 \le j \le n})
+#' @param data : dataset of observations from the DAG
+#' @return list with binary response and probability of the existence of a directed edge
+#' @examples
+#' require(RBGL)
+#' require(gRbase)
+#' require(foreach)
+#' data(example)
+#'## load the D2C object
+#' testDAG<-new("simulatedDAG",NDAG=1, N=50,noNodes=5,
+#'            functionType = "linear", seed=1,sdn=c(0.25,0.5))
+#' ## creates a simulatedDAG object for testing
+#' plot(testDAG@@list.DAGs[[1]])
+#' ## plot the topology of the simulatedDAG
+#' predict(example,1,2, testDAG@@list.observationsDAGs[[1]])
+#' ## predict if the edge 1->2 exists
+#' predict(example,4,3, testDAG@@list.observationsDAGs[[1]])
+#' ## predict if the edge 4->3 exists
+#' predict(example,4,1, testDAG@@list.observationsDAGs[[1]])
+#' ## predict if the edge 4->1 exists
+#' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
+#' @export
+setMethod("predict", signature="D2C",
+          function(object,i,j,data)
+          {
+            out = list()
+            
+            if (any(apply(data,2,sd)<0.01))
+              stop("Error in D2C::predict: Remove constant variables from dataset. ")
+            
+            if (object@type=="is.mb"){
+              X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
+                                        acc = object@descr@acc,ns=object@descr@ns,
+                                        struct = object@descr@struct,
+                                        pq = object@descr@pq, bivariate =object@descr@bivariate,mimr=FALSE)
+            }else {
+              X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
+                                        acc = object@descr@acc,ns=object@descr@ns,
+                                        struct = object@descr@struct,
+                                        pq = object@descr@pq, bivariate =object@descr@bivariate)
+            }
+            if (any(is.infinite(X_descriptor)))
+              stop("Error in D2C::predict: infinite value ")
+            
+            X_descriptor=X_descriptor[object@rank]
+            
+            
+            X_descriptor=scale(array(X_descriptor,c(1,length(X_descriptor))),
+                               object@scaled,object@center)
+            if (any(is.infinite(X_descriptor)))
+              stop("error in D2C::predict")
+            out[["response"]] = predict(object@mod, X_descriptor, type="response")
+            out[["prob"]] = predict(object@mod, X_descriptor, type="prob")
+            
+            
+            return(out)
+          })
+
 
 
 
@@ -873,70 +926,6 @@ setMethod(f="updateD2C",
             
           }
 )
-
-#' predict if there is a connection between node i and node j
-#' @param object : a D2C object
-#' @param i :  index of putative cause (\eqn{1 \le i \le n})
-#' @param j  : index of putative effect (\eqn{1 \le j \le n})
-#' @param data : dataset of observations from the DAG
-#' @return list with binary response and probability of the existence of a directed edge
-#' @examples
-#' require(RBGL)
-#' require(gRbase)
-#' require(foreach)
-#' data(example)
-#'## load the D2C object
-#' testDAG<-new("simulatedDAG",NDAG=1, N=50,noNodes=5,
-#'            functionType = "linear", seed=1,sdn=c(0.25,0.5))
-#' ## creates a simulatedDAG object for testing
-#' plot(testDAG@@list.DAGs[[1]])
-#' ## plot the topology of the simulatedDAG
-#' predict(example,1,2, testDAG@@list.observationsDAGs[[1]])
-#' ## predict if the edge 1->2 exists
-#' predict(example,4,3, testDAG@@list.observationsDAGs[[1]])
-#' ## predict if the edge 4->3 exists
-#' predict(example,4,1, testDAG@@list.observationsDAGs[[1]])
-#' ## predict if the edge 4->1 exists
-#' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
-#' @export
-setMethod("predict", signature="D2C",
-          function(object,i,j,data)
-          {
-            out = list()
-            
-            if (any(apply(data,2,sd)<0.01))
-              stop("Error in D2C::predict: Remove constant variables from dataset. ")
-            
-            if (object@type=="is.mb"){
-              X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
-                                        acc = object@descr@acc,ns=object@descr@ns,
-                                        struct = object@descr@struct,
-                                        pq = object@descr@pq, bivariate =object@descr@bivariate,mimr=FALSE)
-            }else {
-              X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
-                                        acc = object@descr@acc,ns=object@descr@ns,
-                                        struct = object@descr@struct,
-                                        pq = object@descr@pq, bivariate =object@descr@bivariate)
-            }
-            if (any(is.infinite(X_descriptor)))
-              stop("Error in D2C::predict: infinite value ")
-            
-            X_descriptor=X_descriptor[object@features]
-            
-            
-            X_descriptor=scale(array(X_descriptor,c(1,length(X_descriptor))),
-                               attr(object@X,"scaled:center"),attr(object@X,"scaled:scale"))
-            if (any(is.infinite(X_descriptor[,object@rank])))
-              stop("error in D2C::predict")
-            out[["response"]] = predict(object@mod, X_descriptor[,object@rank], type="response")
-            out[["prob"]] = predict(object@mod, X_descriptor[,object@rank], type="prob")
-            
-            
-            return(out)
-          })
-
-
-
 
 #' Dataset example
 #'@title stored D2C object
