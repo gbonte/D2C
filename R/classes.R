@@ -813,7 +813,7 @@ setMethod("predict", signature="D2C",
             
             
             X_descriptor=scale(array(X_descriptor,c(1,length(X_descriptor))),
-                               object@scaled,object@center)
+                               object@center,object@scaled)
             if (any(is.infinite(X_descriptor)))
               stop("error in D2C::predict")
             out[["response"]] = predict(object@mod, X_descriptor, type="response")
