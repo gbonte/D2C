@@ -774,7 +774,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
     #min(Mod(polyroot(c(1, -model$ar))))
     while (any(Mod(polyroot(c(1,-Cf)))<=1))
       Cf=rnorm(ord)
-    Y<-c(arima.sim(n = NN, list(ar = Cf, ma = ma,sd = sd))  
+    Y<-c(arima.sim(n = NN, list(ar = Cf, ma = ma,sd = sd)))  
   }
   
   Y=scale(Y[nn:length(Y)])
