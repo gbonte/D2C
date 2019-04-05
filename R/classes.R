@@ -732,7 +732,10 @@ setMethod("initialize",
               w1<-sample(w1,length(w0))
             X<-X[c(w0,w1),]
             Y<-Y[c(w0,w1)]
-            origX<-X
+            
+            
+            
+            .Object@origX<-X
             
             X<-scale(X[,features])
             .Object@scaled=attr(X,"scaled:scale")
