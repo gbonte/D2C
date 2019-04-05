@@ -492,7 +492,7 @@ setOldClass("randomForest")
 
 #' An S4 class to store the RF model trained on the basis of the descriptors of NDAG DAGs
 setClass("D2C",
-         slots = list(mod="randomForest", X="matrix",Y="numeric",
+         slots = list(mod="randomForest", X="matrix",origX="matrix",Y="numeric",
                       descr="D2C.descriptor",scaled="numeric",rank="numeric",center="numeric",
                       allEdges="list",ratioMissingNode="numeric",ratioEdges="numeric",
                       max.features="numeric",type="character"
@@ -722,6 +722,7 @@ setMethod("initialize",
             if (length(wna)>0)
               features<-setdiff(features,wna)
             
+            
             w0<-which(Y==0)
             w1<-which(Y==1)
             if (length(w0)>length(w1))
@@ -731,6 +732,7 @@ setMethod("initialize",
               w1<-sample(w1,length(w0))
             X<-X[c(w0,w1),]
             Y<-Y[c(w0,w1)]
+            origX<-X
             
             X<-scale(X[,features])
             .Object@scaled=attr(X,"scaled:scale")
