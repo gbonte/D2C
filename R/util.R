@@ -692,12 +692,12 @@ MakeEmbedded<-function(ts, n, delay,hor=1,w=1){
 
 genTS<-function(nn,NN,sd=0.5,num=1){
   
-  num=sample(c(-4,-3,-2,-1,1:12),1)
+  num=sample(c(-3,-2,-1,1:12),1)
   n=4  ## max embedding order 
   Y=rnorm(nn)
   ep=0
   th0=rnorm(1)
-  if (num>0)
+  if (num>0){
     for (i in 1:NN){
       N=length(Y)
       
@@ -764,15 +764,17 @@ genTS<-function(nn,NN,sd=0.5,num=1){
       }
       
     }
+  }
   
   if (num<0){
     fs<- 1:(-num)
     ord=-num
     Cf=rnorm(ord)
+    ma=rnorm(2)
     #min(Mod(polyroot(c(1, -model$ar))))
     while (any(Mod(polyroot(c(1,-Cf)))<=1))
       Cf=rnorm(ord)
-    Y<-c(arima.sim(n = NN, list(ar = Cf, ma = c(-0.2279, 0.2488)),sd = sd))  
+    Y<-c(arima.sim(n = NN, list(ar = Cf, ma = ma,sd = sd))  
   }
   
   Y=scale(Y[nn:length(Y)])
