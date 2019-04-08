@@ -694,7 +694,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
   
   
   n=4  ## max embedding order 
-  Y=rnorm(nn)
+  Y=rnorm(nn,sd=0.1)
   ep=0
   th0=rnorm(1)
   fs<-sample(0:(n),4)
@@ -769,7 +769,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
         nfs=2
         fs=0:1
         ## Henon map
-        Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.1*sd*rnorm(1))
+        Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sd*rnorm(1))
       }
       if (num==15){
         nfs=1
