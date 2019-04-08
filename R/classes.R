@@ -361,7 +361,8 @@ setMethod("initialize",
 ##' @param seed : random seed
 setClass("simulatedTS",
          slots = list(list.DAGs="list",list.observationsDAGs="list",
-                      NDAG="numeric", functionType="character",seed="numeric",
+                      NDAG="numeric", typeser="numeric", functionType="character",
+                      seed="numeric",
                       additive="logical"))
 
 ##' creation of a "simulatedTS" containing a list of DAGs and associated time series observations
@@ -370,9 +371,10 @@ setClass("simulatedTS",
 #' @param noNodes  : number of Nodes of the DAGs. If it is a two-valued vector , the value of Nodes is randomly sampled in the interval
 #' @param N  : number of sampled observations for each DAG. If it is a two-valued vector [a,b], the value of N is randomly sampled in the interval [a,b]
 #' @param sdn : standard deviation of aditive noise. If it is a two-valued vector, the value of N is randomly sampled in the interval
+#' @param typeser : type time series: numbers associated to different processes in function genTS 
 #' @param seed : random seed
 #' @param verbose : if TRUE it prints out the state of progress
-#'  @param goParallel : if TRUE it uses parallelism
+#' @param goParallel : if TRUE it uses parallelism
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @examples
 #' require(RBGL)
@@ -380,7 +382,7 @@ setClass("simulatedTS",
 #' require(foreach)
 #' descr=new("D2C.descriptor")
 #'descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=3,acc=TRUE)
-#'trainDAG<-new("simulatedTS",NDAG=10, N=c(50,100),noNodes=c(15,40),
+#'trainDAG<-new("simulatedTS",NDAG=10, N=c(50,100),noNodes=c(15,40), typser=3,
 #'              functionType = "linear", seed=0,sdn=c(0.45,0.75))
 #' @export
 #'
@@ -390,6 +392,7 @@ setMethod("initialize",
           function(.Object, NDAG=1,
                    noNodes=sample(10:20,size=1),
                    verbose=TRUE,N=sample(100:500,size=1),
+                   typeser=1:5,
                    seed=1234,sdn=0.5, goParallel=FALSE)
           {
             
@@ -432,8 +435,8 @@ setMethod("initialize",
                 sdn.i<-runif(1,sdn[1],sdn[2])
               
             
-              
-              G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i)
+              num=sample(typeser,1)
+              G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               netwDAG<-G$DAG 
               observationsDAG = G$D
               

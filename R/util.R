@@ -692,7 +692,7 @@ MakeEmbedded<-function(ts, n, delay,hor=1,w=1){
 
 genTS<-function(nn,NN,sd=0.5,num=1){
   
-  num=sample(c(-3,-2,-1,1:12),1)
+  
   n=4  ## max embedding order 
   Y=rnorm(nn)
   ep=0
