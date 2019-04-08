@@ -817,7 +817,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
   
   fs=fs[1:nfs]
   Y=scale(Y[nn:length(Y)])
-  if (any(is.nan(Y) || abs(Y)>100))
+  if (any(is.nan(Y) ) )
     browser()
   M=MakeEmbedded(array(Y,c(length(Y),1)),n=nn,delay=0,hor=rep(1,1),w=1:1)
   netwDAG<-new("graphNEL", nodes=as.character(1:nn), edgemode="directed")
