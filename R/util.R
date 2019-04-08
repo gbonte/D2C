@@ -698,6 +698,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
   ep=0
   th0=rnorm(1)
   fs<-sample(0:(n),4)
+  state=0
   if (num>0){
     for (i in 1:NN){
       N=length(Y)
@@ -772,11 +773,29 @@ genTS<-function(nn,NN,sd=0.5,num=1){
         nfs=1
         ## TAR map
         if (Y[N-fs[1]]<1){
-        Y=c(Y,-0.5*Y[N-fs[1]]+sd*rnorm(1))
+          Y=c(Y,-0.5*Y[N-fs[1]]+sd*rnorm(1))
         } else {
           Y=c(Y,0.4*Y[N-fs[1]]+sd*rnorm(1))
         }
       }
+      if (num==16){
+        nfs=1
+        ## TAR2 map
+        if (state==1){
+          Y=c(Y,-0.5*Y[N-fs[1]]+sd*rnorm(1))
+        } else {
+          Y=c(Y,0.4*Y[N-fs[1]]+sd*rnorm(1))
+        }
+        if (runif(1)>0.9)
+          state=1-state
+      }
+      if (num==17){
+        nfs=4
+       #GARCH 
+        Y=c(Y,sqrt(0.000019+0.846*((Y[N-fs[1]])^2+0.3*(Y[N-fs[2]])^2+0.2*(Y[N-fs[3]])^2+0.1*(Y[N-fs[4]])^2) )*sd*rnorm(1))
+        
+      }
+      
       if (any(is.nan(Y) || abs(Y)>100))
         browser()
       
@@ -798,7 +817,8 @@ genTS<-function(nn,NN,sd=0.5,num=1){
   
   fs=fs[1:nfs]
   Y=scale(Y[nn:length(Y)])
-  
+  if (any(is.nan(Y) || abs(Y)>100))
+    browser()
   M=MakeEmbedded(array(Y,c(length(Y),1)),n=nn,delay=0,hor=rep(1,1),w=1:1)
   netwDAG<-new("graphNEL", nodes=as.character(1:nn), edgemode="directed")
   
