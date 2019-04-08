@@ -694,7 +694,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
   
   
   n=4  ## max embedding order 
-  Y=rnorm(nn)
+  Y=runif(nn)
   ep=0
   th0=rnorm(1)
   fs<-sample(0:(n),4)
@@ -816,8 +816,10 @@ genTS<-function(nn,NN,sd=0.5,num=1){
   }
   
   fs=fs[1:nfs]
+  if (sd(Y[nn:length(Y)])<0.1 ) 
+    browser()
   Y=scale(Y[nn:length(Y)])
-  if (any(is.nan(Y) ) )
+  if (any(is.nan(Y) ))
     browser()
   M=MakeEmbedded(array(Y,c(length(Y),1)),n=nn,delay=0,hor=rep(1,1),w=1:1)
   netwDAG<-new("graphNEL", nodes=as.character(1:nn), edgemode="directed")
