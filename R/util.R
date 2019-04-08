@@ -768,7 +768,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
         ## Henon map
         Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+sd*rnorm(1))
       }
-      if (num==14){
+      if (num==15){
         nfs=1
         ## TAR map
         if (Y[N-fs[1]]<1){
