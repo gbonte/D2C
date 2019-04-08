@@ -762,7 +762,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
       }
       if (num==13){
         nfs=1
-        Y=c(Y,0.246*Y[N-fs[1]]*(16-Y[N-fs[1]])+sd*rnorm(1))
+        Y=c(Y,0.246*Y[N-fs[1]]*(16-Y[N-fs[1]])+rnorm(1,sd=0.5))
       }
       if (num==14){
         nfs=2
@@ -816,7 +816,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
   }
   
   fs=fs[1:nfs]
-  if (sd(Y[nn:length(Y)])<0.1 ) 
+  if (sd(Y[nn:length(Y)])<0.001 ) 
     browser()
   Y=scale(Y[nn:length(Y)])
   if (any(is.nan(Y) ))
