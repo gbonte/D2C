@@ -153,11 +153,18 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     ef.ca<-npred(D[,ef],D[,ca],lin=lin)
     
     
-    delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin)
+    E.ef=ecdf(D[,ef])(D[,ef]) ## empirical cdf of D[,ef]
+    E.ca=ecdf(D[,ca])(D[,ca])
+    ## gini relevance of ca for ef
+    gini.ca.ef<-npred(D[,ca],E.ef,lin=lin)
+    ## gini relevance of ef for ca
+    gini.ef.ca<-npred(D[,ef],E.ca,lin=lin)
     
+    delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin)
     delta2<- norminf(D[,ca],D[,ef],D[,MBca],lin=lin)
     
-    
+    gini.delta<- norminf(D[,ef],E.ca,D[,MBef],lin=lin)
+    gini.delta2<- norminf(D[,ca],E.ef,D[,MBca],lin=lin)
     
     ## relevance of ca for ef given MBef
     delta.i<-NULL
@@ -213,19 +220,23 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     
     
     
-    x<-c(x,delta,delta2,quantile(delta.i,probs=pq,na.rm=TRUE),
-         quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,
+    x<-c(x,delta,delta2,
+         gini.delta,gini.delta2,
+         quantile(delta.i,probs=pq,na.rm=TRUE),
+         quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,gini.ca.ef,gini.ef.ca,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
          quantile(I2.i,probs=pq,na.rm=TRUE),quantile(I2.j,probs=pq,na.rm=TRUE),
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE))
     
-    namesx<-c(namesx,"delta","delta2",paste("delta",1:length(pq)),
+    namesx<-c(namesx,"delta","delta2",
+              "gini.delta","gini.delta2",
+              paste("delta",1:length(pq)),
               paste("delta2",1:length(pq)),
-              "ca.ef","ef.ca",
+              "ca.ef","ef.ca","gini.ca.ef","gini.ef.ca",
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)))
-  }
+  } ## if acc
   
   if (length(names(x))!=length(namesx))
     stop("error in function D2C.n!")

@@ -436,13 +436,14 @@ setMethod("initialize",
               
             
               num=sample(typeser,1)
+              
               G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               netwDAG<-G$DAG 
               observationsDAG = G$D
               
               if (verbose){
                 
-                cat("simulatedTS: TS number:",i,"generated: #nodes=", NCOL(observationsDAG),
+                cat("simulatedTS: TS number:",i,":",num," generated: #nodes=", NCOL(observationsDAG),
                     "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", N.i, "\n")
                 
               }
