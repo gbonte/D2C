@@ -375,6 +375,7 @@ setClass("simulatedTS",
 #' @param seed : random seed
 #' @param verbose : if TRUE it prints out the state of progress
 #' @param goParallel : if TRUE it uses parallelism
+#' @param nseries : number of series (if > 1 it is multivariate)
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @examples
 #' require(RBGL)
@@ -393,7 +394,7 @@ setMethod("initialize",
                    noNodes=sample(10:20,size=1),
                    verbose=TRUE,N=sample(100:500,size=1),
                    typeser=1:5,
-                   seed=1234,sdn=0.5, goParallel=FALSE)
+                   seed=1234,sdn=0.5, goParallel=FALSE, nseries=1)
           {
             
             ##generate a training set
@@ -436,9 +437,11 @@ setMethod("initialize",
               
             
               num=sample(typeser,1)
+              if (nseries>1)
+                G<-genSTAR(n=nseries,nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
+              else
+                G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               
-              #G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
-              G<-genSTAR(n=10,nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               
               netwDAG<-G$DAG 
               observationsDAG = G$D
