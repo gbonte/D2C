@@ -793,7 +793,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
       }
       if (num==17){
         nfs=4
-       #GARCH 
+        #GARCH 
         Y=c(Y,sqrt(0.000019+0.846*((Y[N-fs[1]])^2+0.3*(Y[N-fs[2]])^2+0.2*(Y[N-fs[3]])^2+0.1*(Y[N-fs[4]])^2) )*sd*rnorm(1))
         
       }
@@ -835,4 +835,84 @@ genTS<-function(nn,NN,sd=0.5,num=1){
   list(D=M$inp,DAG=netwDAG)
 }
 
+genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
+  
+  loc=1  ## size of neighborhood
+  Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
+  ep=0
+  th0=rnorm(1)
+  fs<-sample(0:(nn-2),3)
+  state=0
+  
+  for (ii in 1:NN){
+    N=NROW(Y)
+    y=numeric(n)
+    if (num==1){
+      nfs=2
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=-0.4*(3-mean(Y[N-fs[1],neigh])^2)/(1+mean(Y[N-fs[1],neigh])^2)+
+          0.6*(3-(mean(Y[N-fs[2],neigh])-0.5)^3)/(1+(mean(Y[N-fs[2],neigh])-0.5)^4)+sd*e
+        
+      }
+      
+    }
+    if (num==2){
+      nfs=2
+      
+      #Y=c(Y,(0.4-2*exp(-50*Y[N-fs[1]]^2))*Y[N-fs[1]]+(0.5-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sd*(e+th0*ep))
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=(0.4-2*exp(-50*mean(Y[N-fs[1],neigh])^2))*mean(Y[N-fs[1],neigh])+
+          (0.5-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sd*e
+        
+      }
+    }
+    if (num==3){
+      nfs=3
+       #Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sin(pi/2*Y[N-fs[3]])+sd*(e+th0*ep))
+      
+        for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=1.5 *sin(pi/2*mean(Y[N-fs[1],neigh]))-sin(pi/2*mean(Y[N-fs[2],neigh]))+sin(pi/2*mean(Y[N-fs[3],neigh]))+sd*e
+        
+      }
+    }
+    
+    Y<-rbind(Y,y)
+    if (any(is.nan(Y) | abs(Y)>1000))
+      stop("error")
+    
+  } ## for i
+  
+  
+  
+ 
+  
+  fs=fs[1:nfs]
+  
+  Y=scale(Y[nn:NROW(Y),])
+  if (any(is.nan(Y) ))
+    stop("error")
+  M=MakeEmbedded(Y,n=numeric(n)+nn,delay=numeric(n),hor=rep(1,n),w=1:n)
+  netwDAG<-new("graphNEL", nodes=as.character(1:(n*nn)), edgemode="directed")
+  
+  fs=sort(fs)
+  for (i in 1:n){
+    for (j in 1:(nn-max(fs)-1)){
+      for (f in fs){
+        for (neigh in max(1,i-loc):min(n,i+loc)){
+          netwDAG <- addEdge(as.character((neigh-1)*nn+j+f+1), as.character((i-1)*nn+j), netwDAG, 1)
+          #cat((neigh-1)*nn+j+f+1,"->",(i-1)*nn+j,"\n")
+        }
+      }
+    }
+  }
+  
+  
+  list(D=M$inp,DAG=netwDAG)
+}
 

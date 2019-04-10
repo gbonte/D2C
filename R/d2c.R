@@ -483,7 +483,11 @@ D2C.2<-function(x,y,sdkmin=0.5,sdkmax=0.5,Ls=1){
   
   N<-length(x)
   
-  asxy<-c(assoc(x,y),abs(cor(x2,y2))-abs(pcor1(x2,y2,Ex)),
+  Ecdf.x=ecdf(x)(x) ## empirical cdf of D[,ef]
+  Ecdf.y=ecdf(y)(y)
+  
+  asxy<-c(assoc(x,y),assoc(x,Ecdf.y),assoc(Ecdf.x,y),
+          abs(cor(x2,y2))-abs(pcor1(x2,y2,Ex)),
           abs(cor(x1,y1))-abs(pcor1(x1,y1,Ey)))
   asey<-assoc(Ex,y2)
   asex<-assoc(Ex,x2)-asey

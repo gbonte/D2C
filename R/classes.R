@@ -417,7 +417,7 @@ setMethod("initialize",
               return(.Object)
             
             FF<-foreach (i=1:NDAG) %op%{
-              ##  for (i in 1:NDAG){
+               ## for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -437,7 +437,9 @@ setMethod("initialize",
             
               num=sample(typeser,1)
               
-              G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
+              #G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
+              G<-genSTAR(n=10,nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
+              
               netwDAG<-G$DAG 
               observationsDAG = G$D
               
