@@ -882,6 +882,19 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
       }
     }
     
+    if (num==4){
+      nfs=2
+      #  Y=c(Y,2*exp(-0.1*Y[N-fs[1]]^2)*Y[N-fs[1]]-exp(-0.1*Y[N-fs[2]]^2)*Y[N-fs[2]]+sd*(e+th0*ep))
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=2*exp(-0.1*mean(Y[N-fs[1],neigh])^2)*mean(Y[N-fs[1],neigh])-
+          exp(-0.1*mean(Y[N-fs[2],neigh])^2)*mean(Y[N-fs[2],neigh])+sd*e
+        
+      }
+    }
+    
     Y<-rbind(Y,y)
     if (any(is.nan(Y) | abs(Y)>1000))
       stop("error")
