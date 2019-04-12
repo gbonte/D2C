@@ -741,7 +741,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
       }
       if (num==8){
         nfs=2
-        Y=c(Y,(0.5-1.1*exp(-50*Y[N-fs[1]]^2))*Y[N]+(0.3-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sd*rnorm(1))
+        Y=c(Y,(0.5-1.1*exp(-50*Y[N-fs[1]]^2))*Y[N-fs[1]]+(0.3-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sd*rnorm(1))
       }
       if (num==9){
         nfs=2
@@ -872,12 +872,14 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
     }
     if (num==3){
       nfs=3
-       #Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sin(pi/2*Y[N-fs[3]])+sd*(e+th0*ep))
+      #Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sin(pi/2*Y[N-fs[3]])+sd*(e+th0*ep))
       
-        for (i in 1:n){
+      for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
-        y[i]=1.5 *sin(pi/2*mean(Y[N-fs[1],neigh]))-sin(pi/2*mean(Y[N-fs[2],neigh]))+sin(pi/2*mean(Y[N-fs[3],neigh]))+sd*e
+        y[i]=1.5 *sin(pi/2*mean(Y[N-fs[1],neigh]))-
+          sin(pi/2*mean(Y[N-fs[2],neigh]))+
+          sin(pi/2*mean(Y[N-fs[3],neigh]))+sd*e
         
       }
     }
@@ -895,6 +897,180 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
       }
     }
     
+    if (num==5){
+      nfs=1
+      #Y=c(Y,-2*Y[N-fs[1]]*max(0,sign(-Y[N-fs[1]]))+0.4*Y[N-fs[1]]*max(0,sign(Y[N-fs[1]]))+sd*rnorm(1))
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=-2*mean(Y[N-fs[1],neigh])*max(0,sign(-mean(Y[N-fs[1],neigh])))+
+          0.4*mean(Y[N-fs[1],neigh])*max(0,sign(mean(Y[N-fs[1],neigh])))+sd*e
+        
+      }
+    }
+    if (num==6){
+      nfs=2
+      #Y=c(Y,0.8*log(1+3*Y[N-fs[1]]^2)-0.6*log(1+3*Y[N-fs[2]]^2)+sd*rnorm(1))
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=0.8*log(1+3*mean(Y[N-fs[1],neigh])^2)-0.6*log(1+3*mean(Y[N-fs[2],neigh])^2)+sd*e
+        
+      }
+    }
+    if (num==7){
+      nfs=2
+      #1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sd*rnorm(1)
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=1.5 *sin(pi/2*mean(Y[N-fs[1],neigh]))-sin(pi/2*mean(Y[N-fs[2],neigh]))+sd*e
+        
+      }
+    }
+    if (num==8){
+      nfs=2
+      #Y=c(Y,(0.5-1.1*exp(-50*Y[N-fs[1]]^2))*Y[N]+(0.3-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sd*rnorm(1))
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=0.5-1.1*exp(-50*mean(Y[N-fs[1],neigh])^2)*mean(Y[N-fs[1],neigh])+
+          (0.3-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sd*e
+        
+      }
+      
+    }
+    
+    if (num==9){
+      nfs=2
+      ##Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
+          (0.1-0.9*mean(Y[N-fs[1],neigh])+
+             0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e
+      }
+      
+    }
+    if (num==10){
+      nfs=1
+      ##Y=c(Y,sign(Y[N-fs[1]])+sd*rnorm(1))
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=sign(mean(Y[N-fs[1],neigh]))+sd*e
+        
+      }
+    }
+    if (num==11){
+      nfs=1
+      ##Y=c(Y,0.8*Y[N-fs[1]]-0.8*Y[N-fs[1]]/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1)) 
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=0.8*mean(Y[N-fs[1],neigh])-0.8*mean(Y[N-fs[1],neigh])/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e
+        
+      }
+    }
+    if (num==12){
+      nfs=2
+      ##  Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
+          (0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e
+        
+      }
+    }
+    if (num==13){
+      nfs=1
+      ##  Y=c(Y,min(1,max(0,3.8*Y[N-fs[1]]*(1-Y[N-fs[1]])+sd*rnorm(1))))
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=min(1,max(0,3.8*mean(Y[N-fs[1],neigh])*(1-mean(Y[N-fs[1],neigh]))+sd*e))
+        
+      }
+    }
+    if (num==14){
+      nfs=2
+      ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sd*rnorm(1))
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]= 1-1.4*mean(Y[N-fs[1],neigh])*mean(Y[N-fs[1],neigh]) + 0.3*mean(Y[N-fs[2],neigh])+0.001*sd*e
+        
+      }
+    }
+    if (num==15){
+      nfs=1
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        if (mean(Y[N-fs[1],neigh])<1){
+          y[i]=-0.5*mean(Y[N-fs[1],neigh])+sd*e
+        } else {
+          y[i]=0.4*mean(Y[N-fs[1],neigh])+sd*e
+        }
+      }
+    }
+    
+    if (num==15){
+      nfs=1
+      ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sd*rnorm(1))
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        if (mean(Y[N-fs[1],neigh])<1){
+          y[i]=-0.5*mean(Y[N-fs[1],neigh])+sd*e
+        } else {
+          y[i]=0.4*mean(Y[N-fs[1],neigh])+sd*e
+        }
+      }
+    } 
+    if (num==16){
+      nfs=1
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        if (state==1){
+          y[i]=-0.5*mean(Y[N-fs[1],neigh])+sd*rnorm(1)
+        } else {
+          y[i]=0.4*mean(Y[N-fs[1],neigh])+sd*rnorm(1)
+        }
+        if (runif(1)>0.9)
+          state=1-state
+      }
+    }
+    
+    if (num==17){
+      
+      nfs=4
+      #GARCH 
+      ##Y=c(Y,sqrt(0.000019+0.846*((Y[N-fs[1]])^2+0.3*(Y[N-fs[2]])^2+0.2*(Y[N-fs[3]])^2+0.1*(Y[N-fs[4]])^2) )*sd*rnorm(1))
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=sqrt(0.000019+0.846*((mean(Y[N-fs[1],neigh]))^2+
+                                    0.3*(mean(Y[N-fs[2],neigh]))^2+0.2*(mean(Y[N-fs[3],neigh]))^2+
+                                    0.1*(mean(Y[N-fs[4],neigh]))^2) )*sd*e
+        
+        
+      }
+    }
+    
     Y<-rbind(Y,y)
     if (any(is.nan(Y) | abs(Y)>1000))
       stop("error")
@@ -903,7 +1079,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
   
   
   
- 
+  
   
   fs=fs[1:nfs]
   
@@ -912,7 +1088,8 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
     stop("error")
   M=MakeEmbedded(Y,n=numeric(n)+nn,delay=numeric(n),hor=rep(1,n),w=1:n)
   netwDAG<-new("graphNEL", nodes=as.character(1:(n*nn)), edgemode="directed")
-  
+  if (NCOL(M$inp)!=(n*nn))
+    browser()
   fs=sort(fs)
   for (i in 1:n){
     for (j in 1:(nn-max(fs)-1)){
