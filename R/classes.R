@@ -437,6 +437,7 @@ setMethod("initialize",
               
             
               num=sample(typeser,1)
+              
               if (nseries>1)
                 G<-genSTAR(n=nseries,nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               else

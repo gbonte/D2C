@@ -841,7 +841,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
   Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
   ep=0
   th0=rnorm(1)
-  fs<-sample(0:(nn-2),3)
+  fs<-sample(0:(nn-2),4)
   state=0
   
   for (ii in 1:NN){
@@ -1064,7 +1064,8 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
         y[i]=sqrt(0.000019+0.846*((mean(Y[N-fs[1],neigh]))^2+
-                                    0.3*(mean(Y[N-fs[2],neigh]))^2+0.2*(mean(Y[N-fs[3],neigh]))^2+
+                                    0.3*(mean(Y[N-fs[2],neigh]))^2+
+                                    0.2*(mean(Y[N-fs[3],neigh]))^2+
                                     0.1*(mean(Y[N-fs[4],neigh]))^2) )*sd*e
         
         
@@ -1072,6 +1073,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
     }
     
     Y<-rbind(Y,y)
+    
     if (any(is.nan(Y) | abs(Y)>1000))
       stop("error")
     
