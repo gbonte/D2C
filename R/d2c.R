@@ -21,6 +21,9 @@ npred<-function(X,Y,lin=TRUE){
   X<-scale(X)
   e<-Y-lazy.pred(X,Y,X,conPar=c(10,20),
                  linPar=NULL,class=FALSE,cmbPar=10)
+  #  Itr=sample(1:N,min(50,round(2*N/3)))
+  #  Its=setdiff(1:N,Itr)
+  # e<-Y[Its]-rf.pred(X[Itr,],Y[Itr],X[Its,],class=FALSE,ntree=5)
   nmse<-mean(e^2)/var(Y) 
   max(1e-3,nmse)
 }

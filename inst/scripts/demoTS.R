@@ -19,16 +19,16 @@ is.what<-function(iDAG,i,j){
   
 }
 
-noNodes<-c(10,20)
+noNodes<-c(5,6)
 ## range of number of nodes
 
-N<-c(500,1000)
+N<-c(100,200)
 ## range of number of samples
 
-NDAG=50
+NDAG=20
 ## number of DAGs to be created and simulated
-NDAG.test=100
-
+NDAG.test=10
+nseries=10
 sdev<-c(0.1,0.3)
 
 goParallel=FALSE
@@ -38,21 +38,21 @@ if (TRUE){
   
   
   trainDAG<-new("simulatedTS",NDAG=NDAG, N=N, noNodes=noNodes,
-                seed=10,sdn=sdev,goParallel=goParallel)
+                seed=10,sdn=sdev,goParallel=goParallel,nseries=nseries,typeser=1:7)
   
   
   descr.example<-new("D2C.descriptor",bivariate=TRUE,ns=3,acc=TRUE,lin=FALSE)
   
   trainD2C<-new("D2C",sDAG=trainDAG,
-                descr=descr.example,ratioEdges=1,
+                descr=descr.example,ratioEdges=0.2,
                 max.features=50, type=type,goParallel=goParallel,verbose=TRUE)
   
   
-  trainD2C@mod
-  predict(trainD2C@mod,trainD2C@X)
+  print(colnames(trainD2C@origX[,trainD2C@rank]))
   
   testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
-               seed=101,sdn=sdev,goParallel=goParallel)
+               seed=101,sdn=sdev,goParallel=goParallel,nseries=round(nseries/2),
+               typeser=setdiff(8:18,14))
   
   
   if (FALSE){

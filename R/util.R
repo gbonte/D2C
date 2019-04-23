@@ -376,6 +376,45 @@ lazy.pred<- function(X,Y,X.ts,class=FALSE,return.more=FALSE,
 
 
 
+rf.pred<- function(X,Y,X.ts,class=FALSE,...){
+  
+  n<-NCOL(X)
+  N<-NROW(X)
+  if (is.vector(X.ts) & n>1){
+    N.ts<-1
+    X.ts<-array(X.ts,c(1,n))
+  }  else {
+    if (n==1)
+      N.ts<-length(X.ts)
+    else
+      N.ts<-nrow(X.ts)
+  }
+  
+  if (n==1){
+    X<-array(X,c(N,1))
+    X.ts<-array(X.ts,c(N.ts,1))
+  }
+  #set.seed(N*n)
+  d<-data.frame(Y,X)
+  names(d)[1]<-"Y"
+  
+  mod.rf<-randomForest(Y~.,data=d,...)
+  d.ts<-data.frame(X.ts)
+  names(d.ts)[1:(n)]<-names(d)[2:(n+1)]
+  p<-predict(mod.rf,d.ts,type="response")
+  
+  if (class){
+    P<-predict(mod.rf,d.ts,type="prob")
+    return(list(pred=p,prob=P))
+  } else {
+    
+    
+    return(p)
+  }
+  
+}
+
+
 #' mIMR (minimum Interaction max Relevance) filter
 #' @param X :  input matrix
 #' @param Y : output vector
@@ -1006,9 +1045,11 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
-        y[i]= 1-1.4*mean(Y[N-fs[1],neigh])*mean(Y[N-fs[1],neigh]) + 0.3*mean(Y[N-fs[2],neigh])+0.001*sd*e
+        y[i]= 1-1.4*mean(Y[N-fs[1],neigh])*mean(Y[N-fs[1],neigh]) + 
+          0.3*mean(Y[N-fs[2],neigh])+0.0001*sd*e
         
       }
+      
     }
     if (num==15){
       nfs=1
@@ -1024,7 +1065,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
       }
     }
     
-    if (num==15){
+    if (num==16){
       nfs=1
       ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sd*rnorm(1))
       
@@ -1038,7 +1079,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
         }
       }
     } 
-    if (num==16){
+    if (num==17){
       nfs=1
       
       for (i in 1:n){
@@ -1054,7 +1095,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
       }
     }
     
-    if (num==17){
+    if (num==18){
       
       nfs=4
       #GARCH 
@@ -1074,8 +1115,11 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
     
     Y<-rbind(Y,y)
     
-    if (any(is.nan(Y) | abs(Y)>1000))
+    if (any(is.nan(Y) | abs(Y)>1000)){
+      browser()
       stop("error")
+      
+    }
     
   } ## for i
   
