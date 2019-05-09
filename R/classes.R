@@ -502,7 +502,8 @@ setOldClass("randomForest")
 
 #' An S4 class to store the RF model trained on the basis of the descriptors of NDAG DAGs
 setClass("D2C",
-         slots = list(mod="randomForest", X="matrix",origX="matrix",Y="numeric",
+         slots = list(#mod="randomForest", 
+                      mod="list", X="matrix",origX="matrix",Y="numeric",
                       descr="D2C.descriptor",scaled="numeric",rank="numeric",center="numeric",
                       allEdges="list",ratioMissingNode="numeric",ratioEdges="numeric",
                       max.features="numeric",type="character"
@@ -735,43 +736,48 @@ setMethod("initialize",
               features<-setdiff(features,wna)
             
             
-            w0<-which(Y==0)
-            w1<-which(Y==1)
-            if (length(w0)>length(w1))
-              w0<-sample(w0,length(w1))
             
-            if (length(w1)>length(w0))
-              w1<-sample(w1,length(w0))
-            X<-X[c(w0,w1),]
-            Y<-Y[c(w0,w1)]
-            
-            
-            
-            .Object@origX<-X
-            
-            X<-scale(X[,features])
-            .Object@scaled=attr(X,"scaled:scale")
-            .Object@center=attr(X,"scaled:center")
-            .Object@Y=Y
-            .Object@allEdges=allEdges
-            if (length(gini)>0){
-              rank<-match(c(gini),
-                          colnames(X))
-              X=X[,rank]
-              RF <- randomForest(x =X ,y = factor(Y))
-            }else{
-              RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
-              IM<-importance(RF)[,"MeanDecreaseAccuracy"]
-              rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(X))]
-              X=X[,rank]
-              RF <- randomForest(x =X ,y = factor(Y))
+            listRF<-list()
+            for (rep in 1:10){
+              w0<-which(Y==0)
+              w1<-which(Y==1)
+              if (length(w0)>length(w1))
+                w0<-sample(w0,length(w1))
+              
+              if (length(w1)>length(w0))
+                w1<-sample(w1,length(w0))
+              Xb<-X[c(w0,w1),]
+              Yb<-Y[c(w0,w1)]
+              
+              
+              
+              .Object@origX<-X
+              
+              Xb<-scale(Xb[,features])
+              .Object@scaled=attr(Xb,"scaled:scale")
+              .Object@center=attr(Xb,"scaled:center")
+              .Object@Y=Y
+              .Object@allEdges=allEdges
+              if (length(gini)>0){
+                rank<-match(c(gini),
+                            colnames(Xb))
+                Xb=Xb[,rank]
+                RF <- randomForest(x =Xb ,y = factor(Yb))
+              }else{
+                RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
+                IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+                rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(Xb))]
+                Xb=Xb[,rank]
+                RF <- randomForest(x =Xb ,y = factor(Yb))
+              }
+              listRF<-c(listRF,list(RF))
             }
-            .Object@X=X
+            .Object@X=Xb
             .Object@rank=features[rank]
             .Object@scaled=.Object@scaled[rank]
             .Object@center=.Object@center[rank]
             .Object@rank=features[rank]
-            .Object@mod=RF
+            .Object@mod=listRF
             
             .Object
           }
@@ -833,10 +839,16 @@ setMethod("predict", signature="D2C",
                                object@center,object@scaled)
             if (any(is.infinite(X_descriptor)))
               stop("error in D2C::predict")
-            out[["response"]] = predict(object@mod, X_descriptor, type="response")
-            out[["prob"]] = predict(object@mod, X_descriptor, type="prob")
+            Response<-NULL
+            Prob<-NULL
+            for (r in 1:length(object@mod)){
+              mod=object@mod[[r]]
+              Response = c( Response, predict(mod, X_descriptor, type="response"))
+              Prob = c(Prob,predict(mod, X_descriptor, type="prob")[,"1"])
+            }
             
-            
+            out[["response"]] =round(mean(Response))
+            out[["prob"]]=mean(Prob)
             return(out)
           })
 
