@@ -754,7 +754,7 @@ setMethod("initialize",
             .Object@center=attr(X,"scaled:center")
             .Object@Y=Y
             .Object@allEdges=allEdges
-            if (length(gini)<0){
+            if (length(gini)>0){
               rank<-match(c(gini),
                           colnames(X))
               X=X[,rank]
