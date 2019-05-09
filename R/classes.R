@@ -536,7 +536,7 @@ setMethod("initialize",
           function(.Object, sDAG,
                    descr=new("D2C.descriptor"),
                    verbose=TRUE,
-                   gini=FALSE,
+                   gini=NULL,
                    ratioMissingNode=0,
                    ratioEdges=1,max.features=20,
                    goParallel=FALSE,
@@ -754,8 +754,8 @@ setMethod("initialize",
             .Object@center=attr(X,"scaled:center")
             .Object@Y=Y
             .Object@allEdges=allEdges
-            if (gini){
-              rank<-match(c("gini.delta","gini.delta2","gini.ca.ef","gini.ef.ca"),
+            if (length(gini)<0){
+              rank<-match(c(gini),
                           colnames(X))
               X=X[,rank]
               RF <- randomForest(x =X ,y = factor(Y))

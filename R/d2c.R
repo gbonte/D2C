@@ -71,7 +71,7 @@ norminf<-function(y,x1,x2,lin=TRUE){
 
 D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                 lin=FALSE,acc=TRUE,struct=TRUE,
-                pq= c(0.1,0.25,0.5,0.75,0.9),mimr=TRUE){
+                pq= c(0.05,0.1,0.25,0.5,0.75,0.9,0.95),mimr=TRUE){
   ## is i cause oj j
   n<-NCOL(D)
   N<-NROW(D)
