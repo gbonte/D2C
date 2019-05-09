@@ -418,14 +418,14 @@ setMethod("initialize",
               return(.Object)
             
             FF<-foreach (i=1:NDAG) %op%{
-               ## for (i in 1:NDAG){
+              ## for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
               if (length(N)>1)
                 N.i<-sample(N[1]:N[2],1)
               
-               
+              
               noNodes.i<-max(3,noNodes[1])
               if (length(noNodes)==2)
                 noNodes.i<-sample(max(3:noNodes[1]):max(3:noNodes[2]),1)
@@ -435,7 +435,7 @@ setMethod("initialize",
               if (length(sdn)>1)
                 sdn.i<-runif(1,sdn[1],sdn[2])
               
-            
+              
               num=sample(typeser,1)
               
               if (nseries>1)
@@ -453,7 +453,7 @@ setMethod("initialize",
                     "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", N.i, "\n")
                 
               }
-             
+              
               list(observationsDAG=observationsDAG,netwDAG=netwDAG)
             } ## foreach
             
@@ -517,6 +517,7 @@ setClass("D2C",
 #' @param ratioEdges  : percentage of existing edges which are added to the training set
 #' @param ratioMissingNode  : percentage of existing nodes which are not considered. This is used to emulate latent variables.
 #' @param goParallel : if TRUE it uses parallelism
+#' @param gini : if TRUE it uses parallelism
 #' @param verbose  : if TRUE it prints the state of progress
 #' @param type : type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
@@ -535,6 +536,7 @@ setMethod("initialize",
           function(.Object, sDAG,
                    descr=new("D2C.descriptor"),
                    verbose=TRUE,
+                   gini=FALSE,
                    ratioMissingNode=0,
                    ratioEdges=1,max.features=20,
                    goParallel=FALSE,
@@ -556,8 +558,8 @@ setMethod("initialize",
             allEdges=NULL
             FF<-NULL
             
-           FF<-foreach (ii=1:sDAG@NDAG) %op%{
-     ##         for (ii in 1:sDAG@NDAG)  {
+            FF<-foreach (ii=1:sDAG@NDAG) %op%{
+              ##         for (ii in 1:sDAG@NDAG)  {
               set.seed(ii)
               
               DAG = sDAG@list.DAGs[[ii]]
@@ -752,13 +754,18 @@ setMethod("initialize",
             .Object@center=attr(X,"scaled:center")
             .Object@Y=Y
             .Object@allEdges=allEdges
-            
-            RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
-            IM<-importance(RF)[,"MeanDecreaseAccuracy"]
-            rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(X))]
-            X=X[,rank]
-            RF <- randomForest(x =X ,y = factor(Y))
-            
+            if (gini){
+              rank<-match(c("gini.delta","gini.delta2","gini.ca.ef","gini.ef.ca"),
+                          colnames(X))
+              X=X[,rank]
+              RF <- randomForest(x =X ,y = factor(Y))
+            }else{
+              RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
+              IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+              rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(X))]
+              X=X[,rank]
+              RF <- randomForest(x =X ,y = factor(Y))
+            }
             .Object@X=X
             .Object@rank=features[rank]
             .Object@scaled=.Object@scaled[rank]
