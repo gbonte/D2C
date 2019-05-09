@@ -517,7 +517,7 @@ setClass("D2C",
 #' @param ratioEdges  : percentage of existing edges which are added to the training set
 #' @param ratioMissingNode  : percentage of existing nodes which are not considered. This is used to emulate latent variables.
 #' @param goParallel : if TRUE it uses parallelism
-#' @param gini : if TRUE it uses parallelism
+#' @param gini : if NULL it use feature selection
 #' @param verbose  : if TRUE it prints the state of progress
 #' @param type : type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
