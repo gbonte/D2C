@@ -504,7 +504,7 @@ setOldClass("randomForest")
 setClass("D2C",
          slots = list(#mod="randomForest", 
                       mod="list", X="matrix",origX="matrix",Y="numeric",
-                      descr="D2C.descriptor",scaled="numeric",rank="numeric",center="numeric",
+                      descr="D2C.descriptor",scaled="numeric",features="numeric",center="numeric",
                       allEdges="list",ratioMissingNode="numeric",ratioEdges="numeric",
                       max.features="numeric",type="character"
          ))
@@ -735,8 +735,9 @@ setMethod("initialize",
             if (length(wna)>0)
               features<-setdiff(features,wna)
             
-            
-            
+            X<-scale(X[,features])
+            .Object@scaled=attr(X,"scaled:scale")
+            .Object@center=attr(X,"scaled:center")
             listRF<-list()
             for (rep in 1:10){
               w0<-which(Y==0)
@@ -748,14 +749,8 @@ setMethod("initialize",
                 w1<-sample(w1,length(w0))
               Xb<-X[c(w0,w1),]
               Yb<-Y[c(w0,w1)]
-              
-              
-              
               .Object@origX<-X
               
-              Xb<-scale(Xb[,features])
-              .Object@scaled=attr(Xb,"scaled:scale")
-              .Object@center=attr(Xb,"scaled:center")
               .Object@Y=Y
               .Object@allEdges=allEdges
               if (length(gini)>0){
@@ -770,13 +765,10 @@ setMethod("initialize",
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }
-              listRF<-c(listRF,list(RF))
+              listRF<-c(listRF,list(list(mod=RF,feat=rank)))
             }
             .Object@X=Xb
-            .Object@rank=features[rank]
-            .Object@scaled=.Object@scaled[rank]
-            .Object@center=.Object@center[rank]
-            .Object@rank=features[rank]
+            .Object@features=features
             .Object@mod=listRF
             
             .Object
@@ -831,9 +823,7 @@ setMethod("predict", signature="D2C",
             }
             if (any(is.infinite(X_descriptor)))
               stop("Error in D2C::predict: infinite value ")
-            
-            X_descriptor=X_descriptor[object@rank]
-            
+            X_descriptor=X_descriptor[object@features]
             
             X_descriptor=scale(array(X_descriptor,c(1,length(X_descriptor))),
                                object@center,object@scaled)
@@ -842,9 +832,10 @@ setMethod("predict", signature="D2C",
             Response<-NULL
             Prob<-NULL
             for (r in 1:length(object@mod)){
-              mod=object@mod[[r]]
-              Response = c( Response, predict(mod, X_descriptor, type="response"))
-              Prob = c(Prob,predict(mod, X_descriptor, type="prob")[,"1"])
+              mod=object@mod[[r]]$mod
+              fs=object@mod[[r]]$feat
+              Response = c( Response, predict(mod, X_descriptor[fs], type="response"))
+              Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])
             }
             
             out[["response"]] =round(mean(Response))
