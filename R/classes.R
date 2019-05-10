@@ -9,7 +9,7 @@
 setClass("D2C.descriptor",
          slots = list(lin="logical", acc="logical",
                       struct="logical",pq="numeric",
-                      bivariate="logical",ns="numeric"))
+                      bivariate="logical",ns="numeric",boot="character"))
 
 ##' creation of a D2C.descriptor
 ##' @name D2C descriptor
@@ -20,6 +20,7 @@ setClass("D2C.descriptor",
 ##' @param pq :a vector of quantiles used to compute the descriptors
 ##' @param bivariate \{TRUE, FALSE\}: if TRUE it includes also the descriptors of the bivariate dependence
 ##' @param ns : size of the Markov Blanket returned by the mIMR algorithm
+##' @param boot : bootstrap algorithm
 ##' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 ##' @examples
 ##' require(RBGL)
@@ -32,7 +33,7 @@ setMethod("initialize",
           "D2C.descriptor",
           function(.Object, lin=TRUE, acc=TRUE,
                    struct=TRUE,pq=c(0.1, 0.25, 0.5, 0.75, 0.9),
-                   bivariate=FALSE,ns=4)
+                   bivariate=FALSE,ns=4,boot="rank")
           {
             
             .Object@lin <- lin
@@ -41,6 +42,7 @@ setMethod("initialize",
             .Object@bivariate <- bivariate
             .Object@pq <- pq
             .Object@ns <- ns
+            .Object@boot <- boot
             .Object
           }
 )
@@ -560,7 +562,7 @@ setMethod("initialize",
             FF<-NULL
             
             FF<-foreach (ii=1:sDAG@NDAG) %op%{
-              ##         for (ii in 1:sDAG@NDAG)  {
+            ##           for (ii in 1:sDAG@NDAG)  {
               set.seed(ii)
               
               DAG = sDAG@list.DAGs[[ii]]
@@ -582,19 +584,19 @@ setMethod("initialize",
               
               ##choose which edge to train / predict and find the right label
               nEdge = length(edgeList(DAG))
-              sz=min(max(1,round(nEdge*ratioEdges)),20)
+              sz=max(1,round(nEdge*ratioEdges))
               
               if (type=="is.parent"){
                 edgesM = matrix(unlist(sample(edgeList(DAG2),
                                               size = sz,replace = F)),ncol=2,byrow = TRUE)
-                edgesM = rbind(edgesM,t(replicate(n =sz ,
+                edgesM = rbind(edgesM,t(replicate(n =2*sz ,
                                                   sample(keepNode,size=2,replace = FALSE)))) ## random edges
               } else {
                 
                 edgesM = t(replicate(n =2*sz ,sample(keepNode,size=2,replace = FALSE))) ## random edges
               }
               nEdges =  NROW(edgesM)
-              
+             
               rev<-TRUE  
               ### if TRUE, it uses both directions of the edge to train the learner 
               ### (i.e. if i is parent of j, it is also true that j is a child of i)
@@ -616,12 +618,12 @@ setMethod("initialize",
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,mimr=FALSE)
+                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
                   } else {
                     
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns)
+                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
                   }
                   
                   
@@ -650,11 +652,11 @@ setMethod("initialize",
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,mimr=FALSE)
+                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
                   } else {
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns)
+                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
                   }
                   
                   if (type=="is.parent")
@@ -684,12 +686,12 @@ setMethod("initialize",
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,mimr=FALSE)
+                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
                   } else {
                     
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns)
+                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
                     
                     
                     
@@ -729,7 +731,6 @@ setMethod("initialize",
             Y<-do.call(c,lapply(FF,"[[",2))
             allEdges<-lapply(FF,"[[",3)
             
-            
             features<-1:NCOL(X)
             wna<-which(apply(X,2,sd)<0.01)
             if (length(wna)>0)
@@ -738,6 +739,11 @@ setMethod("initialize",
             X<-scale(X[,features])
             .Object@scaled=attr(X,"scaled:scale")
             .Object@center=attr(X,"scaled:center")
+            .Object@origX<-X
+            .Object@features=features
+            .Object@Y=Y
+            .Object@allEdges=allEdges
+            
             listRF<-list()
             for (rep in 1:10){
               w0<-which(Y==0)
@@ -749,16 +755,14 @@ setMethod("initialize",
                 w1<-sample(w1,length(w0))
               Xb<-X[c(w0,w1),]
               Yb<-Y[c(w0,w1)]
-              .Object@origX<-X
               
-              .Object@Y=Y
-              .Object@allEdges=allEdges
               if (length(gini)>0){
                 rank<-match(c(gini),
                             colnames(Xb))
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }else{
+                
                 RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
                 IM<-importance(RF)[,"MeanDecreaseAccuracy"]
                 rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(Xb))]
@@ -767,8 +771,7 @@ setMethod("initialize",
               }
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
             }
-            .Object@X=Xb
-            .Object@features=features
+            
             .Object@mod=listRF
             
             .Object
@@ -814,12 +817,12 @@ setMethod("predict", signature="D2C",
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
                                         acc = object@descr@acc,ns=object@descr@ns,
                                         struct = object@descr@struct,
-                                        pq = object@descr@pq, bivariate =object@descr@bivariate,mimr=FALSE)
+                                        pq = object@descr@pq, bivariate =object@descr@bivariate,boot=descr@boot)
             }else {
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
                                         acc = object@descr@acc,ns=object@descr@ns,
                                         struct = object@descr@struct,
-                                        pq = object@descr@pq, bivariate =object@descr@bivariate)
+                                        pq = object@descr@pq, bivariate =object@descr@bivariate, boot=descr@boot)
             }
             if (any(is.infinite(X_descriptor)))
               stop("Error in D2C::predict: infinite value ")
@@ -834,6 +837,7 @@ setMethod("predict", signature="D2C",
             for (r in 1:length(object@mod)){
               mod=object@mod[[r]]$mod
               fs=object@mod[[r]]$feat
+              
               Response = c( Response, predict(mod, X_descriptor[fs], type="response"))
               Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])
             }
@@ -910,11 +914,11 @@ setMethod(f="updateD2C",
                 if (object@type=="is.mb"){
                   d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                 struct=descr@struct,bivariate=descr@bivariate,
-                                pq=descr@pq,ns=descr@ns,mimr=FALSE)
+                                pq=descr@pq,ns=descr@ns,boot=boot)
                 } else {
                   d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                 struct=descr@struct,bivariate=descr@bivariate,
-                                pq=descr@pq,ns=descr@ns,mimr=TRUE)
+                                pq=descr@pq,ns=descr@ns,boot=boot)
                 }
                 
                 

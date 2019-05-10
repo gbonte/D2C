@@ -47,11 +47,12 @@ npred<-function(X,Y,lin=TRUE){
 descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      lin=FALSE,acc=TRUE,struct=TRUE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
-                     bivariate=FALSE,mimr=TRUE ){
+                     bivariate=FALSE,boot="mimr" ){
   if (bivariate)
-    return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,mimr=mimr),D2C.2(D[,ca],D[,ef])))
+    return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot),D2C.2(D[,ca],D[,ef])))
   else
-    return(c(NROW(D),NCOL(D)/NROW(D),D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,mimr=mimr)))
+    return(c(NROW(D),NCOL(D)/NROW(D),D2C.n(D,ca,ef,ns,lin,acc,struct,
+                                           pq=pq,boot=boot)))
 }
 
 
@@ -75,7 +76,7 @@ E<-function(x){
 
 D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                 lin=FALSE,acc=TRUE,struct=TRUE,
-                pq= c(0.05,0.1,0.25,0.5,0.75,0.9,0.95),mimr=TRUE){
+                pq= c(0.05,0.1,0.25,0.5,0.75,0.9,0.95),boot="mrmr"){
   ## is i cause oj j
   n<-NCOL(D)
   N<-NROW(D)
@@ -90,19 +91,42 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (n>(ns+1)){
     ind<-setdiff(1:n,ca)
     ind<-ind[rankrho(D[,ind],D[,ca],nmax=min(length(ind),50))]
-    if (mimr)
-      MBca<-ind[mimr(D[,ind],D[,ca],nmax=ns,init=TRUE)]
-    else
+    if (boot=="mrmr")
       MBca<-ind[mrmr(D[,ind],D[,ca],nmax=ns)]
+    
+    if (boot=="rank")
+      MBca<-ind[1:ns]
+    
+    MBca2=MBca
+    
+    if (boot=="mimr"){
+      MBca2<-ind[mimreff(D[,ind],D[,ca],nmax=ns)] ## putative list of effects
+      MBca<-ind[mimr(D[,ind],D[,ca],nmax=2*ns,init=TRUE)] 
+      MBca<-setdiff(MBca,MBca2) ## remove putative effects
+      MBca<-MBca[1:ns]
+    }
+    
     
     #### creation of the Markov Blanket of ef (denoted MBef)
     ind<-setdiff(1:n,ef)
     ind<-ind[rankrho(D[,ind],D[,ef],nmax=min(length(ind),50))]
     
-    if (mimr)
-      MBef<-ind[mimr(D[,ind],D[,ef],nmax=ns,init=TRUE)]
-    else
+    if (boot=="mrmr")
       MBef<-ind[mrmr(D[,ind],D[,ef],nmax=ns)]
+    
+    if (boot=="rank")
+      MBef<-ind[1:ns]
+    
+    MBef2<-MBef
+    if (boot=="mimr"){
+      MBef2<-ind[mimreff(D[,ind],D[,ef],nmax=ns)]
+      MBef<-ind[mimr(D[,ind],D[,ef],nmax=2*ns,init=TRUE)]
+      MBef<-setdiff(MBef,MBef2)   ## remove putative effects
+      MBef<-MBef[1:ns]
+    }
+    
+    
+    
   }
   
   namesx<-NULL 
@@ -151,6 +175,9 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   
   MBca<-setdiff(MBca,ef)
   MBef<-setdiff(MBef,ca)
+  
+  MBca2<-setdiff(MBca2,ef)
+  MBef2<-setdiff(MBef2,ca)
   
   if (acc){
     
@@ -225,6 +252,22 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
         I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin)))
       }
     
+    
+    E3.i<-NULL
+    ## Information of MBef2 on MBca given ca
+    for (i in 1:length(MBca))
+      for (j in 1:length(MBef2)){
+        E3.i<-c(E3.i,(norminf(D[,MBca[i]],D[,MBef2[j]],D[,ca],lin=lin)))
+      }
+    
+    E3.j<-NULL
+    ## Information of MBef on MBca2 given ef
+    for (i in 1:length(MBca2))
+      for (j in 1:length(MBef)){
+        E3.j<-c(E3.j,(norminf(D[,MBca2[i]],D[,MBef[j]],D[,ef],lin=lin)))
+      }
+    
+    
     G1.i<-NULL
     ## Information of Mbef on ca 
     
@@ -276,7 +319,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE),
          quantile(G1.i,probs=pq,na.rm=TRUE),quantile(G1.j,probs=pq,na.rm=TRUE),
          quantile(G2.i,probs=pq,na.rm=TRUE),quantile(G2.j,probs=pq,na.rm=TRUE),
-         quantile(G3.i,probs=pq,na.rm=TRUE),quantile(G3.j,probs=pq,na.rm=TRUE))
+         quantile(G3.i,probs=pq,na.rm=TRUE),quantile(G3.j,probs=pq,na.rm=TRUE),
+         quantile(E3.i,probs=pq,na.rm=TRUE),quantile(E3.j,probs=pq,na.rm=TRUE))
     
     namesx<-c(namesx,"delta","delta2",
               "gini.delta","gini.delta2",
@@ -288,7 +332,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)),
               paste0("G1.i",1:length(pq)), paste0("G1.j",1:length(pq)),
               paste0("G2.i",1:length(pq)), paste0("G2.j",1:length(pq)),
-              paste0("G3.i",1:length(pq)), paste0("G3.j",1:length(pq)))
+              paste0("G3.i",1:length(pq)), paste0("G3.j",1:length(pq)),
+              paste0("E3.i",1:length(pq)), paste0("E3.j",1:length(pq)))
   } ## if acc
   
   if (length(names(x))!=length(namesx))

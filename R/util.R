@@ -509,10 +509,6 @@ mimr<-function(X,Y,nmax=5,
       s<-which.max(mrmr)
       subs<-c(subs,s)
     }
-    
-    
-    
-    
   }
   
   ra<-subset[subs]
@@ -523,6 +519,145 @@ mimr<-function(X,Y,nmax=5,
   ra
   
 }
+
+mimrmat<-function(X,Y,nmax=5,
+                  init=TRUE,lambda=0.5,
+                  spouse.removal=TRUE,R=100){
+  if (var(Y)<0.01)
+    return(1:nmax)
+  
+  m<-NCOL(Y) # number of outputs
+  n<-NCOL(X)
+  nmax<-min(n-2,nmax)
+  orign<-n
+  N<-NROW(X)
+  H<-apply(X,2,var)
+  HY<-var(Y)
+  CY<-corXY(X,Y)
+  Iy<-cor2I2(CY)
+  subset<-1:n
+  pv.rho<-ppears(c(CY),N+numeric(n))
+  if (spouse.removal){
+    pv<-ppears(c(CY),N+numeric(n))
+    s<-sort(pv,decreasing=TRUE,index.return=TRUE)
+    hw<-max(1,min(n-nmax,length(which(s$x>0.05))))
+    spouse<-s$ix[1:hw]
+    subset<-setdiff(1:n,s$ix[1:hw])
+    X<-X[,subset]
+    Iy<-Iy[subset]
+    n<-NCOL(X)
+  }
+  CCx<-cor(X)
+  Ix<-cor2I2(CCx)
+  ## mutual information
+  Ixx<-Icond(X,z=Y,lambda=0.02)
+  f<-function(x,y){
+    if (x==1 && y==1)
+      return(1)
+    return(-1)
+  }
+  best=-Inf
+  for (r in 1:R){
+    if (runif(1)<0.5 || r <10)
+      C<-sample(c(-1,1),n,replace=TRUE)
+    else{
+      C=bestC
+      i=sample(n,1)
+      C[i]=-C[i]
+    }
+    wC=which(C>0)
+    Sy=sum(Iy[wC])
+    MC=outer(C,C,Vectorize(f))
+    S=MC*Ixx-MC*Ix
+    diag(S)=0
+    
+    if ((sum(S)+Sy)>best){
+      best=sum(S)+Sy
+      bestC=C
+      print(best)
+    }
+    
+  }
+  subs=sort(bestC,decr=TRUE,index=TRUE)$ix[1:nmax]
+  
+  ra<-subset[subs]
+  
+  if (nmax>length(ra))
+    ra<-c(ra,setdiff(1:orign,ra))
+  
+  ra
+}
+
+mimreff<-function(X,Y,nmax=5,
+                  init=TRUE,lambda=0.5,
+                  spouse.removal=TRUE){
+  if (var(Y)<0.01)
+    return(1:nmax)
+  
+  m<-NCOL(Y) # number of outputs
+  n<-NCOL(X)
+  nmax<-min(n-2,nmax)
+  orign<-n
+  N<-NROW(X)
+  H<-apply(X,2,var)
+  HY<-var(Y)
+  CY<-corXY(X,Y)
+  Iy<-cor2I2(CY)
+  subset<-1:n
+  pv.rho<-ppears(c(CY),N+numeric(n))
+  if (spouse.removal){
+    pv<-ppears(c(CY),N+numeric(n))
+    s<-sort(pv,decreasing=TRUE,index.return=TRUE)
+    hw<-max(1,min(n-nmax,length(which(s$x>0.05))))
+    spouse<-s$ix[1:hw]
+    subset<-setdiff(1:n,s$ix[1:hw])
+    X<-X[,subset]
+    Iy<-Iy[subset]
+    n<-NCOL(X)
+  }
+  
+  
+  CCx<-cor(X)
+  Ix<-cor2I2(CCx)
+  ## mutual information
+  Ixx<-Icond(X,z=Y,lambda=0.02)
+  ## conditional information
+  Inter<-array(NA,c(n,n))
+  
+  max.kj<--Inf
+  for (kk in 1:(n-1)){
+    for (jj in (kk+1):n){
+      Inter[kk,jj]<- (1-lambda)*(Iy[kk]+Iy[jj])+lambda*(Ixx[kk,jj]-Ix[kk,jj])
+      Inter[jj,kk]<-Inter[kk,jj]
+      if (Inter[kk,jj]>max.kj){
+        max.kj<-Inter[kk,jj]
+        causes<-c(kk,jj)
+      }
+    }
+  }
+  
+  
+  subs<-NULL
+  
+  while (length(subs)< nmax){
+    score<-numeric(n)-Inf
+    subs2<-c(subs,causes)
+    if (length(subs2)>=(n-1))
+      score[-subs2]<- (1-lambda)*Iy[-subs2]-lambda*mean(-Ix[subs2,-subs2]+Ixx[subs2,-subs2])
+    else
+      score[-subs2]<- (1-lambda)*Iy[-subs2]-lambda*apply(-Ix[subs2,-subs2]+Ixx[subs2,-subs2],2,mean)
+    
+    s<-which.max(score)
+    subs<-c(subs,s)
+  }
+  ra<-subset[subs]
+  if (nmax>length(ra))
+    ra<-c(ra,setdiff(1:orign,ra))
+  
+  ra
+}
+
+
 
 
 mrmr<-function(X,Y,nmax=5,first=NULL,all=FALSE,back=FALSE,lambda=1,categ=FALSE){
