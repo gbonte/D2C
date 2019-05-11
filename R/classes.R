@@ -817,12 +817,14 @@ setMethod("predict", signature="D2C",
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
                                         acc = object@descr@acc,ns=object@descr@ns,
                                         struct = object@descr@struct,
-                                        pq = object@descr@pq, bivariate =object@descr@bivariate,boot=descr@boot)
+                                        pq = object@descr@pq, bivariate =object@descr@bivariate,
+                                        boot=object@descr@boot)
             }else {
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
                                         acc = object@descr@acc,ns=object@descr@ns,
                                         struct = object@descr@struct,
-                                        pq = object@descr@pq, bivariate =object@descr@bivariate, boot=descr@boot)
+                                        pq = object@descr@pq, bivariate =object@descr@bivariate, 
+                                        boot=object@descr@boot)
             }
             if (any(is.infinite(X_descriptor)))
               stop("Error in D2C::predict: infinite value ")

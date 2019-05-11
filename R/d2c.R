@@ -267,7 +267,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
         E3.j<-c(E3.j,(norminf(D[,MBca2[i]],D[,MBef[j]],D[,ef],lin=lin)))
       }
     
-    
+    if (FALSE){
     G1.i<-NULL
     ## Information of Mbef on ca 
     
@@ -308,7 +308,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
       for (j in 1:length(MBef)){
         G3.j<-c(G3.j,(norminf(D[,MBca[i]],E(D[,MBef[j]]),D[,ef],lin=lin)))
       }
-    
+    } ## if FALSE
     
     x<-c(x,delta,delta2,
          gini.delta,gini.delta2,
@@ -317,8 +317,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
          quantile(I2.i,probs=pq,na.rm=TRUE),quantile(I2.j,probs=pq,na.rm=TRUE),
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE),
-         quantile(G1.i,probs=pq,na.rm=TRUE),quantile(G1.j,probs=pq,na.rm=TRUE),
-         quantile(G2.i,probs=pq,na.rm=TRUE),quantile(G2.j,probs=pq,na.rm=TRUE),
+        # quantile(G1.i,probs=pq,na.rm=TRUE),quantile(G1.j,probs=pq,na.rm=TRUE),
+        # quantile(G2.i,probs=pq,na.rm=TRUE),quantile(G2.j,probs=pq,na.rm=TRUE),
          quantile(G3.i,probs=pq,na.rm=TRUE),quantile(G3.j,probs=pq,na.rm=TRUE),
          quantile(E3.i,probs=pq,na.rm=TRUE),quantile(E3.j,probs=pq,na.rm=TRUE))
     
@@ -330,9 +330,9 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)),
-              paste0("G1.i",1:length(pq)), paste0("G1.j",1:length(pq)),
-              paste0("G2.i",1:length(pq)), paste0("G2.j",1:length(pq)),
-              paste0("G3.i",1:length(pq)), paste0("G3.j",1:length(pq)),
+           #   paste0("G1.i",1:length(pq)), paste0("G1.j",1:length(pq)),
+          #    paste0("G2.i",1:length(pq)), paste0("G2.j",1:length(pq)),
+          #    paste0("G3.i",1:length(pq)), paste0("G3.j",1:length(pq)),
               paste0("E3.i",1:length(pq)), paste0("E3.j",1:length(pq)))
   } ## if acc
   
