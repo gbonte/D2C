@@ -1,7 +1,7 @@
 #' @import MASS randomForest corpcor  lazy
 
 
-npred<-function(X,Y,lin=TRUE){
+npred<-function(X,Y,lin=TRUE,norm=TRUE){
   ## normalized mean squared error of the dependency
   N<-NROW(X)
   n<-NCOL(X)
@@ -24,9 +24,31 @@ npred<-function(X,Y,lin=TRUE){
   #  Itr=sample(1:N,min(50,round(2*N/3)))
   #  Its=setdiff(1:N,Itr)
   # e<-Y[Its]-rf.pred(X[Itr,],Y[Itr],X[Its,],class=FALSE,ntree=5)
-  nmse<-mean(e^2)/var(Y) 
-  max(1e-3,nmse)
+  if (norm){
+    nmse<-mean(e^2)/var(Y) 
+    return(max(1e-3,nmse))
+  }
+  
+  return(mean(e^2))
 }
+
+
+norminf<-function(y,x1,x2=NULL,lin=TRUE){
+  ## Normalized conditional information of x1 to y given x2
+  ## I(x1;y| x2)= (H(y|x2)-H(y | x1,x2))/H(y|x2)
+  
+  if (is.null(x2)){ ## I(x1;y)= (H(y)-H(y | x1))/H(y)
+    return(max(0,1-npred(x1,y,lin=lin,norm=TRUE)))
+    
+  }
+  
+  np<-npred(x2,y,lin=lin,norm=FALSE)
+  x1x2<-cbind(x1,x2)
+  delta<- max(0,np-npred(x1x2,y,lin=lin,norm=FALSE))/(np+0.01)
+  return(delta)
+  
+}
+
 
 #' compute descriptor
 #' @param D :  the observed data matrix of size [N,n], where N is the number of samples and n is the number of nodes
@@ -58,17 +80,6 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
 
 
 
-
-norminf<-function(y,x1,x2,lin=TRUE){
-  ## Normalized conditional information of x1 to y given x2
-  ## I(x1;y| x2)= (H(y|x1)-H(y | x1,x2))/H(y|x1)
-  
-  np<-npred(x1,y,lin=lin)
-  x1x2<-cbind(x1,x2)
-  delta<- max(0,np-npred(x1x2,y,lin=lin))/(np+0.01)
-  return(delta)
-  
-}
 
 E<-function(x){
   return(ecdf(x)(x))
@@ -182,17 +193,17 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (acc){
     
     ## relevance of ca for ef
-    ca.ef<-npred(D[,ca],D[,ef],lin=lin) #I(zi;zj)
+    ca.ef<-norminf(D[,ca],D[,ef],lin=lin) #I(zi;zj)
     ## relevance of ef for ca
-    ef.ca<-npred(D[,ef],D[,ca],lin=lin)
+    ef.ca<-norminf(D[,ef],D[,ca],lin=lin)
     
     
     E.ef=ecdf(D[,ef])(D[,ef]) ## empirical cdf of D[,ef]
     E.ca=ecdf(D[,ca])(D[,ca])
     ## gini relevance of ca for ef
-    gini.ca.ef<-npred(D[,ca],E.ef,lin=lin)
+    gini.ca.ef<-norminf(D[,ca],E.ef,lin=lin)
     ## gini relevance of ef for ca
-    gini.ef.ca<-npred(D[,ef],E.ca,lin=lin)
+    gini.ef.ca<-norminf(D[,ef],E.ca,lin=lin)
     
     delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin) #I(zi;zj;Mj)
     delta2<- norminf(D[,ca],D[,ef],D[,MBca],lin=lin) #I(zi;zj;Mi)
@@ -215,14 +226,14 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     ## Information of Mbef on ca 
     
     for (j in 1:length(MBef)){
-      I1.i<-c(I1.i, (npred(D[,MBef[j]],D[,ca],lin=lin)))  ## I(Mj^k;zi) equation (11)
+      I1.i<-c(I1.i, (norminf(D[,MBef[j]],D[,ca],lin=lin)))  ## I(Mj^k;zi) equation (11)
     }
     
     I1.j<-NULL
     ## Information of Mbca on ef 
     
     for (j in 1:length(MBca)){
-      I1.j<-c(I1.j, (npred(D[,MBca[j]],D[,ef],lin=lin))) ## I(Mi^k;zj) equation (11)
+      I1.j<-c(I1.j, (norminf(D[,MBca[j]],D[,ef],lin=lin))) ## I(Mi^k;zj) equation (11)
     }
     
     I2.i<-NULL
@@ -251,6 +262,37 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
       for (j in 1:length(MBef)){
         I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin))) ## I(Mi^k; Mj^k|zj) equation (9-10)
       }
+    
+    
+    
+    Int1.i<-NULL
+    ## Information of Mbef on ca given ef
+    for (j in 1:length(MBef)){
+      Int1.i<-c(Int1.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)-norminf(D[,ca], D[,MBef[j]],lin=lin)) ## I(zi; Mj^k|zj)-I(zi; Mj^k)
+    }
+    
+    Int1.j<-NULL
+    ## Information of Mbca on ef given ca
+    for (j in 1:length(MBca)){
+      Int1.j<-c(Int1.j, norminf(D[,ef], D[,MBca[j]],D[,ca],lin=lin)-norminf(D[,ef], D[,MBca[j]],lin=lin)) ## I(zj; Mi^k|zi)- I(zj; Mi^k)
+    }
+    
+    
+    Int2.i<-NULL
+    ## Information of MBef on MBca given ca
+    for (i in 1:length(MBca))
+      for (j in 1:length(MBef)){
+        Int2.i<-c(Int2.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin)-norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zi)-I(Mi^k; Mj^k)
+      }
+    
+    Int2.j<-NULL
+    ## Information of MBef on MBca given ef
+    for (i in 1:length(MBca))
+      for (j in 1:length(MBef)){
+        Int2.j<-c(Int2.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin)-norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zj)-I(Mi^k; Mj^k)
+      }
+    
+    
     
     if (FALSE){
       E3.i<-NULL
@@ -316,12 +358,14 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
          quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,gini.ca.ef,gini.ef.ca,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
          quantile(I2.i,probs=pq,na.rm=TRUE),quantile(I2.j,probs=pq,na.rm=TRUE),
-         quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE)
+         quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE),
+         quantile(Int1.i,probs=pq,na.rm=TRUE),quantile(Int1.j,probs=pq,na.rm=TRUE),
+         quantile(Int2.i,probs=pq,na.rm=TRUE),quantile(Int2.j,probs=pq,na.rm=TRUE)
          # quantile(G1.i,probs=pq,na.rm=TRUE),quantile(G1.j,probs=pq,na.rm=TRUE),
          # quantile(G2.i,probs=pq,na.rm=TRUE),quantile(G2.j,probs=pq,na.rm=TRUE),
          # quantile(G3.i,probs=pq,na.rm=TRUE),quantile(G3.j,probs=pq,na.rm=TRUE),
          #quantile(E3.i,probs=pq,na.rm=TRUE),quantile(E3.j,probs=pq,na.rm=TRUE)
-         )
+    )
     
     namesx<-c(namesx,"delta","delta2",
               "gini.delta","gini.delta2",
@@ -330,12 +374,14 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
               "ca.ef","ef.ca","gini.ca.ef","gini.ef.ca",
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
-              paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq))
+              paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)),
+              paste0("Int1.i",1:length(pq)), paste0("Int1.j",1:length(pq)),
+              paste0("Int2.i",1:length(pq)), paste0("Int2.j",1:length(pq))
               #   paste0("G1.i",1:length(pq)), paste0("G1.j",1:length(pq)),
               #    paste0("G2.i",1:length(pq)), paste0("G2.j",1:length(pq)),
               #    paste0("G3.i",1:length(pq)), paste0("G3.j",1:length(pq)),
               #paste0("E3.i",1:length(pq)), paste0("E3.j",1:length(pq))
-              )
+    )
   } ## if acc
   
   if (length(names(x))!=length(namesx))
