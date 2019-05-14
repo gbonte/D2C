@@ -324,7 +324,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
-      Int2.j<-c(Int2.j,(norminf(D[,MBef[i]],D[,MBef[j]],D[,ef],lin=lin)
+      Int3.j<-c(Int3.j,(norminf(D[,MBef[i]],D[,MBef[j]],D[,ef],lin=lin)
                         -norminf(D[,MBef[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zj)-I(Mi^k; Mj^k)
     }
     
