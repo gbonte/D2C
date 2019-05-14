@@ -9,7 +9,8 @@
 setClass("D2C.descriptor",
          slots = list(lin="logical", acc="logical",
                       struct="logical",pq="numeric",
-                      bivariate="logical",ns="numeric",boot="character"))
+                      bivariate="logical",ns="numeric",
+                      maxs="numeric",boot="character"))
 
 ##' creation of a D2C.descriptor
 ##' @name D2C descriptor
@@ -21,6 +22,7 @@ setClass("D2C.descriptor",
 ##' @param bivariate \{TRUE, FALSE\}: if TRUE it includes also the descriptors of the bivariate dependence
 ##' @param ns : size of the Markov Blanket returned by the mIMR algorithm
 ##' @param boot : bootstrap algorithm
+##' @param maxs : max size of distribution samples
 ##' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 ##' @examples
 ##' require(RBGL)
@@ -33,7 +35,7 @@ setMethod("initialize",
           "D2C.descriptor",
           function(.Object, lin=TRUE, acc=TRUE,
                    struct=TRUE,pq=c(0.1, 0.25, 0.5, 0.75, 0.9),
-                   bivariate=FALSE,ns=4,boot="rank")
+                   bivariate=FALSE,ns=4,boot="rank",maxs=20)
           {
             
             .Object@lin <- lin
@@ -42,6 +44,7 @@ setMethod("initialize",
             .Object@bivariate <- bivariate
             .Object@pq <- pq
             .Object@ns <- ns
+            .Object@maxs <- maxs
             .Object@boot <- boot
             .Object
           }
@@ -243,7 +246,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-              ##  for (i in 1:NDAG){
+            ##    for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -562,7 +565,7 @@ setMethod("initialize",
             FF<-NULL
             
             FF<-foreach (ii=1:sDAG@NDAG) %op%{
-            ##           for (ii in 1:sDAG@NDAG)  {
+            #for (ii in 1:sDAG@NDAG)  {   ### D2C
               set.seed(ii)
               
               DAG = sDAG@list.DAGs[[ii]]
@@ -618,12 +621,12 @@ setMethod("initialize",
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs, boot=descr@boot)
                   } else {
                     
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
                   }
                   
                   
@@ -652,11 +655,11 @@ setMethod("initialize",
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
                   } else {
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
                   }
                   
                   if (type=="is.parent")
@@ -686,12 +689,12 @@ setMethod("initialize",
                   if (type=="is.mb"){
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
                   } else {
                     
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,boot=descr@boot)
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
                     
                     
                     
@@ -916,11 +919,11 @@ setMethod(f="updateD2C",
                 if (object@type=="is.mb"){
                   d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                 struct=descr@struct,bivariate=descr@bivariate,
-                                pq=descr@pq,ns=descr@ns,boot=boot)
+                                pq=descr@pq,maxs=descr@maxs,ns=descr@ns,boot=descr@boot)
                 } else {
                   d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                 struct=descr@struct,bivariate=descr@bivariate,
-                                pq=descr@pq,ns=descr@ns,boot=boot)
+                                pq=descr@pq,maxs=descr@maxs,ns=descr@ns,boot=descr@boot)
                 }
                 
                 
