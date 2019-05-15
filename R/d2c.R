@@ -312,7 +312,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
-      Int2.i<-c(Int2.i,(norminf(D[,MBca[i]],D[,MBca[j]],D[,ca],lin=lin)
+      Int3.i<-c(Int3.i,(norminf(D[,MBca[i]],D[,MBca[j]],D[,ca],lin=lin)
                         -norminf(D[,MBca[i]],D[,MBca[j]],lin=lin))) ## I(Mi^k; Mi^k|zi)-I(Mi^k; Mi^k)
     }
     IJ<-expand.grid(1:length(MBef),1:length(MBef))
