@@ -69,7 +69,7 @@ norminf<-function(y,x1,x2=NULL,lin=TRUE){
 descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      lin=FALSE,acc=TRUE,struct=TRUE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
-                     bivariate=FALSE,maxs,boot="mimr" ){
+                     bivariate=FALSE,maxs=10,boot="mimr" ){
   if (bivariate)
     return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs),D2C.2(D[,ca],D[,ef])))
   else

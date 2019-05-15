@@ -815,7 +815,7 @@ setMethod("predict", signature="D2C",
             
             if (any(apply(data,2,sd)<0.01))
               stop("Error in D2C::predict: Remove constant variables from dataset. ")
-            browser()
+            
             if (object@type=="is.mb"){
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
                                         acc = object@descr@acc,ns=object@descr@ns,
