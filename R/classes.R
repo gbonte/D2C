@@ -819,13 +819,14 @@ setMethod("predict", signature="D2C",
             if (object@type=="is.mb"){
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
                                         acc = object@descr@acc,ns=object@descr@ns,
+                                        maxs=object@descr@maxs,
                                         struct = object@descr@struct,
                                         pq = object@descr@pq, bivariate =object@descr@bivariate,
                                         boot=object@descr@boot)
             }else {
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
                                         acc = object@descr@acc,ns=object@descr@ns,
-                                        struct = object@descr@struct,
+                                        maxs=object@descr@maxs,struct = object@descr@struct,
                                         pq = object@descr@pq, bivariate =object@descr@bivariate, 
                                         boot=object@descr@boot)
             }
