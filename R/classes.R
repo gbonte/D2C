@@ -810,7 +810,7 @@ setMethod("initialize",
 #' @export
 setMethod("predict", signature="D2C",
           function(object,i,j,data)
-          {
+          { 
             out = list()
             
             if (any(apply(data,2,sd)<0.01))
