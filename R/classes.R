@@ -426,10 +426,13 @@ setMethod("initialize",
               ## for (i in 1:NDAG){
               set.seed(seed+i)
               
+              nseries.i<-nseries
+              if (length(nseries)>1)
+                nseries.i<-sample(nseries[1]:nseries[2],1)
+              
               N.i<-N
               if (length(N)>1)
                 N.i<-sample(N[1]:N[2],1)
-              
               
               noNodes.i<-max(3,noNodes[1])
               if (length(noNodes)==2)
@@ -443,8 +446,8 @@ setMethod("initialize",
               
               num=sample(typeser,1)
               
-              if (nseries>1)
-                G<-genSTAR(n=nseries,nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
+              if (nseries.i>1)
+                G<-genSTAR(n=nseries.i,nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               else
                 G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               
@@ -809,8 +812,7 @@ setMethod("initialize",
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @export
 setMethod("predict", signature="D2C",
-          function(object,i,j,data)
-          { 
+          function(object,i,j,data){ 
             out = list()
             
             if (any(apply(data,2,sd)<0.01))
@@ -821,13 +823,17 @@ setMethod("predict", signature="D2C",
                                         acc = object@descr@acc,ns=object@descr@ns,
                                         maxs=object@descr@maxs,
                                         struct = object@descr@struct,
-                                        pq = object@descr@pq, bivariate =object@descr@bivariate,
+                                        pq = object@descr@pq, 
+                                        bivariate =object@descr@bivariate,
                                         boot=object@descr@boot)
             }else {
               X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
-                                        acc = object@descr@acc,ns=object@descr@ns,
-                                        maxs=object@descr@maxs,struct = object@descr@struct,
-                                        pq = object@descr@pq, bivariate =object@descr@bivariate, 
+                                        acc = object@descr@acc,
+                                        ns=object@descr@ns,
+                                        maxs=object@descr@maxs,
+                                        struct = object@descr@struct,
+                                        pq = object@descr@pq, 
+                                        bivariate =object@descr@bivariate, 
                                         boot=object@descr@boot)
             }
             if (any(is.infinite(X_descriptor)))
