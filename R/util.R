@@ -1096,12 +1096,14 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
     }
     if (num==7){
       nfs=2
-      #1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sd*rnorm(1)
+      #y[i]=(0.4-2*cos(40*mean(Y[N-5,neigh]))*exp(-30*mean(Y[N-5,neigh])^2))*mean(Y[N-5,neigh])+(0.5-0.5*exp(-50*mean(Y[N-9,neigh])^2))*mean(Y[N-9,neigh])
       
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
-        y[i]=1.5 *sin(pi/2*mean(Y[N-fs[1],neigh]))-sin(pi/2*mean(Y[N-fs[2],neigh]))+sd*e
+        y[i]=(0.4-2*cos(40*mean(Y[N-fs[1],neigh]))*exp(-30*mean(Y[N-fs[1],neigh])^2))*mean(Y[N-fs[1],neigh])+
+          (0.5-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sd*e
+        
         
       }
     }
@@ -1207,10 +1209,10 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
-        if (mean(Y[N-fs[1],neigh])<1){
-          y[i]=-0.5*mean(Y[N-fs[1],neigh])+sd*e
+        if (abs(mean(Y[N-fs[1],neigh]))<=1){
+          y[i]=0.9*mean(Y[N-fs[1],neigh])+sd*e
         } else {
-          y[i]=0.4*mean(Y[N-fs[1],neigh])+sd*e
+          y[i]=-0.3*mean(Y[N-fs[1],neigh])+sd*e
         }
       }
     } 
