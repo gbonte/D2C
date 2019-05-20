@@ -1019,7 +1019,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
   th0=rnorm(1)
   fs<-sample(0:(nn-2),4)
   state=0
-  
+  browser()
   for (ii in 1:NN){
     N=NROW(Y)
     y=numeric(n)
