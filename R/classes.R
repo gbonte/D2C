@@ -422,8 +422,8 @@ setMethod("initialize",
             if (NDAG<=0)
               return(.Object)
             
-            FF<-foreach (i=1:NDAG) %op%{
-              ## for (i in 1:NDAG){
+           ## FF<-foreach (i=1:NDAG) %op%{
+               for (i in 1:NDAG){
               set.seed(seed+i)
               
               nseries.i<-nseries
