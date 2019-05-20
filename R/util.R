@@ -1014,6 +1014,8 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
   loc=1  ## size of neighborhood
   Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
   ep=0
+  eold=numeric(n)
+  eold2=numeric(n)
   th0=rnorm(1)
   fs<-sample(0:(nn-2),4)
   state=0
@@ -1250,6 +1252,73 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
       }
     }
     
+    if (num==19){
+      nfs=1
+      e=numeric(n)
+      # y=0.7 y(t-1)*e(t-2)+e(t)
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e[i]=rnorm(1)
+        y[i]=0.7*(mean(Y[N-fs[1],neigh]))*sd*eold2[i]+sd*e[i]
+      }
+      eold2=eold
+      eold=e
+    }
+    
+    if (num==20){
+      nfs=2
+      e=numeric(n)
+      # y=0.4 y(t-1)-0.3 y(t-2)+0.5*y(t-1)*e(t-1)+e(t)
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e[i]=rnorm(1)
+        y[i]=0.4*(mean(Y[N-fs[1],neigh]))-0.3*(mean(Y[N-fs[2],neigh]))
+          +0.5*(mean(Y[N-fs[1],neigh]))*sd*eold[i]+sd*e[i]
+      }
+      eold2=eold
+      eold=e
+    }
+    
+    if (num==21){
+      nfs=1
+      e=numeric(n)
+      # y=0.7 abs(y(t-1))/(abs(y(t-1))+2)+e
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e[i]=rnorm(1)
+        y[i]=0.7*abs(mean(Y[N-fs[1],neigh]))/ (abs(mean(Y[N-fs[1],neigh]))+2)+sd*e[i]
+      }
+      eold2=eold
+      eold=e
+    }
+    
+    if (num==22){
+      nfs=1
+      e=numeric(n)
+      # y=0.9 y(t-1)- 0.8 y(t-1)/(1+exp(-10 y(t-1))) +e
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e[i]=rnorm(1)
+        y[i]=0.9*mean(Y[N-fs[1],neigh])
+          -0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e[i]
+      }
+      eold2=eold
+      eold=e
+    }
+    if (num==23){
+      nfs=2
+      e=numeric(n)
+      # y=0.3 y(t-1)+ 0.6 y(t-2)+ (0.1-0.9 y(t-1)+0.8 y(t-2))/(1+exp(-10 y(t-1))) +e
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e[i]=rnorm(1)
+        y[i]=0.3*mean(Y[N-fs[1],neigh]) +0.6 *mean(Y[N-fs[2],neigh])
+        +(0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e[i]
+      }
+      eold2=eold
+      eold=e
+    }
+    print(num)
     Y<-rbind(Y,y)
     
     if (any(is.nan(Y) | abs(Y)>1000)){

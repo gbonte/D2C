@@ -268,39 +268,6 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     }
     
     
-    
-    Int1.i<-NULL
-    ## Information of Mbef on ca given ef
-    for (j in 1:length(MBef)){
-      Int1.i<-c(Int1.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)-norminf(D[,ca], D[,MBef[j]],lin=lin)) ## I(zi; Mj^k|zj)-I(zi; Mj^k)
-    }
-    
-    Int1.j<-NULL
-    ## Information of Mbca on ef given ca
-    for (j in 1:length(MBca)){
-      Int1.j<-c(Int1.j, norminf(D[,ef], D[,MBca[j]],D[,ca],lin=lin)
-                -norminf(D[,ef], D[,MBca[j]],lin=lin)) ## I(zj; Mi^k|zi)- I(zj; Mi^k)
-    }
-    
-    
-    Int2.i<-NULL
-    ## Information of MBef on MBca given ca
-    for (r in 1:NROW(IJ)){
-      i=IJ[r,1]
-      j=IJ[r,2]
-      Int2.i<-c(Int2.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin)
-                        -norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zi)-I(Mi^k; Mj^k)
-    }
-    
-    Int2.j<-NULL
-    ## Information of MBef on MBca given ef
-    for (r in 1:NROW(IJ)){
-      i=IJ[r,1]
-      j=IJ[r,2]
-      Int2.j<-c(Int2.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin)
-                        -norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zj)-I(Mi^k; Mj^k)
-    }
-   
     IJ<-expand.grid(1:length(MBca),1:length(MBca))
    
     IJ<-IJ[which(IJ[,1]<IJ[,2]),]
@@ -325,10 +292,46 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       i=IJ[r,1]
       j=IJ[r,2]
       Int3.j<-c(Int3.j,(norminf(D[,MBef[i]],D[,MBef[j]],D[,ef],lin=lin)
-                        -norminf(D[,MBef[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zj)-I(Mi^k; Mj^k)
+                        -norminf(D[,MBef[i]],D[,MBef[j]],lin=lin))) ## I(Mj^k; Mj^k|zj)-I(Mj^k; Mj^k)
     }
     
     if (FALSE){
+      
+      
+      
+      Int1.i<-NULL
+      ## 
+      for (j in 1:length(MBef)){
+        Int1.i<-c(Int1.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)-norminf(D[,ca], D[,MBef[j]],lin=lin)) ## I(zi; Mj^k|zj)-I(zi; Mj^k)
+      }
+      
+      Int1.j<-NULL
+      ## 
+      for (j in 1:length(MBca)){
+        Int1.j<-c(Int1.j, norminf(D[,ef], D[,MBca[j]],D[,ca],lin=lin)
+                  -norminf(D[,ef], D[,MBca[j]],lin=lin)) ## I(zj; Mi^k|zi)- I(zj; Mi^k)
+      }
+      
+      
+      Int2.i<-NULL
+      ## 
+      for (r in 1:NROW(IJ)){
+        i=IJ[r,1]
+        j=IJ[r,2]
+        Int2.i<-c(Int2.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin)
+                          -norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zi)-I(Mi^k; Mj^k)
+      }
+      
+      Int2.j<-NULL
+      ## 
+      for (r in 1:NROW(IJ)){
+        i=IJ[r,1]
+        j=IJ[r,2]
+        Int2.j<-c(Int2.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin)
+                          -norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zj)-I(Mi^k; Mj^k)
+      }
+      
+      
       E3.i<-NULL
       ## Information of MBef2 on MBca given ca
       for (i in 1:length(MBca))
@@ -393,8 +396,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
          quantile(I2.i,probs=pq,na.rm=TRUE),quantile(I2.j,probs=pq,na.rm=TRUE),
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE),
-         quantile(Int1.i,probs=pq,na.rm=TRUE),quantile(Int1.j,probs=pq,na.rm=TRUE),
-         quantile(Int2.i,probs=pq,na.rm=TRUE),quantile(Int2.j,probs=pq,na.rm=TRUE),
+         #quantile(Int1.i,probs=pq,na.rm=TRUE),quantile(Int1.j,probs=pq,na.rm=TRUE),
+         #quantile(Int2.i,probs=pq,na.rm=TRUE),quantile(Int2.j,probs=pq,na.rm=TRUE),
          quantile(Int3.i,probs=pq,na.rm=TRUE),quantile(Int3.j,probs=pq,na.rm=TRUE)
          # quantile(G1.i,probs=pq,na.rm=TRUE),quantile(G1.j,probs=pq,na.rm=TRUE),
          # quantile(G2.i,probs=pq,na.rm=TRUE),quantile(G2.j,probs=pq,na.rm=TRUE),
@@ -410,8 +413,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)),
-              paste0("Int1.i",1:length(pq)), paste0("Int1.j",1:length(pq)),
-              paste0("Int2.i",1:length(pq)), paste0("Int2.j",1:length(pq)),
+              #paste0("Int1.i",1:length(pq)), paste0("Int1.j",1:length(pq)),
+              #paste0("Int2.i",1:length(pq)), paste0("Int2.j",1:length(pq)),
               paste0("Int3.i",1:length(pq)), paste0("Int3.j",1:length(pq))
               #   paste0("G1.i",1:length(pq)), paste0("G1.j",1:length(pq)),
               #    paste0("G2.i",1:length(pq)), paste0("G2.j",1:length(pq)),
