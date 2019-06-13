@@ -246,7 +246,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-            ##    for (i in 1:NDAG){
+              ##    for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -423,7 +423,7 @@ setMethod("initialize",
               return(.Object)
             
             FF<-foreach (i=1:NDAG) %op%{
-           ##    for (i in 1:NDAG){
+              ##    for (i in 1:NDAG){
               set.seed(seed+i)
               
               nseries.i<-nseries
@@ -511,10 +511,10 @@ setOldClass("randomForest")
 #' An S4 class to store the RF model trained on the basis of the descriptors of NDAG DAGs
 setClass("D2C",
          slots = list(#mod="randomForest", 
-                      mod="list", X="matrix",origX="matrix",Y="numeric",
-                      descr="D2C.descriptor",scaled="numeric",features="numeric",center="numeric",
-                      allEdges="list",ratioMissingNode="numeric",ratioEdges="numeric",
-                      max.features="numeric",type="character"
+           mod="list", X="matrix",origX="matrix",Y="numeric",
+           descr="D2C.descriptor",scaled="numeric",features="numeric",center="numeric",
+           allEdges="list",ratioMissingNode="numeric",ratioEdges="numeric",
+           max.features="numeric",type="character"
          ))
 
 #' creation of a D2C object which preprocesses the list of DAGs and observations contained in sDAG and fits a  Random Forest classifier
@@ -568,7 +568,7 @@ setMethod("initialize",
             FF<-NULL
             
             FF<-foreach (ii=1:sDAG@NDAG) %op%{
-            #for (ii in 1:sDAG@NDAG)  {   ### D2C
+              #for (ii in 1:sDAG@NDAG)  {   ### D2C
               set.seed(ii)
               
               DAG = sDAG@list.DAGs[[ii]]
@@ -602,7 +602,7 @@ setMethod("initialize",
                 edgesM = t(replicate(n =2*sz ,sample(keepNode,size=2,replace = FALSE))) ## random edges
               }
               nEdges =  NROW(edgesM)
-             
+              
               rev<-TRUE  
               ### if TRUE, it uses both directions of the edge to train the learner 
               ### (i.e. if i is parent of j, it is also true that j is a child of i)
@@ -742,10 +742,11 @@ setMethod("initialize",
             if (length(wna)>0)
               features<-setdiff(features,wna)
             
+            .Object@origX<-X
             X<-scale(X[,features])
             .Object@scaled=attr(X,"scaled:scale")
             .Object@center=attr(X,"scaled:center")
-            .Object@origX<-X
+            
             .Object@features=features
             .Object@Y=Y
             .Object@allEdges=allEdges
@@ -858,6 +859,73 @@ setMethod("predict", signature="D2C",
             out[["prob"]]=mean(Prob)
             return(out)
           })
+
+
+#' @docType methods
+setGeneric("joinD2C", def=function(object,...) {standardGeneric("joinD2C")})
+
+#' update of a "D2C" with a list of DAGs and associated observations
+#' @name join current D2C and input D2C
+#' @param object :  D2C to be updated
+#' @param input :  D2C to be joined
+#' @param verbose : TRUE or FALSE
+#' @param goParallel : if TRUE it uses  parallelism
+#' @export
+setMethod(f="joinD2C",
+          signature="D2C",
+          definition=function(object,input,
+                              verbose=TRUE, goParallel= FALSE){
+            
+            `%op%` <- if (goParallel) `%dopar%` else `%do%`
+            ratioMissingNode=object@ratioMissingNode
+            ratioEdges=object@ratioEdges
+            descr=object@descr
+            
+            X<-rbind(object@origX,input@origX)
+            Y<-c(object@Y,input@Y)
+            features<-intersect(object@features,input@features)
+            
+            
+            features<-1:NCOL(X)
+            wna<-which(apply(X,2,sd)<0.01)
+            if (length(wna)>0)
+              features<-setdiff(features,wna)
+            
+            X<-scale(X[,features])
+            object@scaled=attr(X,"scaled:scale")
+            object@center=attr(X,"scaled:center")
+            object@origX=X
+            object@features=features
+            object@Y=Y
+            max.features=object@max.features
+            
+            listRF<-list()
+            for (rep in 1:10){
+              w0<-which(Y==0)
+              w1<-which(Y==1)
+              if (length(w0)>length(w1))
+                w0<-sample(w0,length(w1))
+              
+              if (length(w1)>length(w0))
+                w1<-sample(w1,length(w0))
+              Xb<-X[c(w0,w1),]
+              Yb<-Y[c(w0,w1)]
+              
+              
+              RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
+              IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+              rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(Xb))]
+              Xb=Xb[,rank]
+              RF <- randomForest(x =Xb ,y = factor(Yb))
+              
+              listRF<-c(listRF,list(list(mod=RF,feat=rank)))
+            }
+            
+            object@mod=listRF
+            
+            object
+          }
+)
 
 
 

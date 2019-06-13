@@ -10,6 +10,7 @@ export(H_sigmoid)
 export(H_kernel)
 exportMethods(initialize)
 exportMethods(predict)
+exportMethods(joinD2C)
 export(is.what)
 
 export(is.parent)
