@@ -877,10 +877,7 @@ setMethod(f="joinD2C",
                               verbose=TRUE, goParallel= FALSE){
             
             `%op%` <- if (goParallel) `%dopar%` else `%do%`
-            ratioMissingNode=object@ratioMissingNode
-            ratioEdges=object@ratioEdges
-            descr=object@descr
-            
+              
             X<-rbind(object@origX,input@origX)
             Y<-c(object@Y,input@Y)
             features<-intersect(object@features,input@features)
@@ -890,11 +887,11 @@ setMethod(f="joinD2C",
             wna<-which(apply(X,2,sd)<0.01)
             if (length(wna)>0)
               features<-setdiff(features,wna)
-            
+            object@origX=X
             X<-scale(X[,features])
             object@scaled=attr(X,"scaled:scale")
             object@center=attr(X,"scaled:center")
-            object@origX=X
+            
             object@features=features
             object@Y=Y
             max.features=object@max.features
