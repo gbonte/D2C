@@ -25,7 +25,7 @@ noNodes<-c(15,50)
 N<-c(50,100)
 ## range of number of samples
 
-NDAG=25
+NDAG=250
 ## number of DAGs to be created and simulated
 NDAG.test=200
 

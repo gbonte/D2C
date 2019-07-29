@@ -239,45 +239,47 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     }
     
     I2.i<-NULL
+    I2.ib<-NULL
     ## Information of Mbef on ca given ef
     for (j in 1:length(MBef)){
       backdoor=setdiff(union(MBca,MBef[-j]),c(ca,ef))
-      I2.i<-c(I2.i, norminf(D[,ca], D[,MBef[j]],D[,c(ef,backdoor)],lin=lin)) ## I(zi; Mj^k|zj) equation (8)
+      I2.i<-c(I2.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)) ## I(zi; Mj^k|zj) equation (8)
+      I2.ib<-c(I2.ib, norminf(D[,ca], D[,MBef[j]],D[,c(ef,backdoor)],lin=lin)) 
     }
     
     I2.j<-NULL
+    I2.jb<-NULL
     ## Information of Mbca on ef given ca
     for (j in 1:length(MBca)){
       backdoor=setdiff(union(MBef,MBca[-j]),c(ca,ef))
-      I2.j<-c(I2.j, norminf(D[,ef], D[,MBca[j]],D[,c(ca,backdoor)],lin=lin)) ## I(zj; Mi^k|zi) equation (8)
+      I2.j<-c(I2.j, norminf(D[,ef], D[,MBca[j]],D[,ca],lin=lin)) ## I(zj; Mi^k|zi) equation (8)
+      I2.jb<-c(I2.jb, norminf(D[,ef], D[,MBca[j]],D[,c(ca,backdoor)],lin=lin)) 
     }
     
     IJ<-expand.grid(1:length(MBca),1:length(MBef))
     IJ<-IJ[sample(1:NROW(IJ),min(maxs,NROW(IJ))),]
     
     I3.i<-NULL
+    I3.ib<-NULL
     ## Information of MBef on MBca given ca
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
       backdoor=setdiff(union(MBca[-i],MBef[-j]),ca)
-      if (length(backdoor)>0)
-        I3.i<-c(I3.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ca,backdoor)],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
-      else
-        I3.i<-c(I3.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      I3.ib<-c(I3.ib,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ca,backdoor)],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      I3.i<-c(I3.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
       
     }
     
     I3.j<-NULL
+    I3.jb<-NULL
     ## Information of MBef on MBca given ef
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
       backdoor=setdiff(union(MBca[-i],MBef[-j]),ef)
-      if (length(backdoor)>0)
-        I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ef,backdoor)],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
-      else
-        I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin))) ## I(Mi^k; Mj^k|zj) equation (9-10)
+      I3.jb<-c(I3.jb,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ef,backdoor)],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin))) ## I(Mi^k; Mj^k|zj) equation (9-10)
       
       
     }
@@ -410,7 +412,9 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
          quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,gini.ca.ef,gini.ef.ca,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
          quantile(I2.i,probs=pq,na.rm=TRUE),quantile(I2.j,probs=pq,na.rm=TRUE),
+         quantile(I2.ib,probs=pq,na.rm=TRUE),quantile(I2.jb,probs=pq,na.rm=TRUE),
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE),
+         quantile(I3.ib,probs=pq,na.rm=TRUE),quantile(I3.jb,probs=pq,na.rm=TRUE),
          #quantile(Int1.i,probs=pq,na.rm=TRUE),quantile(Int1.j,probs=pq,na.rm=TRUE),
          #quantile(Int2.i,probs=pq,na.rm=TRUE),quantile(Int2.j,probs=pq,na.rm=TRUE),
          quantile(Int3.i,probs=pq,na.rm=TRUE),quantile(Int3.j,probs=pq,na.rm=TRUE)
@@ -427,7 +431,9 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
               "ca.ef","ef.ca","gini.ca.ef","gini.ef.ca",
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
+              paste0("I2.ib",1:length(pq)), paste0("I2.jb",1:length(pq)),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)),
+              paste0("I3.ib",1:length(pq)), paste0("I3.jb",1:length(pq)),
               #paste0("Int1.i",1:length(pq)), paste0("Int1.j",1:length(pq)),
               #paste0("Int2.i",1:length(pq)), paste0("Int2.j",1:length(pq)),
               paste0("Int3.i",1:length(pq)), paste0("Int3.j",1:length(pq))
