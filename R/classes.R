@@ -76,7 +76,8 @@ setClass("DAG.network",  slots = list(network = "graph",additive="logical"))
 setMethod("initialize", signature="DAG.network",
           function(.Object, network,
                    sdn=0.5,
-                   sigma=function(x) return(rnorm(n = 1,sd = sdn)),
+                   sigma=function(x) {
+                     return(rnorm(n = 1,sd = sdn))},
                    H=function(x) return(H_Rn(1)),
                    additive= TRUE,
                    weights=c(0.8,2))
@@ -89,7 +90,11 @@ setMethod("initialize", signature="DAG.network",
             } else  {
               nodeDataDefaults(DAG,"bias") <-0
               nodeDataDefaults(DAG,"sigma") <-sigma
+              nodeDataDefaults(DAG,"seed") <-NA
               edgeDataDefaults(DAG,"H") <- function(x) return(x)
+              for( n in nodes(DAG))
+                nodeData(DAG,n=n,"seed")<-runif(1,1,10000)
+              
               for( edge in edgeList(DAG)){
                 edgeData(DAG, from=edge[1], to=edge[2], attr="weight") <- runif(1,weights[1],weights[2])*sample(c(-1,1),1)
                 ## setting of random linear weights within the specified bounds
@@ -133,40 +138,115 @@ setMethod("compute", signature="DAG.network",
             for (i in topologicalOrder){
               bias = nodeData(DAG,n=i,attr="bias")[[1]]
               sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
+              seed = nodeData(DAG,n=i,attr="seed")[[1]]
               inEdg <-  inEdges(node=i,object=DAG)[[1]]
               
               if (length(inEdg)==0 || is.element(i,knocked)){
+                set.seed(seed)
                 D[,i]<-bias + replicate(N,sigma())
               } else  {
                 D[,i]<-bias
                 Xin<-NULL
-                for(j in  inEdg)
+                for(j in  inEdg){
                   ## it computes the linear combination of the inputs
-                {
                   inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
                   H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
                   
                   if (object@additive){
                     D[,i]<- D[,i] + H(D[,j]) *  inputWeight
                   }else{
+                    ## it stacks inputs in a matrix
                     Xin<-cbind(Xin,D[,j])
-                    ##D[,i]<- D[,i] + (D[,j]) *  inputWeight
+                    
                   }
                 }
                 if (!object@additive){
-                  ##D[,i]<-  H(D[,i])
-                  D[,i]<- kernel.fct(Xin)
+                  H = edgeData(self=DAG,from=inEdg[1],to=i,attr="H")[[1]]
+                  D[,i]<-  H(apply(Xin,1,sum))
                 }
+                set.seed(seed)
                 D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
                 
               }
-            }
+            } ## for i
             col.numeric<-as(colnames(D),"numeric")
             D<-D[,topologicalOrder[order(col.numeric)]]
             
             return(D)
           })
 
+#' @docType methods
+setGeneric("counterfact", function(object,...) {standardGeneric("counterfact")})
+##' generate N samples according to the network distribution by modifying the original dataset
+##' @name compute
+##' @param DN: original dataset
+##' @param knocked: the set of manipulated (e.g. knocked genes) nodes 
+##' @param object: a DAG.network object
+##' @return a N*nNodes matrix
+##' @export
+setMethod("counterfact", signature="DAG.network",  
+          function(object, DN, delta,
+                   knocked=NULL){
+            if(!is.numeric(N))
+              stop("N is not numeric")
+            
+            DAG = object@network
+            nNodes <- numNodes(DAG)
+            
+            topologicalOrder <-tsort(DAG)
+            posknock<-min(match(knocked,topologicalOrder))
+            beforeknock<-numeric(nNodes)
+            if (posknock>1)
+              beforeknock[1:(posknock-1)]=1
+            D <- DN
+            N<-NROW(DN)
+            
+            
+            for (ii in 1:length(topologicalOrder)){
+              
+              i=topologicalOrder[ii]
+              if (beforeknock[ii]==0){
+                bias = nodeData(DAG,n=i,attr="bias")[[1]]
+                sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
+                seed = nodeData(DAG,n=i,attr="seed")[[1]]
+                inEdg <-  inEdges(node=i,object=DAG)[[1]]
+                
+                if (length(inEdg)==0 || is.element(i,knocked)){
+                  if (length(inEdg)==0){
+                    set.seed(seed)
+                    D[,i]<-bias + replicate(N,sigma(seed))
+                  }
+                  if (is.element(i,knocked))
+                    D[,i]<-delta
+                } else  {
+                  D[,i]<-bias
+                  Xin<-NULL
+                  for(j in  inEdg)
+                    ## it computes the linear combination of the inputs
+                  {
+                    inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
+                    H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
+                    
+                    if (object@additive){
+                      D[,i]<- D[,i] + H(D[,j]) *  inputWeight
+                    }else{
+                      Xin<-cbind(Xin,D[,j])
+                      ##D[,i]<- D[,i] + (D[,j]) *  inputWeight
+                    }
+                  }
+                  if (!object@additive){
+                    ##D[,i]<-  H(D[,i])
+                    D[,i]<- kernel.fct(Xin)
+                  }
+                  set.seed(seed)
+                  D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
+                  
+                }
+              }
+            }
+            
+            return(D)
+          })
 
 
 #########################################
@@ -246,7 +326,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-              ##    for (i in 1:NDAG){
+            ##      for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -526,7 +606,7 @@ setClass("D2C",
 #' @param ratioEdges  : percentage of existing edges which are added to the training set
 #' @param ratioMissingNode  : percentage of existing nodes which are not considered. This is used to emulate latent variables.
 #' @param goParallel : if TRUE it uses parallelism
-#' @param gini : if NULL it use feature selection
+#' @param interaction : if NULL it use feature selection
 #' @param verbose  : if TRUE it prints the state of progress
 #' @param type : type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
@@ -545,7 +625,7 @@ setMethod("initialize",
           function(.Object, sDAG,
                    descr=new("D2C.descriptor"),
                    verbose=TRUE,
-                   gini=NULL,
+                   interaction=TRUE,
                    ratioMissingNode=0,
                    ratioEdges=1,max.features=20,
                    goParallel=FALSE,
@@ -568,7 +648,7 @@ setMethod("initialize",
             FF<-NULL
             
             FF<-foreach (ii=1:sDAG@NDAG) %op%{
-              #for (ii in 1:sDAG@NDAG)  {   ### D2C
+             ## for (ii in 1:sDAG@NDAG)  {   ### D2C
               set.seed(ii)
               
               DAG = sDAG@list.DAGs[[ii]]
@@ -763,9 +843,11 @@ setMethod("initialize",
               Xb<-X[c(w0,w1),]
               Yb<-Y[c(w0,w1)]
               
-              if (length(gini)>0){
-                rank<-match(c(gini),
-                            colnames(Xb))
+              if (interaction==FALSE){
+                
+                Intvars<- grep('Int3.',colnames(Xb))
+                rank<-setdiff(1:NCOL(Xb),Intvars)
+                rank<-rank[1:min(max.features,length(rank))]
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }else{
@@ -877,7 +959,7 @@ setMethod(f="joinD2C",
                               verbose=TRUE, goParallel= FALSE){
             
             `%op%` <- if (goParallel) `%dopar%` else `%do%`
-              
+            
             X<-rbind(object@origX,input@origX)
             Y<-c(object@Y,input@Y)
             features<-intersect(object@features,input@features)

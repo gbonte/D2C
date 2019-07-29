@@ -19,17 +19,17 @@ is.what<-function(iDAG,i,j){
 
 }
 
-noNodes<-c(3,10)
+noNodes<-c(15,50)
 ## range of number of nodes
 
-N<-c(20,100)
+N<-c(50,100)
 ## range of number of samples
 
-NDAG=50
+NDAG=250
 ## number of DAGs to be created and simulated
-NDAG.test=20
+NDAG.test=200
 
-sdev<-c(0.2,1)
+sdev<-c(0.2,0.4)
 
 goParallel=FALSE
 savefile<-TRUE
@@ -45,16 +45,22 @@ if (TRUE){
   if (savefile)
     save(file=namefile,list=c("trainDAG"))
 
-  descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE)
+  descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE,boot="mimr")
 
   trainD2C<-new("D2C",sDAG=trainDAG,
-                descr=descr.example,ratioEdges=0.5,
+                descr=descr.example,ratioEdges=0.5,interaction=FALSE,
+                max.features=30, type=type,goParallel=goParallel,verbose=TRUE)
+  
+  descr.exampleI<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE,boot="rank")
+  
+  trainD2CI<-new("D2C",sDAG=trainDAG,
+                descr=descr.exampleI,ratioEdges=0.5,interaction=TRUE,
                 max.features=30, type=type,goParallel=goParallel,verbose=TRUE)
 
   print("done")
 
   if (savefile)
-    save(file=namefile,list=c("trainD2C","trainDAG"))
+    save(file=namefile,list=c("trainD2C","trainD2CI"))
 
 
   print(dim(trainD2C@X))
@@ -64,11 +70,6 @@ if (TRUE){
 
 
 
-
-  testDAG<-new("simulatedDAG",NDAG=NDAG.test, N=N, noNodes=noNodes,
-               functionType = c("linear","quadratic","sigmoid","kernel"),
-               seed=101,sdn=sdev,quantize=c(FALSE),
-               additive=c(TRUE,FALSE),goParallel=goParallel)
 
 
   if (savefile)
@@ -80,17 +81,28 @@ if (TRUE){
 if (savefile)
   load(namefile)
 
+
+
+testDAG<-new("simulatedDAG",NDAG=NDAG.test, N=N, noNodes=noNodes,
+             functionType = c("linear","quadratic","sigmoid","kernel"),
+             seed=101,sdn=sdev,quantize=c(FALSE),
+             additive=c(TRUE,FALSE),goParallel=goParallel)
+
+
+
 BER.D2C<-NULL
+BER.D2CI<-NULL
 BER.IAMB<-NULL
 BER.GS<-NULL
 BER.PC<-NULL
 Yhat.D2C<-NULL
+Yhat.D2CI<-NULL
 Yhat.IAMB<-NULL
 Yhat.GS<-NULL
 Yhat.PC<-NULL
 Ytrue<-NULL
 for ( r in 1:testDAG@NDAG){
-  set.seed(r)
+  set.seed(r+100)
   observedData<-testDAG@list.observationsDAGs[[r]]
   trueDAG<-testDAG@list.DAGs[[r]]
 
@@ -112,7 +124,7 @@ for ( r in 1:testDAG@NDAG){
 
   ## selection of a balanced subset of edges for the assessment
   Nodes=graph::nodes(trueDAG)
-  max.edges<-min(30,length(gRbase::edgeList(trueDAG)))
+  max.edges<-min(40,length(gRbase::edgeList(trueDAG)))
   subset.edges = matrix(unlist(sample(gRbase::edgeList(trueDAG),size = max.edges,replace = F)),ncol=2,byrow = TRUE)
   subset.edges = rbind(subset.edges,t(replicate(n =max.edges ,sample(Nodes,size=2,replace = FALSE))))
 
@@ -121,9 +133,10 @@ for ( r in 1:testDAG@NDAG){
     i =as(subset.edges[jj,1],"numeric");
     j =as(subset.edges[jj,2],"numeric") ;
     pred.D2C = predict(trainD2C,i,j, observedData)
-
     Yhat.D2C<-c(Yhat.D2C,as.numeric(pred.D2C$response)  -1)
-
+    pred.D2CI = predict(trainD2CI,i,j, observedData)
+    Yhat.D2CI<-c(Yhat.D2CI,as.numeric(pred.D2CI$response)  -1)
+    
     Yhat.IAMB<-c(Yhat.IAMB,is.what(igraph.IAMB,i,j))
     Yhat.GS<-c(Yhat.GS,is.what(igraph.GS,i,j))
     Yhat.PC<-c(Yhat.PC,is.what(igraph.PC,i,j))
@@ -135,11 +148,14 @@ for ( r in 1:testDAG@NDAG){
 
   ## computation of Balanced Error Rate
   BER.D2C<-BER(Ytrue,Yhat.D2C)
+  BER.D2CI<-BER(Ytrue,Yhat.D2CI)
   BER.IAMB<-BER(Ytrue,Yhat.IAMB)
   BER.GS<-BER(Ytrue,Yhat.GS)
   BER.PC<-BER(Ytrue,Yhat.PC)
-  cat("\n r=",r," BER.D2C=",mean(BER.D2C), "BER.IAMB=",mean(BER.IAMB),
-      "BER.GS=",mean(BER.GS),"BER.PC=",mean(BER.PC),"#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
+  cat("\n r=",r," BER.D2C=",mean(BER.D2C), " BER.D2CI=",mean(BER.D2CI),
+      "BER.IAMB=",mean(BER.IAMB),
+      "BER.GS=",mean(BER.GS),"BER.PC=",mean(BER.PC),
+      "#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
 
 }
 

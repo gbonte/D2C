@@ -22,7 +22,7 @@ export(is.mb)
 export(npred)
 export(norminf)
 exportMethods(compute)
-
+exportMethods(counterfact)
 
 import(MASS)
 import(RBGL)

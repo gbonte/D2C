@@ -99,6 +99,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
   
   MBca<-setdiff(1:n,ca)
   MBef<-setdiff(1:n,ef)
+  MBca2=MBca
+  MBef2<-MBef
   if (n>(ns+1)){
     ind<-setdiff(1:n,ca)
     ind<-ind[rankrho(D[,ind],D[,ca],nmax=min(length(ind),50))]
@@ -214,11 +216,11 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     ## relevance of ca for ef given MBef
     delta.i<-NULL
     for (m in MBef)
-      delta.i<- c(delta.i,norminf(D[,ef],D[,ca],D[,m],lin=lin)) #I(zj;zi|Mj^k)
+      delta.i<- c(delta.i,norminf(D[,ef],D[,ca],D[,c(m,MBca)],lin=lin)) #I(zj;zi|Mj^k)
     
     delta2.i<-NULL
     for (m in MBca)
-      delta2.i<- c(delta2.i,norminf(D[,ca],D[,ef],D[,m],lin=lin)) #I(zi;zj|Mi^k)
+      delta2.i<- c(delta2.i,norminf(D[,ca],D[,ef],D[,c(m,MBef)],lin=lin)) #I(zi;zj|Mi^k)
     
     
     
@@ -239,13 +241,15 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     I2.i<-NULL
     ## Information of Mbef on ca given ef
     for (j in 1:length(MBef)){
-      I2.i<-c(I2.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)) ## I(zi; Mj^k|zj) equation (8)
+      backdoor=setdiff(union(MBca,MBef[-j]),c(ca,ef))
+      I2.i<-c(I2.i, norminf(D[,ca], D[,MBef[j]],D[,c(ef,backdoor)],lin=lin)) ## I(zi; Mj^k|zj) equation (8)
     }
     
     I2.j<-NULL
     ## Information of Mbca on ef given ca
     for (j in 1:length(MBca)){
-      I2.j<-c(I2.j, norminf(D[,ef], D[,MBca[j]],D[,ca],lin=lin)) ## I(zj; Mi^k|zi) equation (8)
+      backdoor=setdiff(union(MBef,MBca[-j]),c(ca,ef))
+      I2.j<-c(I2.j, norminf(D[,ef], D[,MBca[j]],D[,c(ca,backdoor)],lin=lin)) ## I(zj; Mi^k|zi) equation (8)
     }
     
     IJ<-expand.grid(1:length(MBca),1:length(MBef))
@@ -256,7 +260,12 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
-      I3.i<-c(I3.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      backdoor=setdiff(union(MBca[-i],MBef[-j]),ca)
+      if (length(backdoor)>0)
+        I3.i<-c(I3.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ca,backdoor)],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      else
+        I3.i<-c(I3.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      
     }
     
     I3.j<-NULL
@@ -264,12 +273,18 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
-      I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin))) ## I(Mi^k; Mj^k|zj) equation (9-10)
+      backdoor=setdiff(union(MBca[-i],MBef[-j]),ef)
+      if (length(backdoor)>0)
+        I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ef,backdoor)],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      else
+        I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin))) ## I(Mi^k; Mj^k|zj) equation (9-10)
+      
+      
     }
     
     
     IJ<-expand.grid(1:length(MBca),1:length(MBca))
-   
+    
     IJ<-IJ[which(IJ[,1]<IJ[,2]),]
     IJ<-IJ[sample(1:NROW(IJ),min(maxs,NROW(IJ))),]
     

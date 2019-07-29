@@ -28,68 +28,28 @@ noNodes<-c(5,6)
 N<-c(200,300)
 ## range of number of samples
 
-NDAG=50
+NDAG=5
 ## number of DAGs to be created and simulated
-NDAG.test=20
-nseries=5
+NDAG.test=10
+nseries=c(20,100)
 sdev<-c(0.1,0.3)
 
 goParallel=FALSE
 savefile<-FALSE
 namefile<-"../D2Cdata2/traintestSTAR.200.100.RData"
+
+load(namefile)
+namefile2<-"../D2Cdata2/testSTAR.RData"
 if (TRUE){
+  testDAG<-new("simulatedTS",NDAG=NDAG.test, N=c(300,400), noNodes=noNodes,
+               seed=101,sdn=sdev,goParallel=goParallel,nseries=nseries,
+               typeser=setdiff(8:18,14))
   
-  testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
-               seed=3101,sdn=sdev,
-               goParallel=goParallel,typeser=15:23,
-               nseries=nseries)
+  save(file=namefile2, list=c("testDAG"))
+} else {
   
-  trainDAG<-new("simulatedTS",NDAG=NDAG, N=N, noNodes=noNodes,
-                seed=10,sdn=sdev,goParallel=goParallel,nseries=nseries,typeser=c(15:23))
-  
-  
-  descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,maxs=10,acc=TRUE,lin=FALSE,
-                     struct=FALSE, boot="rank")
-  
-  
-  trainD2C<-new("D2C",sDAG=trainDAG,
-                descr=descr.example,ratioEdges=0.15,
-                max.features=20, type=type,goParallel=goParallel,
-                gini=NULL,
-                verbose=TRUE)
-  
-  
- 
-  
-  trainD2C.2<-new("D2C",sDAG=trainDAG,
-                  descr=descr.example,ratioEdges=0.05,
-                  max.features=20, type=type,goParallel=goParallel,
-                  gini=NULL,
-                  verbose=TRUE)
-  print(NROW(trainD2C@origX))
-  print(NROW(trainD2C.2@origX))
-  trainD2C.1<-joinD2C(trainD2C,trainD2C.2)
-  print(NROW(trainD2C.1@origX))
-    
-  
-  
-  testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
-               seed=101,sdn=sdev,goParallel=goParallel,nseries=round(nseries/2),
-               typeser=setdiff(9:18,14))
-  
-  
-  
-  if (savefile)
-    save(file=namefile,list=c("trainD2C","testDAG"))
+  load(namefile2)
 }
-##stopCluster(cl)
-
-## number of DAGs used for testing
-if (savefile)
-  load(namefile)
-
-
-print(colnames(trainD2C.1@X))
 BER.D2C<-NULL
 BER.D2C.1<-NULL
 BER.IAMB<-NULL
@@ -107,22 +67,22 @@ Ytrue<-NULL
 for ( r in 1:testDAG@NDAG){
   set.seed(r)
   observedData<-testDAG@list.observationsDAGs[[r]]
-  n<-NCOL(observedData)
+  N<-NROW(observedData)
+  observedData<-observedData[1:min(N,300),]
+  N<-NROW(observedData)
   trueDAG<-testDAG@list.DAGs[[r]]
   
   cat("Dim test dataset"=dim(observedData),"\n")
   
   ## inference of networks with bnlearn package
+  
+  ## Ahat.GS<-(amat(gs(data.frame(observedData))))
   Ahat.IAMB<-(amat(iamb(data.frame(observedData),optimized=TRUE,
                         alpha=0.01,max.sx=3)))
   print("Done IAMB")
   Ahat.PC<-(amat(si.hiton.pc(data.frame(observedData),alpha=0.01)))
-  
-  if (n<100){
-  Ahat.GS<-(amat(gs(data.frame(observedData))))
-  
-  
-  
+  #Ahat.IAMB<-Ahat.PC
+  print("Done Si.Hiton")
   suffStat <- list(C = cor(observedData),n=NROW(observedData))
   normal.pag <- pc(suffStat, indepTest=gaussCItest, alpha = 0.01, ,m.max=5,
                    verbose=FALSE,p=NCOL(observedData),
@@ -144,7 +104,7 @@ for ( r in 1:testDAG@NDAG){
   
   ## selection of a balanced subset of edges for the assessment
   Nodes=graph::nodes(trueDAG)
-  max.edges<-min(100,length(gRbase::edgeList(trueDAG)))
+  max.edges<-min(30,length(gRbase::edgeList(trueDAG)))
   subset.edges = matrix(unlist(sample(gRbase::edgeList(trueDAG),size = max.edges,replace = F)),
                         ncol=2,byrow = TRUE)
   subset.edges = rbind(subset.edges,t(replicate(n =max.edges ,
@@ -156,7 +116,7 @@ for ( r in 1:testDAG@NDAG){
     j =as(subset.edges[jj,2],"numeric") ;
     pred.D2C = predict(trainD2C.1,i,j, observedData)
     pred.D2C.1 = pred.D2C #predict(trainD2C.1,i,j, observedData)
-    pred.GRANGER=1-grangertest(observedData[,i],observedData[,j], order = 1)$"Pr(>F)"[2]
+    pred.GRANGER=pred.D2C.1 #1-grangertest(observedData[,i],observedData[,j], order = 1)$"Pr(>F)"[2]
     Yhat.GRA<-c(Yhat.GRA,as.numeric(pred.GRANGER>0.5) )
     Yhat.D2C<-c(Yhat.D2C,as.numeric(pred.D2C$response)  -1)
     Yhat.D2C.1<-c(Yhat.D2C.1,as.numeric(pred.D2C.1$response)  -1)
@@ -183,6 +143,5 @@ for ( r in 1:testDAG@NDAG){
       "BER.GS=",mean(BER.GS),"BER.PC=",mean(BER.PC),"BER.KPC=",mean(BER.KPC),
       "#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
   
-  }
 }
 
