@@ -67,7 +67,7 @@ norminf<-function(y,x1,x2=NULL,lin=TRUE){
 #' @references G. Bontempi, M. Birattari, and H. Bersini (1999) Lazy learning for modeling and control design. International Journal of Control, 72(7/8), pp. 643-658.
 #' @export 
 descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
-                     lin=FALSE,acc=TRUE,struct=TRUE, 
+                     lin=FALSE,acc=TRUE,struct=FALSE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
                      bivariate=FALSE,maxs=10,boot="mimr" ){
   if (bivariate)
@@ -200,18 +200,10 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     ef.ca<-norminf(D[,ef],D[,ca],lin=lin)
     
     
-    E.ef=ecdf(D[,ef])(D[,ef]) ## empirical cdf of D[,ef]
-    E.ca=ecdf(D[,ca])(D[,ca])
-    ## gini relevance of ca for ef
-    gini.ca.ef<-norminf(D[,ca],E.ef,lin=lin)
-    ## gini relevance of ef for ca
-    gini.ef.ca<-norminf(D[,ef],E.ca,lin=lin)
+    delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin) #I(zi;zj|Mj)
+    delta2<- norminf(D[,ca],D[,ef],D[,MBca],lin=lin) #I(zi;zj|Mi)
     
-    delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin) #I(zi;zj;Mj)
-    delta2<- norminf(D[,ca],D[,ef],D[,MBca],lin=lin) #I(zi;zj;Mi)
-    
-    gini.delta<- norminf(D[,ef],E.ca,D[,MBef],lin=lin)
-    gini.delta2<- norminf(D[,ca],E.ef,D[,MBca],lin=lin)
+   
     
     ## relevance of ca for ef given MBef
     delta.i<-NULL
@@ -266,7 +258,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       i=IJ[r,1]
       j=IJ[r,2]
       backdoor=setdiff(union(MBca[-i],MBef[-j]),ca)
-      I3.ib<-c(I3.ib,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ca,backdoor)],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      I3.ib<-c(I3.ib,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ca,backdoor)],lin=lin))) 
       I3.i<-c(I3.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
       
     }
@@ -278,7 +270,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       i=IJ[r,1]
       j=IJ[r,2]
       backdoor=setdiff(union(MBca[-i],MBef[-j]),ef)
-      I3.jb<-c(I3.jb,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ef,backdoor)],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      I3.jb<-c(I3.jb,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ef,backdoor)],lin=lin))) 
       I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin))) ## I(Mi^k; Mj^k|zj) equation (9-10)
       
       
@@ -292,7 +284,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
     
     Int3.i<-NULL
-    ## Information of MBef on MBca given ca
+    ## Interaction of terms of Mbca
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
@@ -304,7 +296,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     IJ<-IJ[sample(1:NROW(IJ),min(maxs,NROW(IJ))),]
     
     Int3.j<-NULL
-    ## Information of MBef on MBca given ef
+    ## Interaction of terms of Mbef
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
@@ -314,8 +306,14 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
     if (FALSE){
       
-      
-      
+      E.ef=ecdf(D[,ef])(D[,ef]) ## empirical cdf of D[,ef]
+      E.ca=ecdf(D[,ca])(D[,ca])
+      ## gini relevance of ca for ef
+      gini.ca.ef<-norminf(D[,ca],E.ef,lin=lin)
+      ## gini relevance of ef for ca
+      gini.ef.ca<-norminf(D[,ef],E.ca,lin=lin)
+      gini.delta<- norminf(D[,ef],E.ca,D[,MBef],lin=lin)
+      gini.delta2<- norminf(D[,ca],E.ef,D[,MBca],lin=lin)
       Int1.i<-NULL
       ## 
       for (j in 1:length(MBef)){
@@ -407,9 +405,10 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     } ## if FALSE
     
     x<-c(x,delta,delta2,
-         gini.delta,gini.delta2,
+         #gini.delta,gini.delta2,
          quantile(delta.i,probs=pq,na.rm=TRUE),
-         quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,gini.ca.ef,gini.ef.ca,
+         quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,
+         #gini.ca.ef,gini.ef.ca,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
          quantile(I2.i,probs=pq,na.rm=TRUE),quantile(I2.j,probs=pq,na.rm=TRUE),
          quantile(I2.ib,probs=pq,na.rm=TRUE),quantile(I2.jb,probs=pq,na.rm=TRUE),
@@ -425,10 +424,11 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     )
     
     namesx<-c(namesx,"delta","delta2",
-              "gini.delta","gini.delta2",
+              #"gini.delta","gini.delta2",
               paste("delta.i",1:length(pq)),
               paste("delta2.i",1:length(pq)),
-              "ca.ef","ef.ca","gini.ca.ef","gini.ef.ca",
+              "ca.ef","ef.ca",
+              #"gini.ca.ef","gini.ef.ca",
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
               paste0("I2.ib",1:length(pq)), paste0("I2.jb",1:length(pq)),
