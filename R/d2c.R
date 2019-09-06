@@ -19,7 +19,7 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
   
   
   X<-scale(X)
-  e<-Y-lazy.pred(X,Y,X,conPar=c(min(10,N-1),min(N,20)),
+  e<-Y-lazy.pred(X,Y,X,conPar=c(min(10,N-2),min(N,20)),
                  linPar=NULL,class=FALSE,cmbPar=10)
   #  Itr=sample(1:N,min(50,round(2*N/3)))
   #  Its=setdiff(1:N,Itr)
