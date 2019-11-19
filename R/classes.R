@@ -832,7 +832,7 @@ setMethod("initialize",
             .Object@allEdges=allEdges
             
             listRF<-list()
-            for (rep in 1:10){
+            for (rep in 1:1){
               w0<-which(Y==0)
               w1<-which(Y==1)
               if (length(w0)>length(w1))
@@ -843,6 +843,10 @@ setMethod("initialize",
               Xb<-X[c(w0,w1),]
               Yb<-Y[c(w0,w1)]
               
+              RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
+              IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+              rank<-sort(IM,decr=TRUE,ind=TRUE)$ix
+              Xb=Xb[,rank]
               if (interaction==FALSE){
                 
                 Intvars<- grep('Int3.',colnames(Xb))
@@ -852,9 +856,7 @@ setMethod("initialize",
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }else{
                 
-                RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
-                IM<-importance(RF)[,"MeanDecreaseAccuracy"]
-                rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(Xb))]
+                rank<-rank[1:min(max.features,length(rank))]
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }
