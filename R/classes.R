@@ -80,12 +80,10 @@ setMethod("initialize", signature="DAG.network",
                      return(rnorm(n = 1,sd = sdn))},
                    H=function(x) return(H_Rn(1)),
                    additive= TRUE,
-                   weights=c(0.8,2))
-          {
+                   weights=c(0.8,2)){
             DAG = network
             .Object@additive=additive
-            if(!is.DAG(DAG))
-            {
+            if(!is.DAG(DAG)) {
               stop("it is not a DAG")
             } else  {
               nodeDataDefaults(DAG,"bias") <-0
@@ -326,7 +324,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-            ##      for (i in 1:NDAG){
+              ##      for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -503,7 +501,7 @@ setMethod("initialize",
               return(.Object)
             
             FF<-foreach (i=1:NDAG) %op%{
-            ##      for (i in 1:NDAG){
+              ##      for (i in 1:NDAG){
               set.seed(seed+i)
               
               nseries.i<-nseries
@@ -648,11 +646,14 @@ setMethod("initialize",
             FF<-NULL
             
             FF<-foreach (ii=1:sDAG@NDAG) %op%{
-             ## for (ii in 1:sDAG@NDAG)  {   ### D2C
+              ## for (ii in 1:sDAG@NDAG)  {   ### D2C
+               
               set.seed(ii)
               
               DAG = sDAG@list.DAGs[[ii]]
               observationsDAG =sDAG@list.observationsDAGs[[ii]]
+              if (verbose)
+                cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG), "\n")
               
               Nodes = nodes(DAG)
               
@@ -683,6 +684,9 @@ setMethod("initialize",
               }
               nEdges =  NROW(edgesM)
               
+              if (verbose)
+                cat("nEdges=", nEdges, "\n")
+              
               rev<-TRUE  
               ### if TRUE, it uses both directions of the edge to train the learner 
               ### (i.e. if i is parent of j, it is also true that j is a child of i)
@@ -701,16 +705,9 @@ setMethod("initialize",
                   I =as(edgesM[j,1],"numeric") 
                   J =as(edgesM[j,2],"numeric") 
                   
-                  if (type=="is.mb"){
-                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                  struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs, boot=descr@boot)
-                  } else {
-                    
-                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                  struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
-                  }
+                  d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                struct=descr@struct,bivariate=descr@bivariate,
+                                pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
                   
                   
                   if (type=="is.parent")
@@ -735,15 +732,10 @@ setMethod("initialize",
                   J =as(edgesM[j,1],"numeric") ;
                   
                   
-                  if (type=="is.mb"){
-                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                  struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
-                  } else {
-                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                  struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
-                  }
+                  d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                struct=descr@struct,bivariate=descr@bivariate,
+                                pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
+                  
                   
                   if (type=="is.parent")
                     if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
@@ -762,26 +754,15 @@ setMethod("initialize",
                       labelEdge[2*j] =1
                   X.out = rbind(X.out,d)
                   
-                  
                 }
               } else {    ### if rev
                 for(j in 1:nEdges){
                   I =as(edgesM[j,1],"numeric") ;
                   J =as(edgesM[j,2],"numeric") ;
                   
-                  if (type=="is.mb"){
-                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                  struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
-                  } else {
-                    
-                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                  struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
-                    
-                    
-                    
-                  }
+                  d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                struct=descr@struct,bivariate=descr@bivariate,
+                                pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
                   
                   labelEdge[j] =0
                   if (type=="is.parent")
@@ -805,9 +786,7 @@ setMethod("initialize",
               } ## if rev
               
               if (verbose)
-                cat("D2C:  DAG", ii, " processed \n")
-              
-              
+                cat("D2C:  DAG", ii, "/", sDAG@NDAG, " processed \n")
               list(X=X.out,Y=labelEdge,edges=edgesM)
               
             } ## foreach
