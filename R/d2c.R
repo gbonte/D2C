@@ -72,13 +72,16 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      lin=FALSE,acc=TRUE,struct=FALSE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
                      bivariate=FALSE,maxs=10,boot="mimr" ){
-  if (bivariate)
+  if (bivariate){
     return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs),D2C.2(D[,ca],D[,ef])))
-  else
-    return(c(NROW(D),NCOL(D)/NROW(D),D2C.n(D,ca,ef,ns,lin,acc,struct,
-                                           pq=pq,boot=boot,maxs=maxs)))
+  }else {
+    D=c(NROW(D),NCOL(D)/NROW(D),kurtosis(D[,ca])/kurtosis(D[,ef]),kurtosis(D[,ef])/kurtosis(D[,ca]),
+        D2C.n(D,ca,ef,ns,lin,acc,struct,
+              pq=pq,boot=boot,maxs=maxs))
+    names(D)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
+    return(D)
+    }
 }
-
 
 
 
@@ -305,16 +308,19 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
                         -norminf(D[,MBef[i]],D[,MBef[j]],lin=lin))) ## I(Mj^k; Mj^k|zj)-I(Mj^k; Mj^k)
     }
     
+    E.ef=ecdf(D[,ef])(D[,ef]) ## empirical cdf of D[,ef]
+    E.ca=ecdf(D[,ca])(D[,ca])
+    ## gini relevance of ca for ef
+    gini.ca.ef<-norminf(D[,ca],E.ef,lin=lin)
+    ## gini relevance of ef for ca
+    gini.ef.ca<-norminf(D[,ef],E.ca,lin=lin)
+    gini.delta<- norminf(D[,ef],E.ca,D[,MBef],lin=lin)
+    gini.delta2<- norminf(D[,ca],E.ef,D[,MBca],lin=lin)
+    
+    
     if (FALSE){
       
-      E.ef=ecdf(D[,ef])(D[,ef]) ## empirical cdf of D[,ef]
-      E.ca=ecdf(D[,ca])(D[,ca])
-      ## gini relevance of ca for ef
-      gini.ca.ef<-norminf(D[,ca],E.ef,lin=lin)
-      ## gini relevance of ef for ca
-      gini.ef.ca<-norminf(D[,ef],E.ca,lin=lin)
-      gini.delta<- norminf(D[,ef],E.ca,D[,MBef],lin=lin)
-      gini.delta2<- norminf(D[,ca],E.ef,D[,MBca],lin=lin)
+      
       Int1.i<-NULL
       ## 
       for (j in 1:length(MBef)){
@@ -413,9 +419,9 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
          quantile(I2.ib,probs=pq,na.rm=TRUE),quantile(I2.jb,probs=pq,na.rm=TRUE),
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE),
          quantile(I3.ib,probs=pq,na.rm=TRUE),quantile(I3.jb,probs=pq,na.rm=TRUE),
-         quantile(Int3.i,probs=pq,na.rm=TRUE),quantile(Int3.j,probs=pq,na.rm=TRUE)
-         #gini.delta,gini.delta2,
-         #gini.ca.ef,gini.ef.ca,
+         quantile(Int3.i,probs=pq,na.rm=TRUE),quantile(Int3.j,probs=pq,na.rm=TRUE),
+         gini.delta,gini.delta2,
+         gini.ca.ef,gini.ef.ca
          #quantile(Int1.i,probs=pq,na.rm=TRUE),quantile(Int1.j,probs=pq,na.rm=TRUE),
          #quantile(Int2.i,probs=pq,na.rm=TRUE),quantile(Int2.j,probs=pq,na.rm=TRUE),
          # quantile(G1.i,probs=pq,na.rm=TRUE),quantile(G1.j,probs=pq,na.rm=TRUE),
@@ -433,9 +439,9 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
               paste0("I2.ib",1:length(pq)), paste0("I2.jb",1:length(pq)),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)),
               paste0("I3.ib",1:length(pq)), paste0("I3.jb",1:length(pq)),
-              paste0("Int3.i",1:length(pq)), paste0("Int3.j",1:length(pq))
-              #"gini.delta","gini.delta2",
-              #"gini.ca.ef","gini.ef.ca",
+              paste0("Int3.i",1:length(pq)), paste0("Int3.j",1:length(pq)),
+              "gini.delta","gini.delta2",
+              "gini.ca.ef","gini.ef.ca"
               #paste0("Int1.i",1:length(pq)), paste0("Int1.j",1:length(pq)),
               #paste0("Int2.i",1:length(pq)), paste0("Int2.j",1:length(pq)),
               #   paste0("G1.i",1:length(pq)), paste0("G1.j",1:length(pq)),

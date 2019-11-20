@@ -1,4 +1,4 @@
-#' @import RBGL gRbase randomForest Rgraphviz methods foreach kernlab MASS igraph graph
+#' @import RBGL gRbase randomForest Rgraphviz methods foreach kernlab MASS igraph graph e1071
 
 
 #########################################

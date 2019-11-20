@@ -38,4 +38,4 @@ import(methods)
 import(igraph)
 import(graph)
 import(randomForest)
-
+import(e1071)
