@@ -503,7 +503,7 @@ setMethod("initialize",
               return(.Object)
             
             FF<-foreach (i=1:NDAG) %op%{
-              ##    for (i in 1:NDAG){
+            ##      for (i in 1:NDAG){
               set.seed(seed+i)
               
               nseries.i<-nseries
@@ -514,9 +514,9 @@ setMethod("initialize",
               if (length(N)>1)
                 N.i<-sample(N[1]:N[2],1)
               
-              noNodes.i<-max(3,noNodes[1])
+              noNodes.i<-max(4,noNodes[1])
               if (length(noNodes)==2)
-                noNodes.i<-sample(max(3:noNodes[1]):max(3:noNodes[2]),1)
+                noNodes.i<-sample(max(4:noNodes[1]):max(4:noNodes[2]),1)
               
               
               sdn.i<-sdn
@@ -843,25 +843,24 @@ setMethod("initialize",
               Xb<-X[c(w0,w1),]
               Yb<-Y[c(w0,w1)]
               
-              RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
-              IM<-importance(RF)[,"MeanDecreaseAccuracy"]
-              rank<-sort(IM,decr=TRUE,ind=TRUE)$ix
-              Xb=Xb[,rank]
+              #RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
+              #IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+              rank<-mrmr(Xb ,factor(Yb),2*max.features) #sort(IM,decr=TRUE,ind=TRUE)$ix
+              Intvars<- grep('Int3.',colnames(Xb))
               if (interaction==FALSE){
                 
-                Intvars<- grep('Int3.',colnames(Xb))
-                rank<-setdiff(1:NCOL(Xb),Intvars)
+                
+                rank<-setdiff(rank,Intvars)
                 rank<-rank[1:min(max.features,length(rank))]
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }else{
-                
-                rank<-rank[1:min(max.features,length(rank))]
+                rank<-union(Intvars,rank[1:min(max.features,length(rank))])
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
-            }
+            } ## for rep
             
             .Object@mod=listRF
             
