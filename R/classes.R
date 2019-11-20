@@ -838,7 +838,7 @@ setMethod("initialize",
               }
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
               if (verbose)
-                cat(" RF", rep, " (N,n)", size(Xb), "\n")
+                cat(" RF", rep, " (N,n)", dim(Xb), "\n")
             } ## for rep
             
             .Object@mod=listRF
