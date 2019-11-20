@@ -811,10 +811,13 @@ setMethod("initialize",
             .Object@allEdges=allEdges
             
             listRF<-list()
-            featrank<-mrmr(X ,factor(Y),min(NCOL(X),3*max.features))
-            #RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
-            #IM<-importance(RF)[,"MeanDecreaseAccuracy"]
-            #featrank<- sort(IM,decr=TRUE,ind=TRUE)$ix
+            #featrank<-mrmr(X ,factor(Y),min(NCOL(X),3*max.features))
+            RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
+            IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+            featrank<- sort(IM,decr=TRUE,ind=TRUE)$ix
+            
+            cat("Best descriptors: ", colnames(X)[featrank], "\n")
+            
             for (rep in 1:EErep){
               w0<-which(Y==0)
               w1<-which(Y==1)

@@ -205,7 +205,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin) #I(zi;zj|Mj)
     delta2<- norminf(D[,ca],D[,ef],D[,MBca],lin=lin) #I(zi;zj|Mi)
     
-   
+    
     
     ## relevance of ca for ef given MBef
     delta.i<-NULL
@@ -406,18 +406,18 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     } ## if FALSE
     
     x<-c(x,delta,delta2,
-         #gini.delta,gini.delta2,
          quantile(delta.i,probs=pq,na.rm=TRUE),
          quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,
-         #gini.ca.ef,gini.ef.ca,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
          quantile(I2.i,probs=pq,na.rm=TRUE),quantile(I2.j,probs=pq,na.rm=TRUE),
          quantile(I2.ib,probs=pq,na.rm=TRUE),quantile(I2.jb,probs=pq,na.rm=TRUE),
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE),
          quantile(I3.ib,probs=pq,na.rm=TRUE),quantile(I3.jb,probs=pq,na.rm=TRUE),
+         quantile(Int3.i,probs=pq,na.rm=TRUE),quantile(Int3.j,probs=pq,na.rm=TRUE)
+         #gini.delta,gini.delta2,
+         #gini.ca.ef,gini.ef.ca,
          #quantile(Int1.i,probs=pq,na.rm=TRUE),quantile(Int1.j,probs=pq,na.rm=TRUE),
          #quantile(Int2.i,probs=pq,na.rm=TRUE),quantile(Int2.j,probs=pq,na.rm=TRUE),
-         quantile(Int3.i,probs=pq,na.rm=TRUE),quantile(Int3.j,probs=pq,na.rm=TRUE)
          # quantile(G1.i,probs=pq,na.rm=TRUE),quantile(G1.j,probs=pq,na.rm=TRUE),
          # quantile(G2.i,probs=pq,na.rm=TRUE),quantile(G2.j,probs=pq,na.rm=TRUE),
          # quantile(G3.i,probs=pq,na.rm=TRUE),quantile(G3.j,probs=pq,na.rm=TRUE),
@@ -425,19 +425,19 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     )
     
     namesx<-c(namesx,"delta","delta2",
-              #"gini.delta","gini.delta2",
               paste("delta.i",1:length(pq)),
               paste("delta2.i",1:length(pq)),
               "ca.ef","ef.ca",
-              #"gini.ca.ef","gini.ef.ca",
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
               paste0("I2.ib",1:length(pq)), paste0("I2.jb",1:length(pq)),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)),
               paste0("I3.ib",1:length(pq)), paste0("I3.jb",1:length(pq)),
+              paste0("Int3.i",1:length(pq)), paste0("Int3.j",1:length(pq))
+              #"gini.delta","gini.delta2",
+              #"gini.ca.ef","gini.ef.ca",
               #paste0("Int1.i",1:length(pq)), paste0("Int1.j",1:length(pq)),
               #paste0("Int2.i",1:length(pq)), paste0("Int2.j",1:length(pq)),
-              paste0("Int3.i",1:length(pq)), paste0("Int3.j",1:length(pq))
               #   paste0("G1.i",1:length(pq)), paste0("G1.j",1:length(pq)),
               #    paste0("G2.i",1:length(pq)), paste0("G2.j",1:length(pq)),
               #    paste0("G3.i",1:length(pq)), paste0("G3.j",1:length(pq)),
