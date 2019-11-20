@@ -647,13 +647,13 @@ setMethod("initialize",
             
             FF<-foreach (ii=1:sDAG@NDAG) %op%{
               ## for (ii in 1:sDAG@NDAG)  {   ### D2C
-               
+              
               set.seed(ii)
               
               DAG = sDAG@list.DAGs[[ii]]
               observationsDAG =sDAG@list.observationsDAGs[[ii]]
               if (verbose)
-                cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG), "\n")
+                cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG), " ")
               
               Nodes = nodes(DAG)
               
@@ -685,7 +685,7 @@ setMethod("initialize",
               nEdges =  NROW(edgesM)
               
               if (verbose)
-                cat("nEdges=", nEdges, "\n")
+                cat("nEdges=", nEdges, " ")
               
               rev<-TRUE  
               ### if TRUE, it uses both directions of the edge to train the learner 
@@ -786,7 +786,7 @@ setMethod("initialize",
               } ## if rev
               
               if (verbose)
-                cat("D2C:  DAG", ii, "/", sDAG@NDAG, " processed \n")
+                cat(" DONE \n")
               list(X=X.out,Y=labelEdge,edges=edgesM)
               
             } ## foreach
@@ -827,8 +827,6 @@ setMethod("initialize",
               rank<-mrmr(Xb ,factor(Yb),2*max.features) #sort(IM,decr=TRUE,ind=TRUE)$ix
               Intvars<- grep('Int3.',colnames(Xb))
               if (interaction==FALSE){
-                
-                
                 rank<-setdiff(rank,Intvars)
                 rank<-rank[1:min(max.features,length(rank))]
                 Xb=Xb[,rank]
@@ -839,6 +837,8 @@ setMethod("initialize",
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
+              if (verbose)
+                cat(" RF", rep, " (N,n)", size(Xb), "\n")
             } ## for rep
             
             .Object@mod=listRF
@@ -881,24 +881,16 @@ setMethod("predict", signature="D2C",
             if (any(apply(data,2,sd)<0.01))
               stop("Error in D2C::predict: Remove constant variables from dataset. ")
             
-            if (object@type=="is.mb"){
-              X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
-                                        acc = object@descr@acc,ns=object@descr@ns,
-                                        maxs=object@descr@maxs,
-                                        struct = object@descr@struct,
-                                        pq = object@descr@pq, 
-                                        bivariate =object@descr@bivariate,
-                                        boot=object@descr@boot)
-            }else {
-              X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
-                                        acc = object@descr@acc,
-                                        ns=object@descr@ns,
-                                        maxs=object@descr@maxs,
-                                        struct = object@descr@struct,
-                                        pq = object@descr@pq, 
-                                        bivariate =object@descr@bivariate, 
-                                        boot=object@descr@boot)
-            }
+            
+            X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
+                                      acc = object@descr@acc,
+                                      ns=object@descr@ns,
+                                      maxs=object@descr@maxs,
+                                      struct = object@descr@struct,
+                                      pq = object@descr@pq, 
+                                      bivariate =object@descr@bivariate, 
+                                      boot=object@descr@boot)
+            
             if (any(is.infinite(X_descriptor)))
               stop("Error in D2C::predict: infinite value ")
             X_descriptor=X_descriptor[object@features]
@@ -1050,15 +1042,11 @@ setMethod(f="updateD2C",
                 I =as(edgesM[j,1],"numeric") ;
                 J =as(edgesM[j,2],"numeric") ;
                 
-                if (object@type=="is.mb"){
-                  d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                struct=descr@struct,bivariate=descr@bivariate,
-                                pq=descr@pq,maxs=descr@maxs,ns=descr@ns,boot=descr@boot)
-                } else {
-                  d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                struct=descr@struct,bivariate=descr@bivariate,
-                                pq=descr@pq,maxs=descr@maxs,ns=descr@ns,boot=descr@boot)
-                }
+                
+                d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                              struct=descr@struct,bivariate=descr@bivariate,
+                              pq=descr@pq,maxs=descr@maxs,ns=descr@ns,boot=descr@boot)
+                
                 
                 
                 
