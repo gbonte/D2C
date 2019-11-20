@@ -60,6 +60,8 @@ norminf<-function(y,x1,x2=NULL,lin=TRUE){
 #' @param struct :   TRUE or FALSE to use the ranking in the markov blanket as a descriptor
 #' @param pq :  a vector of quantiles used to compute de descriptor
 #' @param bivariate :  TRUE OR FALSE. if TRUE it includes the descriptors of the bivariate dependency
+#' @param maxs : max number of pairs MB(i), MB(j) considered 
+#' @param boot :  feature selection algorithm
 #' @details This function is the core of the D2C algorithm. Given two candidate nodes, (\code{ca}, putative cause and \code{ef}, putative effect) it first infers from the dataset D the Markov Blankets of the variables indexed by \code{ca} and \code{ef} (\code{MBca} and \code{MBef}) by using the \link{mimr} algorithm (Bontempi, Meyer, ICML10). Then it computes a set of (conditional) mutual information terms describing the dependency between the variables ca and ef. These terms are used to create a vector of descriptors. If \code{acc=TRUE}, the vector contains the descriptors related to the asymmetric information theoretic terms described in the paper. If \code{struct=TRUE}, the vector contains descriptors related to the positions of the terms of the MBef in MBca and viceversa. The estimation of the information theoretic terms require the estimation of the dependency between nodes. If \code{lin=TRUE} a linear assumption is made. Otherwise the local learning estimator, implemented by the R package \link{lazy}, is used.
 #' @references Gianluca Bontempi, Maxime Flauder (2014) From dependency to causality: a machine learning approach. Under submission
 #' @references Bontempi G., Meyer P.E. (2010) Causal filter selection in microarray data. ICML'10
@@ -94,7 +96,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
   
   #### creation of the Markov Blanket of ca (denoted MBca)
   #### MB is obtained by first ranking the other nodes and then selecting a subset of size ns 
-  #### with the mimr algorithm
+  #### with the algorithm mentioned in the "boot" variable
   
   
   MBca<-setdiff(1:n,ca)
@@ -217,14 +219,14 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
     
     I1.i<-NULL
-    ## Information of Mbef on ca 
+    ## Information of Mbef on ca (i)
     
     for (j in 1:length(MBef)){
       I1.i<-c(I1.i, (norminf(D[,MBef[j]],D[,ca],lin=lin)))  ## I(Mj^k;zi) equation (11)
     }
     
     I1.j<-NULL
-    ## Information of Mbca on ef 
+    ## Information of Mbca on ef  (j)
     
     for (j in 1:length(MBca)){
       I1.j<-c(I1.j, (norminf(D[,MBca[j]],D[,ef],lin=lin))) ## I(Mi^k;zj) equation (11)
@@ -278,10 +280,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
     
     IJ<-expand.grid(1:length(MBca),1:length(MBca))
-    
     IJ<-IJ[which(IJ[,1]<IJ[,2]),]
     IJ<-IJ[sample(1:NROW(IJ),min(maxs,NROW(IJ))),]
-    
     
     Int3.i<-NULL
     ## Interaction of terms of Mbca
@@ -291,6 +291,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       Int3.i<-c(Int3.i,(norminf(D[,MBca[i]],D[,MBca[j]],D[,ca],lin=lin)
                         -norminf(D[,MBca[i]],D[,MBca[j]],lin=lin))) ## I(Mi^k; Mi^k|zi)-I(Mi^k; Mi^k)
     }
+    
     IJ<-expand.grid(1:length(MBef),1:length(MBef))
     IJ<-IJ[which(IJ[,1]<IJ[,2]),]
     IJ<-IJ[sample(1:NROW(IJ),min(maxs,NROW(IJ))),]

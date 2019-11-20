@@ -644,7 +644,7 @@ setMethod("initialize",
             Y=NULL
             allEdges=NULL
             FF<-NULL
-            
+            EErep=10 # Easy Ensemble size to deal with unbalancedness
             FF<-foreach (ii=1:sDAG@NDAG) %op%{
               ## for (ii in 1:sDAG@NDAG)  {   ### D2C
               
@@ -786,7 +786,7 @@ setMethod("initialize",
               } ## if rev
               
               if (verbose)
-                cat(" DONE \n")
+                cat("Descriptor (N,n)=", dim(X.out), " DONE \n")
               list(X=X.out,Y=labelEdge,edges=edgesM)
               
             } ## foreach
@@ -811,7 +811,11 @@ setMethod("initialize",
             .Object@allEdges=allEdges
             
             listRF<-list()
-            for (rep in 1:1){
+            featrank<-mrmr(X ,factor(Y),min(NCOL(X),3*max.features))
+            #RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
+            #IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+            #featrank<- sort(IM,decr=TRUE,ind=TRUE)$ix
+            for (rep in 1:EErep){
               w0<-which(Y==0)
               w1<-which(Y==1)
               if (length(w0)>length(w1))
@@ -821,24 +825,21 @@ setMethod("initialize",
                 w1<-sample(w1,length(w0))
               Xb<-X[c(w0,w1),]
               Yb<-Y[c(w0,w1)]
-              
-              #RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
-              #IM<-importance(RF)[,"MeanDecreaseAccuracy"]
-              rank<-mrmr(Xb ,factor(Yb),2*max.features) #sort(IM,decr=TRUE,ind=TRUE)$ix
+          
               Intvars<- grep('Int3.',colnames(Xb))
               if (interaction==FALSE){
-                rank<-setdiff(rank,Intvars)
+                rank<-setdiff(featrank,Intvars)
                 rank<-rank[1:min(max.features,length(rank))]
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }else{
-                rank<-union(Intvars,rank[1:min(max.features,length(rank))])
+                rank<-union(Intvars,featrank[1:min(max.features,length(featrank))])
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
               if (verbose)
-                cat(" RF", rep, " (N,n)", dim(Xb), "\n")
+                cat(" RF", rep, " (N,n)=", dim(Xb), "\n")
             } ## for rep
             
             .Object@mod=listRF
