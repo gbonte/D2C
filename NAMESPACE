@@ -4,6 +4,7 @@
 export(descriptor)
 export(BER)
 export(AUC)
+export(genSTAR)
 export(mimr)
 export(H_Rn)
 export(H_sigmoid)

@@ -527,7 +527,7 @@ setMethod("initialize",
               num=sample(typeser,1)
               
               if (nseries.i>1)
-                G<-genSTAR(n=nseries.i,nn=noNodes.i,N=N.i,sd=sdn.i,num=num,loc=sample(2:3,1))
+                G<-genSTAR(n=nseries.i,nn=noNodes.i,NN=N.i,sd=sdn.i,num=num,loc=sample(2:3,1))
               else
                 G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               

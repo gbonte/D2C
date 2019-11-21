@@ -1009,9 +1009,15 @@ genTS<-function(nn,NN,sd=0.5,num=1){
   list(D=M$inp,DAG=netwDAG)
 }
 
-genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
-  
-  
+genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
+  # n: number of time series
+  # nn: max lag
+  ## NN: number of samples
+  ## loc : size neghborhood
+  ##
+  ## Returns:
+  ## D [NN,n*nn] observation dataset
+  ## DAG associated DAG
   Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
   ep=0
   eold=numeric(n)
@@ -1273,7 +1279,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
         neigh=max(1,i-loc):min(n,i+loc)
         e[i]=rnorm(1)
         y[i]=0.4*(mean(Y[N-fs[1],neigh]))-0.3*(mean(Y[N-fs[2],neigh]))
-          +0.5*(mean(Y[N-fs[1],neigh]))*sd*eold[i]+sd*e[i]
+        +0.5*(mean(Y[N-fs[1],neigh]))*sd*eold[i]+sd*e[i]
       }
       eold2=eold
       eold=e
@@ -1300,7 +1306,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
         neigh=max(1,i-loc):min(n,i+loc)
         e[i]=rnorm(1)
         y[i]=0.9*mean(Y[N-fs[1],neigh])
-          -0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e[i]
+        -0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e[i]
       }
       eold2=eold
       eold=e
@@ -1344,17 +1350,20 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
     browser()
   fs=sort(fs)
   for (i in 1:n){
-    for (j in 1:(nn-max(fs)-1)){
+    for (j in 1:nn){
       for (f in fs){
-        for (neigh in max(1,i-loc):min(n,i+loc)){
-          netwDAG <- addEdge(as.character((neigh-1)*nn+j+f+1), as.character((i-1)*nn+j), netwDAG, 1)
-          #cat((neigh-1)*nn+j+f+1,"->",(i-1)*nn+j,"\n")
+        if ((j+f)<nn){
+          for (neigh in max(1,i-loc):min(n,i+loc)){
+            netwDAG <- addEdge(as.character((neigh-1)*nn+j+f+1), as.character((i-1)*nn+j), netwDAG, 1)
+            if (verbose)
+              cat((neigh-1)*nn+j+f+1,"->",(i-1)*nn+j,"\n")
+          }
         }
       }
     }
   }
   
   
-  list(D=M$inp,DAG=netwDAG)
+  list(D=M$inp,DAG=netwDAG,fs=fs)
 }
 
