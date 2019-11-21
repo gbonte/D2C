@@ -1018,12 +1018,15 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
   ## Returns:
   ## D [NN,n*nn] observation dataset
   ## DAG associated DAG
+  ## nodes 1:nn= series 1
+  ## nodes nn+1:2*nn= series 2
   Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
   ep=0
   eold=numeric(n)
   eold2=numeric(n)
   th0=rnorm(1)
   fs<-sample(0:max(nn-2,0),min(length(0:max(nn-2,0)),4))
+  ## subset of lags 
   state=0
   print(num)
   for (ii in 1:NN){
