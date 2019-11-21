@@ -379,12 +379,14 @@ setMethod("initialize",
               wgt = runif(n = 1,min = 0.85,max = 1)
               netwDAG<-random_dag(V,maxpar = maxpar,wgt)  
               ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
-              cnt<-2
               
-              while (sum(unlist(lapply(graph::edges(netwDAG),length)))<2 & cnt<1000){
+              nodes(netwDAG)<-as.character(V)
+              
+              cnt<-1
+              while (sum(unlist(lapply(graph::edges(netwDAG),length)))<2 ){
                 maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
-                netwDAG<-random_dag(V,maxpar = 3,1)
-                
+                netwDAG<-random_dag(V,maxpar = maxpar,1)
+                nodes(netwDAG)<-as.character(V)
                 cnt<-cnt+1
                 if (cnt>50){
                   netwDAG<-new("graphNEL", nodes=as.character(1:noNodes.i), edgemode="directed")
@@ -525,12 +527,13 @@ setMethod("initialize",
               num=sample(typeser,1)
               
               if (nseries.i>1)
-                G<-genSTAR(n=nseries.i,nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
+                G<-genSTAR(n=nseries.i,nn=noNodes.i,N=N.i,sd=sdn.i,num=num,loc=sample(2:3,1))
               else
                 G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               
               
               netwDAG<-G$DAG 
+              nodes(netwDAG)<-as.character(1:NCOL(G$D))
               observationsDAG = G$D
               
               if (verbose){
@@ -646,7 +649,7 @@ setMethod("initialize",
             FF<-NULL
             EErep=10 # Easy Ensemble size to deal with unbalancedness
             FF<-foreach (ii=1:sDAG@NDAG) %op%{
-              ## for (ii in 1:sDAG@NDAG)  {   ### D2C
+              ##   for (ii in 1:sDAG@NDAG)  {   ### D2C
               
               set.seed(ii)
               
@@ -821,14 +824,14 @@ setMethod("initialize",
             for (rep in 1:EErep){
               w0<-which(Y==0)
               w1<-which(Y==1)
-              if (length(w0)>length(w1))
-                w0<-sample(w0,length(w1))
+              if (length(w0)>=1.5*length(w1))
+                w0<-sample(w0,round(1.5*length(w1)))
               
-              if (length(w1)>length(w0))
-                w1<-sample(w1,length(w0))
+              if (length(w1)>=1.5*length(w0))
+                w1<-sample(w1,round(1.5*length(w0)))
               Xb<-X[c(w0,w1),]
               Yb<-Y[c(w0,w1)]
-          
+              
               Intvars<- grep('Int3.',colnames(Xb))
               if (interaction==FALSE){
                 rank<-setdiff(featrank,Intvars)
@@ -836,7 +839,8 @@ setMethod("initialize",
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }else{
-                rank<-union(Intvars,featrank[1:min(max.features,length(featrank))])
+                #rank<-c(Intvars,setdiff(featrank,Intvars))
+                rank<-featrank[1:min(max.features,length(featrank))]
                 Xb=Xb[,rank]
                 RF <- randomForest(x =Xb ,y = factor(Yb))
               }
@@ -879,41 +883,50 @@ setMethod("initialize",
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @export
 setMethod("predict", signature="D2C",
-          function(object,i,j,data){ 
+          function(object,i,j,data, rep=1){ 
             out = list()
             
             if (any(apply(data,2,sd)<0.01))
               stop("Error in D2C::predict: Remove constant variables from dataset. ")
-            
-            
-            X_descriptor = descriptor(data,i,j,lin = object@descr@lin,
-                                      acc = object@descr@acc,
-                                      ns=object@descr@ns,
-                                      maxs=object@descr@maxs,
-                                      struct = object@descr@struct,
-                                      pq = object@descr@pq, 
-                                      bivariate =object@descr@bivariate, 
-                                      boot=object@descr@boot)
-            
-            if (any(is.infinite(X_descriptor)))
-              stop("Error in D2C::predict: infinite value ")
-            X_descriptor=X_descriptor[object@features]
-            
-            X_descriptor=scale(array(X_descriptor,c(1,length(X_descriptor))),
-                               object@center,object@scaled)
-            if (any(is.infinite(X_descriptor)))
-              stop("error in D2C::predict")
             Response<-NULL
             Prob<-NULL
-            for (r in 1:length(object@mod)){
-              mod=object@mod[[r]]$mod
-              fs=object@mod[[r]]$feat
-              
-              Response = c( Response, predict(mod, X_descriptor[fs], type="response"))
-              Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])
-            }
             
-            out[["response"]] =round(mean(Response))
+            for (rep in 1:10){
+              ## repetition with different subsets of other variables
+              others=setdiff(1:NCOL(data),c(i,j))
+              if (rep>1)
+                others=sample(others, round(2*length(others)/3))
+              D=data[,c(i,j,others)]
+              # move the concerned variables to the first two places
+              
+              #X_descriptor = descriptor(data,i,j,
+              X_descriptor = descriptor(D,1,2,
+                                        lin = object@descr@lin,
+                                        acc = object@descr@acc,
+                                        ns=object@descr@ns,
+                                        maxs=object@descr@maxs,
+                                        struct = object@descr@struct,
+                                        pq = object@descr@pq, 
+                                        bivariate =object@descr@bivariate, 
+                                        boot=object@descr@boot)
+              
+              if (any(is.infinite(X_descriptor)))
+                stop("Error in D2C::predict: infinite value ")
+              X_descriptor=X_descriptor[object@features]
+              
+              X_descriptor=scale(array(X_descriptor,c(1,length(X_descriptor))),
+                                 object@center,object@scaled)
+              if (any(is.infinite(X_descriptor)))
+                stop("error in D2C::predict")
+              
+              for (r in 1:length(object@mod)){
+                mod=object@mod[[r]]$mod
+                fs=object@mod[[r]]$feat
+                #Response = c( Response, predict(mod, X_descriptor[fs], type="response"))
+                Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])
+              }
+            }
+            out[["response"]] =round(mean(Prob))
             out[["prob"]]=mean(Prob)
             return(out)
           })

@@ -1011,7 +1011,7 @@ genTS<-function(nn,NN,sd=0.5,num=1){
 
 genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2){
   
-  loc=1  ## size of neighborhood
+  
   Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
   ep=0
   eold=numeric(n)

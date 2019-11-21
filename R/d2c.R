@@ -18,8 +18,10 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
     return(max(1e-3,regrlin(X,Y)$MSE.loo/var(Y)))
   
   
-  X<-scale(X)
-  e<-Y-lazy.pred(X,Y,X,conPar=c(min(10,N-2),min(N,20)),
+  XX<-scale(X)
+  if (N<5 | any(is.na(XX)))
+    stop("Error in npred")
+  e<-Y-lazy.pred(XX,Y,XX,conPar=c(min(10,N-2),min(N,20)),
                  linPar=NULL,class=FALSE,cmbPar=10)
   #  Itr=sample(1:N,min(50,round(2*N/3)))
   #  Its=setdiff(1:N,Itr)
@@ -75,11 +77,11 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (bivariate){
     return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs),D2C.2(D[,ca],D[,ef])))
   }else {
-    D=c(NROW(D),NCOL(D)/NROW(D),kurtosis(D[,ca])/kurtosis(D[,ef]),kurtosis(D[,ef])/kurtosis(D[,ca]),
+    De=c(NROW(D),NCOL(D)/NROW(D),kurtosis(D[,ca])/kurtosis(D[,ef]),kurtosis(D[,ef])/kurtosis(D[,ca]),
         D2C.n(D,ca,ef,ns,lin,acc,struct,
               pq=pq,boot=boot,maxs=maxs))
-    names(D)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
-    return(D)
+    names(De)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
+    return(De)
     }
 }
 
@@ -121,7 +123,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       MBca2<-ind[mimreff(D[,ind],D[,ca],nmax=ns)] ## putative list of effects
       MBca<-ind[mimr(D[,ind],D[,ca],nmax=2*ns,init=TRUE)] 
       MBca<-setdiff(MBca,MBca2) ## remove putative effects
-      MBca<-MBca[1:ns]
+      MBca<-MBca[1:min(length(MBca),ns)]
     }
     
     
@@ -140,7 +142,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       MBef2<-ind[mimreff(D[,ind],D[,ef],nmax=ns)]
       MBef<-ind[mimr(D[,ind],D[,ef],nmax=2*ns,init=TRUE)]
       MBef<-setdiff(MBef,MBef2)   ## remove putative effects
-      MBef<-MBef[1:ns]
+      MBef<-MBef[1:min(ns,length(MBef))]
     }
     
     
