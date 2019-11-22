@@ -629,7 +629,7 @@ setMethod("initialize",
                    interaction=TRUE,
                    ratioMissingNode=0,
                    ratioEdges=1,max.features=20,
-                   goParallel=FALSE,
+                   goParallel=FALSE,npar=5,
                    type="is.parent") {
             
             #generate a training set
@@ -648,153 +648,161 @@ setMethod("initialize",
             allEdges=NULL
             FF<-NULL
             EErep=10 # Easy Ensemble size to deal with unbalancedness
-            FF<-foreach (ii=1:sDAG@NDAG) %op%{
-              ##   for (ii in 1:sDAG@NDAG)  {   ### D2C
-              
-              set.seed(ii)
-              
-              DAG = sDAG@list.DAGs[[ii]]
-              observationsDAG =sDAG@list.observationsDAGs[[ii]]
-              if (verbose)
-                cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG), " ")
-              
-              Nodes = nodes(DAG)
-              
-              sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
-              keepNode = sort(sample(Nodes,
-                                     size = sz ,
-                                     replace = F))
-              
-              DAG2 =subGraph(keepNode, DAG) ## subGraph {graph}
-              
-              
-              iDAG2=graph.adjacency(as(DAG2,"matrix"))  ## as(DAG2,"matrix"): adjacency matrix of graphNEL DAG
-              ##  transforms the graphNEL adjacency matrix into igraph object
-              # Use as_graphnel to transform an igraph into graphNEL
-              
-              ##choose which edge to train / predict and find the right label
-              nEdge = length(edgeList(DAG))
-              sz=max(1,round(nEdge*ratioEdges))
-              
-              if (type=="is.parent"){
-                edgesM = matrix(unlist(sample(edgeList(DAG2),
-                                              size = sz,replace = F)),ncol=2,byrow = TRUE)
-                edgesM = rbind(edgesM,t(replicate(n =2*sz ,
-                                                  sample(keepNode,size=2,replace = FALSE)))) ## random edges
-              } else {
+            
+            iter=1
+            while ( iter <=sDAG@NDAG){
+              iFF<-foreach (ii=iter:min(sDAG@NDAG,iter+npar-1)) %dopar%{
+                ##  FF<-foreach (ii=1:sDAG@NDAG) %op%{
+                ##   for (ii in 1:sDAG@NDAG)  {   ### D2C
                 
-                edgesM = t(replicate(n =2*sz ,sample(keepNode,size=2,replace = FALSE))) ## random edges
-              }
-              nEdges =  NROW(edgesM)
-              
-              if (verbose)
-                cat("nEdges=", nEdges, " ")
-              
-              rev<-TRUE  
-              ### if TRUE, it uses both directions of the edge to train the learner 
-              ### (i.e. if i is parent of j, it is also true that j is a child of i)
-              
-              if (rev)
-                labelEdge = numeric(2*nEdges)
-              else
-                labelEdge = numeric(nEdges)
-              
-              ##compute the descriptor for the edges
-              X.out = NULL
-              
-              if (rev){
-                for(j in 1:nEdges){
+                set.seed(ii)
+                
+                DAG = sDAG@list.DAGs[[ii]]
+                observationsDAG =sDAG@list.observationsDAGs[[ii]]
+                if (verbose)
+                  cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG), " ")
+                
+                Nodes = nodes(DAG)
+                
+                sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
+                keepNode = sort(sample(Nodes,
+                                       size = sz ,
+                                       replace = F))
+                
+                DAG2 =subGraph(keepNode, DAG) ## subGraph {graph}
+                
+                
+                iDAG2=graph.adjacency(as(DAG2,"matrix"))  ## as(DAG2,"matrix"): adjacency matrix of graphNEL DAG
+                ##  transforms the graphNEL adjacency matrix into igraph object
+                # Use as_graphnel to transform an igraph into graphNEL
+                
+                ##choose which edge to train / predict and find the right label
+                nEdge = length(edgeList(DAG))
+                sz=max(1,round(nEdge*ratioEdges))
+                
+                if (type=="is.parent"){
+                  edgesM = matrix(unlist(sample(edgeList(DAG2),
+                                                size = sz,replace = F)),ncol=2,byrow = TRUE)
+                  edgesM = rbind(edgesM,t(replicate(n =2*sz ,
+                                                    sample(keepNode,size=2,replace = FALSE)))) ## random edges
+                } else {
                   
-                  I =as(edgesM[j,1],"numeric") 
-                  J =as(edgesM[j,2],"numeric") 
-                  
-                  d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                struct=descr@struct,bivariate=descr@bivariate,
-                                pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
-                  
-                  
-                  if (type=="is.parent")
-                    if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[(2*j)-1] =1
-                  if (type=="is.child")
-                    if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[(2*j)-1] =1
-                  if (type=="is.ancestor")
-                    if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[(2*j)-1] =1
-                  if (type=="is.descendant")
-                    if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[(2*j)-1] =1
-                  if (type=="is.mb")
-                    if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[(2*j)-1] =1
-                  X.out = rbind(X.out,d)
-                  
-                  ## reverse edge
-                  I =as(edgesM[j,2],"numeric") ;
-                  J =as(edgesM[j,1],"numeric") ;
-                  
-                  
-                  d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                struct=descr@struct,bivariate=descr@bivariate,
-                                pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
-                  
-                  
-                  if (type=="is.parent")
-                    if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  if (type=="is.child")
-                    if (is.child(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  if (type=="is.ancestor")
-                    if (is.ancestor(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  if (type=="is.descendant")
-                    if (is.descendant(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  if (type=="is.mb")
-                    if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1]))
-                      labelEdge[2*j] =1
-                  X.out = rbind(X.out,d)
-                  
+                  edgesM = t(replicate(n =2*sz ,sample(keepNode,size=2,replace = FALSE))) ## random edges
                 }
-              } else {    ### if rev
-                for(j in 1:nEdges){
-                  I =as(edgesM[j,1],"numeric") ;
-                  J =as(edgesM[j,2],"numeric") ;
-                  
-                  d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                struct=descr@struct,bivariate=descr@bivariate,
-                                pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
-                  
-                  labelEdge[j] =0
-                  if (type=="is.parent")
-                    if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[j] =1
-                  if (type=="is.child")
-                    if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[j] =1
-                  if (type=="is.ancestor")
-                    if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[j] =1
-                  if (type=="is.descendant")
-                    if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[j] =1
-                  if (type=="is.mb")
-                    if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
-                      labelEdge[j] =1
-                  X.out = rbind(X.out,d)
-                  
-                }
-              } ## if rev
-              
+                nEdges =  NROW(edgesM)
+                
+                if (verbose)
+                  cat("nEdges=", nEdges, " ")
+                
+                rev<-TRUE  
+                ### if TRUE, it uses both directions of the edge to train the learner 
+                ### (i.e. if i is parent of j, it is also true that j is a child of i)
+                
+                if (rev)
+                  labelEdge = numeric(2*nEdges)
+                else
+                  labelEdge = numeric(nEdges)
+                
+                ##compute the descriptor for the edges
+                X.out = NULL
+                
+                if (rev){
+                  for(j in 1:nEdges){
+                    
+                    I =as(edgesM[j,1],"numeric") 
+                    J =as(edgesM[j,2],"numeric") 
+                    
+                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                  struct=descr@struct,bivariate=descr@bivariate,
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
+                    
+                    
+                    if (type=="is.parent")
+                      if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[(2*j)-1] =1
+                    if (type=="is.child")
+                      if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[(2*j)-1] =1
+                    if (type=="is.ancestor")
+                      if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[(2*j)-1] =1
+                    if (type=="is.descendant")
+                      if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[(2*j)-1] =1
+                    if (type=="is.mb")
+                      if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[(2*j)-1] =1
+                    X.out = rbind(X.out,d)
+                    
+                    ## reverse edge
+                    I =as(edgesM[j,2],"numeric") ;
+                    J =as(edgesM[j,1],"numeric") ;
+                    
+                    
+                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                  struct=descr@struct,bivariate=descr@bivariate,
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
+                    
+                    
+                    if (type=="is.parent")
+                      if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
+                        labelEdge[2*j] =1
+                    if (type=="is.child")
+                      if (is.child(iDAG2,edgesM[j,2],edgesM[j,1]))
+                        labelEdge[2*j] =1
+                    if (type=="is.ancestor")
+                      if (is.ancestor(iDAG2,edgesM[j,2],edgesM[j,1]))
+                        labelEdge[2*j] =1
+                    if (type=="is.descendant")
+                      if (is.descendant(iDAG2,edgesM[j,2],edgesM[j,1]))
+                        labelEdge[2*j] =1
+                    if (type=="is.mb")
+                      if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1]))
+                        labelEdge[2*j] =1
+                    X.out = rbind(X.out,d)
+                    
+                  }
+                } else {    ### if rev
+                  for(j in 1:nEdges){
+                    I =as(edgesM[j,1],"numeric") ;
+                    J =as(edgesM[j,2],"numeric") ;
+                    
+                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                  struct=descr@struct,bivariate=descr@bivariate,
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
+                    
+                    labelEdge[j] =0
+                    if (type=="is.parent")
+                      if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[j] =1
+                    if (type=="is.child")
+                      if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[j] =1
+                    if (type=="is.ancestor")
+                      if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[j] =1
+                    if (type=="is.descendant")
+                      if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[j] =1
+                    if (type=="is.mb")
+                      if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        labelEdge[j] =1
+                    X.out = rbind(X.out,d)
+                    
+                  }
+                } ## if rev
+                
+                if (verbose)
+                  cat("Descriptor (N,n)=", dim(X.out), " DONE \n")
+                list(X=X.out,Y=labelEdge,edges=edgesM)
+                
+              } ## foreach
+              iter=iter+npar
+              FF<-c(FF,iFF)
               if (verbose)
-                cat("Descriptor (N,n)=", dim(X.out), " DONE \n")
-              list(X=X.out,Y=labelEdge,edges=edgesM)
-              
-            } ## foreach
-            
-            
+                cat(length(FF),"DAG processed \n")
+             
+            }
             X<-do.call(rbind,lapply(FF,"[[",1))
             Y<-do.call(c,lapply(FF,"[[",2))
             allEdges<-lapply(FF,"[[",3)
@@ -818,8 +826,8 @@ setMethod("initialize",
             RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
             IM<-importance(RF)[,"MeanDecreaseAccuracy"]
             featrank<- sort(IM,decr=TRUE,ind=TRUE)$ix
-            
-            cat("Best descriptors: ", colnames(X)[featrank], "\n")
+            if (verbose)
+              cat("Best descriptors: ", colnames(X)[featrank], "\n")
             
             for (rep in 1:EErep){
               w0<-which(Y==0)
@@ -846,7 +854,7 @@ setMethod("initialize",
               }
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
               if (verbose)
-                cat(" RF", rep, " (N,n)=", dim(Xb), "\n")
+                cat(" RF", rep, ":",RF$confusion, " : (N,n)=", dim(Xb), "\n")
             } ## for rep
             
             .Object@mod=listRF

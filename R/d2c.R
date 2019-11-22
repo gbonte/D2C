@@ -77,9 +77,8 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (bivariate){
     return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs),D2C.2(D[,ca],D[,ef])))
   }else {
-    De=c(NROW(D),NCOL(D)/NROW(D),kurtosis(D[,ca])/kurtosis(D[,ef]),kurtosis(D[,ef])/kurtosis(D[,ca]),
-        D2C.n(D,ca,ef,ns,lin,acc,struct,
-              pq=pq,boot=boot,maxs=maxs))
+    De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
+    De=c(NROW(D),NCOL(D)/NROW(D),kurtosis(D[,ca])/kurtosis(D[,ef]),kurtosis(D[,ef])/kurtosis(D[,ca]),De)
     names(De)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
     return(De)
     }
