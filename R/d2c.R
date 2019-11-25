@@ -1,4 +1,6 @@
-#' @import MASS randomForest corpcor  lazy
+#' @import MASS randomForest corpcor xgboost lazy
+
+
 
 
 npred<-function(X,Y,lin=TRUE,norm=TRUE){
