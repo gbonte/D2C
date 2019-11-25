@@ -203,13 +203,14 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     ## relevance of ca for ef
     ca.ef<-norminf(D[,ca],D[,ef],lin=lin) #I(zi;zj)
     ## relevance of ef for ca
-    ef.ca<-norminf(D[,ef],D[,ca],lin=lin)
+    ef.ca<-norminf(D[,ef],D[,ca],lin=lin) #I(zj;zi)
     
     
     delta<- norminf(D[,ef],D[,ca],D[,MBef],lin=lin) #I(zi;zj|Mj)
     delta2<- norminf(D[,ca],D[,ef],D[,MBca],lin=lin) #I(zi;zj|Mi)
     
-    
+    #Delta<- norminf(D[,ef],D[,ca],D[,MBca],lin=lin) #I(zi;zj|Mj)
+    #Delta2<- norminf(D[,ca],D[,ef],D[,MBef],lin=lin) #I(zi;zj|Mi)
     
     ## relevance of ca for ef given MBef
     delta.i<-NULL

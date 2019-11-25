@@ -1,4 +1,4 @@
-#' @import RBGL gRbase randomForest Rgraphviz methods foreach kernlab MASS igraph graph e1071
+#' @import RBGL gRbase randomForest xgboost Rgraphviz methods foreach kernlab MASS igraph graph e1071
 
 
 #########################################
@@ -595,7 +595,7 @@ setClass("D2C",
            mod="list", X="matrix",origX="matrix",Y="numeric",
            descr="D2C.descriptor",scaled="numeric",features="numeric",center="numeric",
            allEdges="list",ratioMissingNode="numeric",ratioEdges="numeric",
-           max.features="numeric",type="character"
+           max.features="numeric",type="character",classifier="character"
          ))
 
 #' creation of a D2C object which preprocesses the list of DAGs and observations contained in sDAG and fits a  Random Forest classifier
@@ -630,6 +630,7 @@ setMethod("initialize",
                    ratioMissingNode=0,
                    ratioEdges=1,max.features=20,
                    goParallel=FALSE,npar=5,
+                   classifier="XGB",
                    type="is.parent") {
             
             #generate a training set
@@ -643,6 +644,7 @@ setMethod("initialize",
             .Object@ratioEdges= ratioEdges
             .Object@max.features= max.features
             .Object@type= type
+            .Object@classifier= classifier
             X=NULL
             Y=NULL
             allEdges=NULL
@@ -801,7 +803,7 @@ setMethod("initialize",
               FF<-c(FF,iFF)
               if (verbose)
                 cat(length(FF),"DAG processed \n")
-             
+              
             }
             X<-do.call(rbind,lapply(FF,"[[",1))
             Y<-do.call(c,lapply(FF,"[[",2))
@@ -823,20 +825,32 @@ setMethod("initialize",
             
             listRF<-list()
             #featrank<-mrmr(X ,factor(Y),min(NCOL(X),3*max.features))
-            RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
-            IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+            if (classifier=="RF"){
+              RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
+              IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+            }
+            if (classifier=="XGB"){
+              RF <- xgboost(data =X ,label = Y,nrounds=20,objective = "binary:logistic")
+              IM<-numeric(NCOL(X))
+              names(IM)=colnames(X)
+              IM[xgb.importance(model = RF)[,1]]=xgb.importance(model = RF)[,2]
+            }
             featrank<- sort(IM,decr=TRUE,ind=TRUE)$ix
             if (verbose)
               cat("Best descriptors: ", colnames(X)[featrank], "\n")
             
+            if (classifier=="RF")
+              ratio=1
+            if (classifier=="XGB")
+              ratio=3
             for (rep in 1:EErep){
               w0<-which(Y==0)
               w1<-which(Y==1)
-              if (length(w0)>=1.5*length(w1))
-                w0<-sample(w0,round(1.5*length(w1)))
+              if (length(w0)>=ratio*length(w1))
+                w0<-sample(w0,round(ratio*length(w1)))
               
-              if (length(w1)>=1.5*length(w0))
-                w1<-sample(w1,round(1.5*length(w0)))
+              if (length(w1)>=length(w0))
+                w1<-sample(w1,round(length(w0)))
               Xb<-X[c(w0,w1),]
               Yb<-Y[c(w0,w1)]
               
@@ -845,12 +859,18 @@ setMethod("initialize",
                 rank<-setdiff(featrank,Intvars)
                 rank<-rank[1:min(max.features,length(rank))]
                 Xb=Xb[,rank]
-                RF <- randomForest(x =Xb ,y = factor(Yb))
+                if (classifier=="RF")
+                  RF <- randomForest(x =Xb ,y = factor(Yb))
+                if (classifier=="XGB")
+                  RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
               }else{
                 #rank<-c(Intvars,setdiff(featrank,Intvars))
                 rank<-featrank[1:min(max.features,length(featrank))]
                 Xb=Xb[,rank]
-                RF <- randomForest(x =Xb ,y = factor(Yb))
+                if (classifier=="RF")
+                  RF <- randomForest(x =Xb ,y = factor(Yb))
+                if (classifier=="XGB")
+                  RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
               }
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
               if (verbose)
@@ -931,7 +951,12 @@ setMethod("predict", signature="D2C",
                 mod=object@mod[[r]]$mod
                 fs=object@mod[[r]]$feat
                 #Response = c( Response, predict(mod, X_descriptor[fs], type="response"))
-                Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])
+                if (object@classifier=="RF")
+                  Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])
+                if (object@classifier=="XGB"){
+                  
+                  Prob = c(Prob,predict(mod, array(X_descriptor[fs],c(1,length(fs)))))
+                }
               }
             }
             out[["response"]] =round(mean(Prob))
