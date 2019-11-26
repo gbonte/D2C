@@ -1244,14 +1244,14 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
     if (num==12){
       nfs=2
       ##  Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sd*rnorm(1))
-      
-      for (i in 1:n){
-        neigh=max(1,i-loc):min(n,i+loc)
-        e=rnorm(1)
-        y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
-          (0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e
+     
+        for (i in 1:n){
+          neigh=max(1,i-loc):min(n,i+loc)
+          e=rnorm(1)
+          y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
+            (0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e
+        }
         
-      }
     }
     if (num==13){
       nfs=1
@@ -1408,9 +1408,9 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
     
     Y<-rbind(Y,y)
     
-    if (any(is.nan(Y) | abs(Y)>1000)){
-      browser()
-      stop("error")
+    if (any(is.nan(Y) | abs(Y)>10000)){
+      
+      stop("NAN error in genSTAR")
       
     }
     
@@ -1428,7 +1428,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
   M=MakeEmbedded(Y,n=numeric(n)+nn,delay=numeric(n),hor=rep(1,n),w=1:n)
   netwDAG<-new("graphNEL", nodes=as.character(1:(n*nn)), edgemode="directed")
   if (NCOL(M$inp)!=(n*nn))
-    browser()
+    stop("genstar NCOL(M$inp)!=(n*nn)")
   fs=sort(fs)
   for (i in 1:n){
     for (j in 1:nn){
