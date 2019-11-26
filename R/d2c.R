@@ -111,7 +111,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
   MBef2<-MBef
   if (n>(ns+1)){
     ind<-setdiff(1:n,ca)
-    ind<-ind[rankrho(D[,ind],D[,ca],nmax=min(length(ind),50))]
+    ind<-ind[rankrho(D[,ind],D[,ca],nmax=min(length(ind),5*ns))]
     if (boot=="mrmr")
       MBca<-ind[mrmr(D[,ind],D[,ca],nmax=ns)]
     
@@ -130,7 +130,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
     #### creation of the Markov Blanket of ef (denoted MBef)
     ind<-setdiff(1:n,ef)
-    ind<-ind[rankrho(D[,ind],D[,ef],nmax=min(length(ind),50))]
+    ind<-ind[rankrho(D[,ind],D[,ef],nmax=min(length(ind),5*ns))]
     
     if (boot=="mrmr")
       MBef<-ind[mrmr(D[,ind],D[,ef],nmax=ns)]
@@ -146,8 +146,15 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       MBef<-MBef[1:min(ns,length(MBef))]
     }
     
+    iMb=intersect(MBca,MBef)
+    if (length(iMb)<(length(MBca)-1))
+      MBca=setdiff(MBca,iMb)
     
+    if (length(iMb)<(length(MBef)-1))
+      MBef=setdiff(MBef,iMb)
     
+   if (length(MBca)<2 || length(MBef)<2)
+     stop("error: too short MB size")
   }
   
   namesx<-NULL 
