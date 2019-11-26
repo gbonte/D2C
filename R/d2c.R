@@ -146,8 +146,11 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       MBef<-MBef[1:min(ns,length(MBef))]
     }
     
-    
-    
+    iMb=intersect(MBca,MBef)
+    MBca=setdiff(MBca,iMb)
+    MBef=setdiff(MBef,iMb)
+   if (length(MBca)<1 || length(MBef)<1)
+     stop("error: too short MB size")
   }
   
   namesx<-NULL 
