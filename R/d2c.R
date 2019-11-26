@@ -147,6 +147,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     }
     
     iMb=intersect(MBca,MBef)
+
     if (length(iMb)<(length(MBca)-1))
       MBca=setdiff(MBca,iMb)
     
