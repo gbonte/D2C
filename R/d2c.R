@@ -128,23 +128,32 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     }
     
     
+    
     #### creation of the Markov Blanket of ef (denoted MBef)
-    ind<-setdiff(1:n,ef)
-    ind<-ind[rankrho(D[,ind],D[,ef],nmax=min(length(ind),5*ns))]
+    ind2<-setdiff(1:n,ef)
+    ind2<-ind2[rankrho(D[,ind2],D[,ef],nmax=min(length(ind2),5*ns))]
     
     if (boot=="mrmr")
-      MBef<-ind[mrmr(D[,ind],D[,ef],nmax=ns)]
+      MBef<-ind2[mrmr(D[,ind2],D[,ef],nmax=ns)]
     
     if (boot=="rank")
-      MBef<-ind[1:ns]
+      MBef<-ind2[1:ns]
     
     MBef2<-MBef
     if (boot=="mimr"){
-      MBef2<-ind[mimreff(D[,ind],D[,ef],nmax=ns)]
-      MBef<-ind[mimr(D[,ind],D[,ef],nmax=2*ns,init=TRUE)]
+      MBef2<-ind2[mimreff(D[,ind2],D[,ef],nmax=ns)]
+      MBef<-ind2[mimr(D[,ind2],D[,ef],nmax=2*ns,init=TRUE)]
       MBef<-setdiff(MBef,MBef2)   ## remove putative effects
       MBef<-MBef[1:min(ns,length(MBef))]
     }
+    
+    if (boot=="mrmr2"){
+      ind<-setdiff(union(ind,ind2),c(ca,ef))
+      fs=mrmr2(D[,ind],D[,ca],D[,ef],nmax=ns)
+      MBca<-ind[fs$fs1] ## putative list of effects
+      MBef<-ind[fs$fs2] 
+    }
+    
     
     iMb=intersect(MBca,MBef)
 

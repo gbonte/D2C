@@ -737,6 +737,82 @@ mrmr<-function(X,Y,nmax=5,first=NULL,all=FALSE,back=FALSE,lambda=1,categ=FALSE){
   
 }
 
+
+
+mrmr2<-function(X,Y1,Y2,nmax=5,first=NULL,all=FALSE,lambda=1,categ=FALSE){
+  ## mRMR2 filter
+  # 26/11/19
+  
+  
+  n<-NCOL(X)
+  N<-NROW(X)
+  m<-NCOL(Y1)
+  
+  if (categ && is.factor(Y1)){
+    Iy1<-numeric(n)
+    Ix<-array(0,c(n,n))
+    for (i in 1:(n-1)){
+      for (j in (i+1):n){
+        Ix[i,j]<-mean(c(mutinf(factor(X[,i]),factor(X[,j])),
+                        mutinf(factor(X[,j]),factor(X[,i]))))
+      }
+      Iy1[i]<-mutinf(factor(X[,i]),Y1)
+      Iy2[i]<-mutinf(factor(X[,i]),Y2)
+    }
+    
+    
+  }else {
+    
+    X<-scale(X)
+    Iy1<-cor2I2(corXY(X,Y1))
+    Iy2<-cor2I2(corXY(X,Y2))
+    CCx<-cor(X,use="pairwise.complete.obs")
+    Ix<-cor2I2(CCx)
+    
+  }
+  
+  subs1<-which.max(Iy1)
+  subs2<-which.max(Iy2)
+  for (j in length(subs1):min(n-1,nmax)){
+    mrmr1<-numeric(n)-Inf
+    mrmr2<-numeric(n)-Inf
+    if (length(subs1)<(n-1)){
+      if (length(subs1)>1){
+        mrmr1[-subs1]<- Iy1[-subs1]+lambda*apply(-Ix[subs1,-subs1],2,mean)+lambda*apply(-Ix[subs2,-subs1],2,mean)
+        mrmr2[-subs2]<- Iy2[-subs2]+lambda*apply(-Ix[subs2,-subs2],2,mean)+lambda*apply(-Ix[subs1,-subs2],2,mean)
+      } else {
+        
+        mrmr1[-subs1]<- Iy1[-subs1]+lambda*(-Ix[subs1,-subs1])+lambda*(-Ix[subs2,-subs1])
+        mrmr2[-subs2]<- Iy2[-subs2]+lambda*(-Ix[subs1,-subs2])+lambda*(-Ix[subs1,-subs2])
+        
+      }
+    } else {
+      mrmr1[-subs1]<-Inf
+      mrmr2[-subs2]<-Inf
+    }
+    
+    s1<-which.max(mrmr1)
+    s2<-which.max(mrmr2)
+    sortmrmr1<-sort(mrmr1,decreas=TRUE,index=TRUE)$ix[1:(n-length(subs1))]
+    sortmrmr2<-sort(mrmr2,decreas=TRUE,index=TRUE)$ix[1:(n-length(subs2))]
+    allfs1<-c(subs1,sortmrmr1)
+    subs1<-c(subs1,s1)
+    
+    allfs2<-c(subs2,sortmrmr2)
+    subs2<-c(subs2,s2)
+    
+  }
+  
+  
+  if (all){
+    return(list(allfs1,allfs2))
+  } else {
+    return(list(fs1=subs1[1:nmax],fs2=subs2[1:nmax]))
+  }
+  
+}
+
+
 assoc <-function(x,y){
   c(abs(cor(x,y)),cor.test(x,y)$p.value)
   
