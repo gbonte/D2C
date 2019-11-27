@@ -1445,7 +1445,8 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
     }
   }
   
-  
+  if (any(apply(M$inp,2,sd)<0.1))
+    browser()
   list(D=M$inp,DAG=netwDAG,fs=fs)
 }
 
