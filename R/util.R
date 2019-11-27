@@ -1409,7 +1409,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
     Y<-rbind(Y,y)
     
     if (any(is.nan(Y) | abs(Y)>10000)){
-      
+      cat("num=",num,"\n")
       stop("NAN error in genSTAR")
       
     }
