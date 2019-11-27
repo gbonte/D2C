@@ -1272,8 +1272,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
-        y[i]= 1-1.4*mean(Y[N-fs[1],neigh])*mean(Y[N-fs[1],neigh]) + 
-          0.3*mean(Y[N-fs[2],neigh])+0.0001*sd*e
+        y[i]= 1-1.4*mean(Y[N-fs[1],neigh])*mean(Y[N-fs[1],neigh]) + 0.3*mean(Y[N-fs[2],neigh])+0.0001*sd*e
         
       }
       
@@ -1360,8 +1359,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e[i]=rnorm(1)
-        y[i]=0.4*(mean(Y[N-fs[1],neigh]))-0.3*(mean(Y[N-fs[2],neigh]))
-        +0.5*(mean(Y[N-fs[1],neigh]))*sd*eold[i]+sd*e[i]
+        y[i]=0.4*(mean(Y[N-fs[1],neigh]))-0.3*(mean(Y[N-fs[2],neigh]))+0.5*(mean(Y[N-fs[1],neigh]))*sd*eold[i]+sd*e[i]
       }
       eold2=eold
       eold=e
@@ -1387,8 +1385,8 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e[i]=rnorm(1)
-        y[i]=0.9*mean(Y[N-fs[1],neigh])
-        -0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e[i]
+        y[i]=0.9*mean(Y[N-fs[1],neigh])-0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e[i]
+       
       }
       eold2=eold
       eold=e
@@ -1400,8 +1398,7 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e[i]=rnorm(1)
-        y[i]=0.3*mean(Y[N-fs[1],neigh]) +0.6 *mean(Y[N-fs[2],neigh])
-        +(0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e[i]
+        y[i]=0.3*mean(Y[N-fs[1],neigh]) +0.6 *mean(Y[N-fs[2],neigh])+(0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sd*e[i]
       }
       eold2=eold
       eold=e
@@ -1422,7 +1419,8 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
   
   
   fs=fs[1:nfs]
-  
+  if (any(apply(Y,2,sd)<0.1))
+    browser()
   Y=scale(Y[nn:NROW(Y),])
   if (any(is.nan(Y) ))
     stop("error")
