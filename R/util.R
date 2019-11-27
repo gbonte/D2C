@@ -1420,10 +1420,10 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
   
   fs=fs[1:nfs]
   if (any(apply(Y,2,sd)<0.1))
-    browser()
+    stop("genSTAR error: too small sd in Y ")
   Y=scale(Y[nn:NROW(Y),])
   if (any(is.nan(Y) ))
-    stop("error")
+    stop("genSTAR error: nan Y")
   M=MakeEmbedded(Y,n=numeric(n)+nn,delay=numeric(n),hor=rep(1,n),w=1:n)
   netwDAG<-new("graphNEL", nodes=as.character(1:(n*nn)), edgemode="directed")
   if (NCOL(M$inp)!=(n*nn))
@@ -1443,8 +1443,8 @@ genSTAR<-function(n, nn,NN,sd=0.5,num=1,loc=2,verbose=FALSE){
     }
   }
   
-  if (any(apply(M$inp,2,sd)<0.1))
-    browser()
+  if (any(apply(M$inp,2,sd)<0.01))
+    stop("genSTAR error: too small sd in M$inp ")
   list(D=M$inp,DAG=netwDAG,fs=fs)
 }
 
