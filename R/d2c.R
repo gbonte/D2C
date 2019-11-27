@@ -331,6 +331,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
     E.ef=ecdf(D[,ef])(D[,ef]) ## empirical cdf of D[,ef]
     E.ca=ecdf(D[,ca])(D[,ca])
+    
     ## gini relevance of ca for ef
     gini.ca.ef<-norminf(D[,ca],E.ef,lin=lin)
     ## gini relevance of ef for ca
@@ -474,6 +475,10 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
   
   if (length(names(x))!=length(namesx))
     stop("error in function D2C.n!")
+  if (length(namesx)!=length(x)){
+    print(x)
+    stop("error in D2C.n")
+  }
   names(x)<-namesx
   x
   
