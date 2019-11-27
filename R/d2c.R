@@ -81,6 +81,10 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   }else {
     De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
     De=c(NROW(D),NCOL(D)/NROW(D),kurtosis(D[,ca])/kurtosis(D[,ef]),kurtosis(D[,ef])/kurtosis(D[,ca]),De)
+    if (length(names(De))<=4){
+      print(De)
+      stop("Error in descriptor")
+    }
     names(De)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
     return(De)
     }
@@ -473,8 +477,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     )
   } ## if acc
   
-  if (length(names(x))!=length(namesx))
-    stop("error in function D2C.n!")
+  
   if (length(namesx)!=length(x)){
     print(x)
     stop("error in D2C.n")

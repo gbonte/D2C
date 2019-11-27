@@ -348,6 +348,7 @@ lazy.pred<- function(X,Y,X.ts,class=FALSE,return.more=FALSE,
   } else { ## regression
     d<-data.frame(cbind(Y,X))
     names(d)[1]<-"Y"
+    
     names(d)[2:(n+1)]<-paste("x",1:n,sep="")
     
     
