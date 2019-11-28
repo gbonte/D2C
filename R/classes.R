@@ -36,8 +36,8 @@ setClass("D2C.descriptor",
 setMethod("initialize",
           "D2C.descriptor",
           function(.Object, lin=TRUE, acc=TRUE,
-                   struct=TRUE,pq=c(0.1, 0.25, 0.5, 0.75, 0.9),
-                   bivariate=FALSE,ns=4,boot="rank",maxs=20)
+                   struct=FALSE,pq=c(0.1, 0.25, 0.5, 0.75, 0.9),
+                   bivariate=FALSE,ns=4,boot="mrmr2",maxs=20)
           {
             
             .Object@lin <- lin
@@ -632,7 +632,7 @@ setMethod("initialize",
                    ratioMissingNode=0,
                    ratioEdges=1,max.features=20,
                    goParallel=FALSE,npar=5,
-                   classifier="XGB",
+                   classifier="RF",
                    type="is.parent") {
             
             #generate a training set

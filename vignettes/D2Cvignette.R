@@ -6,23 +6,24 @@ require(gRbase)
 require(igraph)
 require(graph)
 
+set.seed(0)
 
-noNodes<-c(10,20)
+noNodes<-c(100,150)
 ## range of number of nodes
 
-N<-c(50,200)
+N<-c(100,200)
 ## range of number of samples
 
-sd.noise<-c(0.2,1)
+sd.noise<-c(0.2,0.5)
 ## range of values for standard deviation of additive noise 
 
-NDAG=100
+NDAG=20
 ## number of DAGs to be created and simulated
 
 
 trainDAG<-new("simulatedDAG",NDAG=NDAG, N=N, noNodes=noNodes,
               functionType = c("linear","quadratic","sigmoid"), 
-              seed=0,sdn=sd.noise,quantize=c(TRUE,FALSE),verbose=FALSE)
+              seed=0,sdn=sd.noise,quantize=c(TRUE,FALSE),verbose=TRUE)
 
 
 
@@ -34,10 +35,10 @@ print(trainDAG@list.DAGs[[1]])
 print(dim(trainDAG@list.observationsDAGs[[1]]))
 
 ## ----echo=TRUE,eval=TRUE-------------------------------------------------
-descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=3,acc=TRUE,lin=TRUE)
+descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE)
 
 trainD2C<-new("D2C",sDAG=trainDAG, 
-              descr=descr.example,ratioEdges=1,max.features=30,verbose=FALSE)
+              descr=descr.example,ratioEdges=0.1,max.features=30,verbose=TRUE)
 
 
 
@@ -51,73 +52,66 @@ print(trainD2C@mod)
 
 
 ## ----echo=TRUE-----------------------------------------------------------
-NDAG.test=50
-noNodes<-c(10,20)
-## range of number of nodes
+NDAG.test=100
 
-N<-c(50,100)
 
 testDAG<-new("simulatedDAG",NDAG=NDAG.test, N=N, noNodes=noNodes,
-             functionType = c("linear","quadratic","sigmoid"), quantize=c(TRUE,FALSE),
-             seed=101,sdn=c(0.2,0.5),verbose=FALSE)
+             functionType = c("linear","quadratic","sigmoid"), 
+             quantize=c(TRUE,FALSE),
+             seed=101,sdn=sd.noise,verbose=TRUE)
 
 ## ----echo=TRUE,results=FALSE,message=FALSE, warning=FALSE,eval=FALSE-----
-#  require(foreach)
-#  if (!require(bnlearn)){
-#    install.packages("bnlearn", repos="http://cran.rstudio.com/")
-#    library(bnlearn)
-#    }
-#  FF<-foreach (r=1:testDAG@NDAG) %do%{
-#    set.seed(r)
-#    observedData<-testDAG@list.observationsDAGs[[r]]
-#    trueDAG<-testDAG@list.DAGs[[r]]
-#  
-#    ## inference of networks with bnlearn package
-#    Ahat.GS<-amat(gs(data.frame(observedData),alpha=0.01))
-#    Ahat.IAMB<-(amat(iamb(data.frame(observedData),alpha=0.01)))
-#  
-#    graphTRUE<- as.adjMAT(trueDAG)
-#  
-#  
-#    ## selection of a balanced subset of edges for the assessment
-#    Nodes=nodes(trueDAG)
-#    max.edges<-min(30,length(edgeList(trueDAG)))
-#    subset.edges = matrix(unlist(sample(edgeList(trueDAG),
-#                                        size = max.edges,replace = F)),ncol=2,byrow = TRUE)
-#    subset.edges = rbind(subset.edges,t(replicate(n =max.edges,
-#                                                  sample(Nodes,size=2,replace = FALSE))))
-#  
-#    Yhat.D2C<-NULL
-#    Yhat.IAMB<-NULL
-#    Yhat.GS<-NULL
-#    Ytrue<-NULL
-#    for(jj in 1:NROW(subset.edges)){
-#      i =as(subset.edges[jj,1],"numeric");
-#      j =as(subset.edges[jj,2],"numeric") ;
-#      pred.D2C = predict(trainD2C,i,j, observedData)
-#  
-#      Yhat.D2C<-c(Yhat.D2C,as.numeric(pred.D2C$response)  -1)
-#      Yhat.IAMB<-c(Yhat.IAMB,Ahat.IAMB[i,j])
-#      Yhat.GS<-c(Yhat.GS,Ahat.GS[i,j])
-#      Ytrue<-c(Ytrue,graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
-#      }
-#  
-#    list(Yhat.D2C=Yhat.D2C,Yhat.GS=Yhat.GS,
-#         Yhat.IAMB=Yhat.IAMB,Ytrue=Ytrue)
-#    }
-#  
-#  Yhat.D2C<-unlist(lapply(FF,"[[",1) )
-#  Yhat.GS<-unlist(lapply(FF,"[[",2))
-#  Yhat.IAMB<-unlist(lapply(FF,"[[",3))
-#  Ytrue<-unlist(lapply(FF,"[[",4))
-#  ## computation of Balanced Error Rate
-#  BER.D2C<-BER(Ytrue,Yhat.D2C)
-#  BER.GS<-BER(Ytrue,Yhat.GS)
-#  
-
-## ----echo=TRUE, eval=FALSE-----------------------------------------------
-#  cat("\n BER.D2C=",BER.D2C, "BER.IAMB=",BER.IAMB,"BER.GS=",BER.GS,"\n")
-
+ 
+  if (!require(bnlearn)){
+    install.packages("bnlearn", repos="http://cran.rstudio.com/")
+    library(bnlearn)
+    }
+Yhat.D2C<-NULL
+Yhat.IAMB<-NULL
+Yhat.GS<-NULL
+Ytrue<-NULL
+  for (r in 1:testDAG@NDAG){
+    set.seed(r)
+    observedData<-testDAG@list.observationsDAGs[[r]]
+    trueDAG<-testDAG@list.DAGs[[r]]
+  
+    ## inference of networks with bnlearn package
+    Ahat.GS<-amat(gs(data.frame(observedData),alpha=0.01))
+    Ahat.IAMB<-(amat(iamb(data.frame(observedData),alpha=0.01)))
+  
+    graphTRUE<- as.adjMAT(trueDAG)
+  
+  
+    ## selection of a balanced subset of edges for the assessment
+    Nodes=nodes(trueDAG)
+    max.edges<-min(10,length(edgeList(trueDAG)))
+    subset.edges = matrix(unlist(sample(edgeList(trueDAG),
+                                        size = max.edges,replace = F)),ncol=2,byrow = TRUE)
+    subset.edges = rbind(subset.edges,t(replicate(n =max.edges,
+                                                  sample(Nodes,size=2,replace = FALSE))))
+  
+    
+    for(jj in 1:NROW(subset.edges)){
+      i =as(subset.edges[jj,1],"numeric");
+      j =as(subset.edges[jj,2],"numeric") ;
+      pred.D2C = predict(trainD2C,i,j, observedData,rep=3)
+  
+      Yhat.D2C<-c(Yhat.D2C,as.numeric(pred.D2C$response))
+      Yhat.IAMB<-c(Yhat.IAMB,Ahat.IAMB[i,j])
+      Yhat.GS<-c(Yhat.GS,Ahat.GS[i,j])
+      Ytrue<-c(Ytrue,graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
+      ## computation of Balanced Error Rate
+      BER.D2C<-BER(Ytrue,Yhat.D2C)
+      BER.GS<-BER(Ytrue,Yhat.GS)
+      BER.IAMB<-BER(Ytrue,Yhat.IAMB)
+      
+      ## ----echo=TRUE, eval=FALSE-----------------------------------------------
+      cat("\n  DAG", r, ",", length(Ytrue), " edges tested: BER.D2C=",BER.D2C, "BER.IAMB=",BER.IAMB,"BER.GS=",BER.GS,"\n")
+      }
+  
+  
+ 
+}
 ## ----echo=TRUE,eval=FALSE------------------------------------------------
 #  data(alarm)
 #  
