@@ -774,6 +774,8 @@ mrmr2<-function(X,Y1,Y2,nmax=5,first=NULL,all=FALSE,lambda=1,categ=FALSE){
   
   subs1<-which.max(Iy1)
   subs2<-which.max(Iy2)
+  if (subs2==subs1)
+    subs2=sort(Iy2,decr=TRUE,index=TRUE)$ix[2]
   for (j in length(subs1):min(n-1,nmax)){
     mrmr1<-numeric(n)-Inf
     mrmr2<-numeric(n)-Inf
@@ -1272,7 +1274,8 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
-        y[i]= 1-1.4*mean(Y[N-fs[1],neigh])*mean(Y[N-fs[1],neigh]) + 0.3*mean(Y[N-fs[2],neigh])+0.0001*sdev*e
+        y[i]= 1-1.4*mean(Y[N-fs[1],neigh])*mean(Y[N-fs[1],neigh]) + 
+          0.3*mean(Y[N-fs[2],neigh])+0.0001*sdev*e
         
       }
       
@@ -1359,7 +1362,8 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e[i]=rnorm(1)
-        y[i]=0.4*(mean(Y[N-fs[1],neigh]))-0.3*(mean(Y[N-fs[2],neigh]))+0.5*(mean(Y[N-fs[1],neigh]))*sdev*eold[i]+sdev*e[i]
+        y[i]=0.4*(mean(Y[N-fs[1],neigh]))-0.3*(mean(Y[N-fs[2],neigh]))+
+          0.5*(mean(Y[N-fs[1],neigh]))*sdev*eold[i]+sdev*e[i]
       }
       eold2=eold
       eold=e
@@ -1385,7 +1389,8 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e[i]=rnorm(1)
-        y[i]=0.9*mean(Y[N-fs[1],neigh])-0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
+        y[i]=0.9*mean(Y[N-fs[1],neigh])-
+          0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
        
       }
       eold2=eold
@@ -1398,7 +1403,8 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e[i]=rnorm(1)
-        y[i]=0.3*mean(Y[N-fs[1],neigh]) +0.6 *mean(Y[N-fs[2],neigh])+(0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
+        y[i]=0.3*mean(Y[N-fs[1],neigh]) +0.6 *mean(Y[N-fs[2],neigh])+(0.1-0.9*mean(Y[N-fs[1],neigh])+
+                                                                        0.8*mean(Y[N-fs[2],neigh]))/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
       }
       eold2=eold
       eold=e

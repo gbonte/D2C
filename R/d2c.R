@@ -156,19 +156,20 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       fs=mrmr2(D[,ind],D[,ca],D[,ef],nmax=ns)
       MBca<-ind[fs$fs1] ## putative list of effects
       MBef<-ind[fs$fs2] 
+      iMb=intersect(MBca,MBef)
+      
+      if (length(iMb)<(length(MBca)-2))
+        MBca=setdiff(MBca,iMb)
+      
+      if (length(iMb)<(length(MBef)-2))
+        MBef=setdiff(MBef,iMb)
+      
+      if (length(MBca)<3 || length(MBef)<3)
+        stop("error: too short MB size")
     }
     
     
-    iMb=intersect(MBca,MBef)
-
-    if (length(iMb)<(length(MBca)-2))
-      MBca=setdiff(MBca,iMb)
     
-    if (length(iMb)<(length(MBef)-2))
-      MBef=setdiff(MBef,iMb)
-    
-   if (length(MBca)<3 || length(MBef)<3)
-     stop("error: too short MB size")
   }
   
   namesx<-NULL 
