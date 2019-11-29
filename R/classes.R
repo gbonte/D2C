@@ -657,7 +657,7 @@ setMethod("initialize",
             while ( iter <=sDAG@NDAG){
               iFF<-foreach (ii=iter:min(sDAG@NDAG,iter+npar-1)) %dopar%{
                 ##  FF<-foreach (ii=1:sDAG@NDAG) %op%{
-                ##   for (ii in 1:sDAG@NDAG)  {   ### D2C
+                 ##  for (ii in iter:min(sDAG@NDAG,iter+npar-1))  {   ### D2C
                 
                 set.seed(ii)
                 

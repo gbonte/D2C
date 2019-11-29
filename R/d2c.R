@@ -80,8 +80,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs),D2C.2(D[,ca],D[,ef])))
   }else {
     De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
-    De=c(NROW(D),NCOL(D)/NROW(D),kurtosis(D[,ca])/kurtosis(D[,ef]),kurtosis(D[,ef])/kurtosis(D[,ca]),De)
-    if (length(names(De))<=4){
+   if (any(is.na(De))){
       print(De)
       stop("Error in descriptor")
     }
@@ -125,7 +124,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     MBca2=MBca
     
     if (boot=="mimr"){
-      MBca2<-ind[mimreff(D[,ind],D[,ca],nmax=ns)] ## putative list of effects
+      MBca2<-ind[mimr(D[,ind],D[,ca],nmax=ns,caus=-1)] ## putative list of effects
       MBca<-ind[mimr(D[,ind],D[,ca],nmax=2*ns,init=TRUE)] 
       MBca<-setdiff(MBca,MBca2) ## remove putative effects
       MBca<-MBca[1:min(length(MBca),ns)]
@@ -145,27 +144,18 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
     MBef2<-MBef
     if (boot=="mimr"){
-      MBef2<-ind2[mimreff(D[,ind2],D[,ef],nmax=ns)]
+      MBef2<-ind2[mimr(D[,ind2],D[,ef],nmax=ns,caus=-1)]
       MBef<-ind2[mimr(D[,ind2],D[,ef],nmax=2*ns,init=TRUE)]
       MBef<-setdiff(MBef,MBef2)   ## remove putative effects
       MBef<-MBef[1:min(ns,length(MBef))]
     }
     
-    if (boot=="mrmr2"){
+    if (boot=="mimr2"){
       ind<-setdiff(union(ind,ind2),c(ca,ef))
-      fs=mrmr2(D[,ind],D[,ca],D[,ef],nmax=ns)
+      fs=mimr2(D[,ind],D[,ca],D[,ef],nmax=ns,init=TRUE)
       MBca<-ind[fs$fs1] ## putative list of effects
       MBef<-ind[fs$fs2] 
-      iMb=intersect(MBca,MBef)
       
-      if (length(iMb)<(length(MBca)-2))
-        MBca=setdiff(MBca,iMb)
-      
-      if (length(iMb)<(length(MBef)-2))
-        MBef=setdiff(MBef,iMb)
-      
-      if (length(MBca)<3 || length(MBef)<3)
-        stop("error: too short MB size")
     }
     
     
@@ -265,18 +255,14 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     I2.ib<-NULL
     ## Information of Mbef on ca given ef
     for (j in 1:length(MBef)){
-      backdoor=setdiff(union(MBca,MBef[-j]),c(ca,ef))
       I2.i<-c(I2.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)) ## I(zi; Mj^k|zj) equation (8)
-      I2.ib<-c(I2.ib, norminf(D[,ca], D[,MBef[j]],D[,c(ef,backdoor)],lin=lin)) 
-    }
+     }
     
     I2.j<-NULL
     I2.jb<-NULL
     ## Information of Mbca on ef given ca
     for (j in 1:length(MBca)){
-      backdoor=setdiff(union(MBef,MBca[-j]),c(ca,ef))
       I2.j<-c(I2.j, norminf(D[,ef], D[,MBca[j]],D[,ca],lin=lin)) ## I(zj; Mi^k|zi) equation (8)
-      I2.jb<-c(I2.jb, norminf(D[,ef], D[,MBca[j]],D[,c(ca,backdoor)],lin=lin)) 
     }
     
     IJ<-expand.grid(1:length(MBca),1:length(MBef))
@@ -288,8 +274,6 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
-      backdoor=setdiff(union(MBca[-i],MBef[-j]),ca)
-      I3.ib<-c(I3.ib,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ca,backdoor)],lin=lin))) 
       I3.i<-c(I3.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
       
     }
@@ -300,8 +284,6 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     for (r in 1:NROW(IJ)){
       i=IJ[r,1]
       j=IJ[r,2]
-      backdoor=setdiff(union(MBca[-i],MBef[-j]),ef)
-      I3.jb<-c(I3.jb,(norminf(D[,MBca[i]],D[,MBef[j]],D[,c(ef,backdoor)],lin=lin))) 
       I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin))) ## I(Mi^k; Mj^k|zj) equation (9-10)
       
       
@@ -443,9 +425,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
          quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
          quantile(I2.i,probs=pq,na.rm=TRUE),quantile(I2.j,probs=pq,na.rm=TRUE),
-         quantile(I2.ib,probs=pq,na.rm=TRUE),quantile(I2.jb,probs=pq,na.rm=TRUE),
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE),
-         quantile(I3.ib,probs=pq,na.rm=TRUE),quantile(I3.jb,probs=pq,na.rm=TRUE),
          quantile(Int3.i,probs=pq,na.rm=TRUE),quantile(Int3.j,probs=pq,na.rm=TRUE),
          gini.delta,gini.delta2,
          gini.ca.ef,gini.ef.ca
@@ -463,9 +443,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
               "ca.ef","ef.ca",
               paste0("I1.i",1:length(pq)), paste0("I1.j",1:length(pq)),
               paste0("I2.i",1:length(pq)), paste0("I2.j",1:length(pq)),
-              paste0("I2.ib",1:length(pq)), paste0("I2.jb",1:length(pq)),
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)),
-              paste0("I3.ib",1:length(pq)), paste0("I3.jb",1:length(pq)),
               paste0("Int3.i",1:length(pq)), paste0("Int3.j",1:length(pq)),
               "gini.delta","gini.delta2",
               "gini.ca.ef","gini.ef.ca"

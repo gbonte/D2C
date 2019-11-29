@@ -521,6 +521,125 @@ mimr<-function(X,Y,nmax=5,
   
 }
 
+
+mimr2<-function(X,Y1,Y2,nmax=5,
+               init=FALSE,lambda=0.5,
+               spouse.removal=TRUE,
+               caus=1){
+  if (sd(Y1)<1e-5 || sd(Y2)<1e-5)
+    return(list(fs1=1:nmax, fs2=1:nmax))
+  NMAX<-nmax
+  m<-NCOL(Y1) # number of outputs
+  n<-NCOL(X)
+  orign<-n
+  N<-NROW(X)
+  H<-apply(X,2,var)
+  HY1<-var(Y1)
+  CY1<-corXY(X,Y1)
+  Iy1<-cor2I2(CY1)
+  HY2<-var(Y2)
+  CY2<-corXY(X,Y2)
+  Iy2<-cor2I2(CY2)
+  subset1<-1:n
+  pv.rho1<-ppears(c(CY1),N+numeric(n))
+  if (spouse.removal){
+    pv1<-ppears(c(CY1),N+numeric(n))
+    s1<-sort(pv1,decreasing=TRUE,index.return=TRUE)
+    hw<-max(1,min(n-nmax,length(which(s1$x>0.05))))
+    spouse<-s1$ix[1:hw]
+    subset1<-setdiff(1:n,s1$ix[1:hw])
+    
+    pv2<-ppears(c(CY2),N+numeric(n))
+    s2<-sort(pv2,decreasing=TRUE,index.return=TRUE)
+    hw<-max(1,min(n-nmax,length(which(s2$x>0.05))))
+    spouse<-s2$ix[1:hw]
+    subset2<-setdiff(1:n,s2$ix[1:hw])
+    
+    subset<-union(subset1,subset2)
+    
+    X<-X[,subset]
+    Iy1<-Iy1[subset]
+    Iy2<-Iy2[subset]
+    n<-NCOL(X)
+  }
+  
+  
+  CCx<-cor(X)
+  Ix<-cor2I2(CCx)
+  ## mutual information
+  Ixx1<-Icond(X,z=Y1,lambda=0.02)
+  Ixx2<-Icond(X,z=Y2,lambda=0.02)
+  ## conditional information
+  Inter1<-array(NA,c(n,n))
+  Inter2<-array(NA,c(n,n))
+  if (init){
+    max.kj<--Inf
+    for (kk in 1:(n-1)){
+      for (jj in (kk+1):n){
+        Inter1[kk,jj]<- (1-lambda)*(Iy1[kk]+Iy1[jj])+caus*lambda*(Ixx1[kk,jj]-Ix[kk,jj])
+        Inter1[jj,kk]<-Inter1[kk,jj]
+        if (Inter1[kk,jj]>max.kj){
+          max.kj<-Inter1[kk,jj]
+          subs1<-c(kk,jj)
+        }
+      }
+    }
+    max.kj<--Inf
+    for (kk in 1:(n-1)){
+      for (jj in (kk+1):n){
+        Inter2[kk,jj]<- (1-lambda)*(Iy2[kk]+Iy2[jj])+caus*lambda*(Ixx2[kk,jj]-Ix[kk,jj])
+        Inter2[jj,kk]<-Inter2[kk,jj]
+        if (Inter2[kk,jj]>max.kj){
+          max.kj<-Inter2[kk,jj]
+          subs2<-c(kk,jj)
+        }
+      }
+    }
+    
+  } else {
+    subs1<-which.max(Iy1)
+    subs2<-which.max(Iy2)
+  }
+  
+  if (nmax>length(subs1)){
+    
+    for (j in length(subs1):min(n-1,NMAX-1)){
+      mrmr1<-numeric(n)-Inf
+      mrmr2<-numeric(n)-Inf
+      if (length(subs1)<(n-1)){
+        if (length(subs1)>1){
+          mrmr1[-subs1]<- (1-lambda)*Iy1[-subs1]+caus*lambda*apply(-Ix[subs1,-subs1]-Ix[subs2,-subs1]+Ixx1[subs1,-subs1],2,mean)
+          mrmr2[-subs2]<- (1-lambda)*Iy2[-subs2]+caus*lambda*apply(-Ix[subs2,-subs2]-Ix[subs1,-subs2]+Ixx2[subs2,-subs2],2,mean)
+        } else {
+          mrmr1[-subs1]<- (1-lambda)*Iy1[-subs1]+caus*lambda*(-Ix[subs1,-subs1]-Ix[subs2,-subs1]+Ixx1[subs1,-subs1])
+          mrmr2[-subs2]<- (1-lambda)*Iy2[-subs2]+caus*lambda*(-Ix[subs2,-subs2]-Ix[subs1,-subs2]+Ixx2[subs2,-subs2])
+        }
+      } else {
+        mrmr1[-subs1]<-Inf
+        mrmr2[-subs2]<-Inf
+      }
+      s1<-which.max(mrmr1)
+      subs1<-c(subs1,s1)
+      s2<-which.max(mrmr2)
+      subs2<-c(subs2,s2)
+    }
+  }
+  
+  ra1<-subset[subs1]
+  ra2<-subset[subs2]
+  
+  if (nmax>length(ra1)){
+    ra1<-c(ra1,setdiff(1:orign,ra1))
+    ra2<-c(ra2,setdiff(1:orign,ra2))
+  }
+  if (any(is.na(ra1))|| any(is.na(ra2))){
+    stop("error in mimr2")
+  }
+  list(fs1=ra1,fs2=ra2)
+  
+}
+
+
 mimrmat<-function(X,Y,nmax=5,
                   init=TRUE,lambda=0.5,
                   spouse.removal=TRUE,R=100){
