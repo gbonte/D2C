@@ -870,7 +870,7 @@ setMethod("initialize",
                 rank<-featrank[1:min(max.features,length(featrank))]
                 Xb=Xb[,rank]
                 if (classifier=="RF")
-                  RF <- randomForest(x =Xb ,y = factor(Yb))
+                  RF <- randomForest(x =Xb ,y = factor(Yb),ntree=2000)
                 if (classifier=="XGB")
                   RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
               }
