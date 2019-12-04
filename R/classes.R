@@ -612,6 +612,7 @@ setClass("D2C",
 #' @param interaction : if NULL it use feature selection
 #' @param verbose  : if TRUE it prints the state of progress
 #' @param type : type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}
+#' @param EErep: Easy Ensemble size to deal with unbalancedness
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @examples
 #' require(RBGL)
@@ -633,7 +634,7 @@ setMethod("initialize",
                    ratioEdges=1,max.features=20,
                    goParallel=FALSE,npar=5,
                    classifier="RF",
-                   type="is.parent") {
+                   type="is.parent",EErep=5) {
             
             #generate a training set
             # NDAG the number of network to use
@@ -651,7 +652,7 @@ setMethod("initialize",
             Y=NULL
             allEdges=NULL
             FF<-NULL
-            EErep=10 # Easy Ensemble size to deal with unbalancedness
+            
             
             iter=1
             while ( iter <=sDAG@NDAG){
@@ -870,7 +871,7 @@ setMethod("initialize",
                 rank<-featrank[1:min(max.features,length(featrank))]
                 Xb=Xb[,rank]
                 if (classifier=="RF")
-                  RF <- randomForest(x =Xb ,y = factor(Yb),ntree=2000)
+                  RF <- randomForest(x =Xb ,y = factor(Yb),ntree=1000)
                 if (classifier=="XGB")
                   RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
               }
