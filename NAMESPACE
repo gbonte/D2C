@@ -12,6 +12,7 @@ export(H_sigmoid)
 export(H_kernel)
 exportMethods(initialize)
 exportMethods(predict)
+exportMethods(makeModel)
 exportMethods(joinD2C)
 export(is.what)
 

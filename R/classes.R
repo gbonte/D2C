@@ -629,12 +629,10 @@ setMethod("initialize",
           function(.Object, sDAG,
                    descr=new("D2C.descriptor"),
                    verbose=TRUE,
-                   interaction=TRUE,
                    ratioMissingNode=0,
                    ratioEdges=1,max.features=20,
                    goParallel=FALSE,npar=5,
-                   classifier="RF",
-                   type="is.parent",EErep=5) {
+                   type="is.parent") {
             
             #generate a training set
             # NDAG the number of network to use
@@ -647,7 +645,7 @@ setMethod("initialize",
             .Object@ratioEdges= ratioEdges
             .Object@max.features= max.features
             .Object@type= type
-            .Object@classifier= classifier
+            
             X=NULL
             Y=NULL
             allEdges=NULL
@@ -658,7 +656,7 @@ setMethod("initialize",
             while ( iter <=sDAG@NDAG){
               iFF<-foreach (ii=iter:min(sDAG@NDAG,iter+npar-1)) %dopar%{
                 ##  FF<-foreach (ii=1:sDAG@NDAG) %op%{
-                 ##  for (ii in iter:min(sDAG@NDAG,iter+npar-1))  {   ### D2C
+                ##  for (ii in iter:min(sDAG@NDAG,iter+npar-1))  {   ### D2C
                 
                 set.seed(ii)
                 
@@ -807,7 +805,7 @@ setMethod("initialize",
               if (verbose)
                 cat(length(FF),"DAG processed \n")
               
-            }
+            } ## while
             X<-do.call(rbind,lapply(FF,"[[",1))
             Y<-do.call(c,lapply(FF,"[[",2))
             allEdges<-lapply(FF,"[[",3)
@@ -818,13 +816,119 @@ setMethod("initialize",
               features<-setdiff(features,wna)
             
             .Object@origX<-X
-            X<-scale(X[,features])
-            .Object@scaled=attr(X,"scaled:scale")
-            .Object@center=attr(X,"scaled:center")
-            
-            .Object@features=features
             .Object@Y=Y
+            .Object@features=features
             .Object@allEdges=allEdges
+            return(.Object)
+            
+            if (FALSE){
+              
+              X<-scale(X[,features])
+              .Object@scaled=attr(X,"scaled:scale")
+              .Object@center=attr(X,"scaled:center")
+              
+              .Object@features=features
+              
+              .Object@allEdges=allEdges
+              
+              listRF<-list()
+              #featrank<-mrmr(X ,factor(Y),min(NCOL(X),3*max.features))
+              if (classifier=="RF"){
+                RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
+                IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+              }
+              if (classifier=="XGB"){
+                RF <- xgboost(data =X ,label = Y,nrounds=20,objective = "binary:logistic")
+                IM<-numeric(NCOL(X))
+                names(IM)=colnames(X)
+                IM[xgb.importance(model = RF)[,1]]=xgb.importance(model = RF)[,2]
+              }
+              featrank<- sort(IM,decr=TRUE,ind=TRUE)$ix
+              if (verbose)
+                cat("Best descriptors: ", colnames(X)[featrank], "\n")
+              
+              if (classifier=="RF")
+                ratio=1
+              if (classifier=="XGB")
+                ratio=3
+              for (rep in 1:EErep){
+                w0<-which(Y==0)
+                w1<-which(Y==1)
+                if (length(w0)>=ratio*length(w1))
+                  w0<-sample(w0,round(ratio*length(w1)))
+                
+                if (length(w1)>=length(w0))
+                  w1<-sample(w1,round(length(w0)))
+                Xb<-X[c(w0,w1),]
+                Yb<-Y[c(w0,w1)]
+                
+                Intvars<- grep('Int3.',colnames(Xb))
+                if (interaction==FALSE){
+                  rank<-setdiff(featrank,Intvars)
+                  rank<-rank[1:min(max.features,length(rank))]
+                  Xb=Xb[,rank]
+                  if (classifier=="RF")
+                    RF <- randomForest(x =Xb ,y = factor(Yb))
+                  if (classifier=="XGB")
+                    RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
+                }else{
+                  #rank<-c(Intvars,setdiff(featrank,Intvars))
+                  rank<-featrank[1:min(max.features,length(featrank))]
+                  Xb=Xb[,rank]
+                  if (classifier=="RF")
+                    RF <- randomForest(x =Xb ,y = factor(Yb),ntree=1000)
+                  if (classifier=="XGB")
+                    RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
+                }
+                listRF<-c(listRF,list(list(mod=RF,feat=rank)))
+                if (verbose)
+                  cat(" RF", rep, ":",RF$confusion, " : (N,n)=", dim(Xb), "\n")
+              } ## for rep
+              
+              .Object@mod=listRF
+              
+              .Object
+            }
+          }
+)
+
+#' @docType methods
+setGeneric("makeModel", def=function(object,...) {standardGeneric("makeModel")})
+
+#' creation of a D2C object which preprocesses the list of DAGs and observations contained in sDAG and fits a  Random Forest classifier
+#' @name  D2C object
+#' @param .Object : the D2C object
+#' @param sDAG : simulateDAG object
+#' @param descr  : D2C.descriptor object containing the parameters of the descriptor
+#' @param max.features  : maximum number of features used by the Random Forest classifier \link[randomForest]{randomForest}. The features are selected by the importance returned by the function \link[randomForest]{importance}.
+#' @param ratioEdges  : percentage of existing edges which are added to the training set
+#' @param ratioMissingNode  : percentage of existing nodes which are not considered. This is used to emulate latent variables.
+#' @param goParallel : if TRUE it uses parallelism
+#' @param interaction : if NULL it use feature selection
+#' @param verbose  : if TRUE it prints the state of progress
+#' @param type : type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}
+#' @param EErep: Easy Ensemble size to deal with unbalancedness
+#' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
+#' @examples
+#' @export
+setMethod("makeModel",
+          "D2C",
+          function(object, max.features=20,
+                   goParallel=FALSE,npar=5,
+                   classifier="RF",
+                   type="is.parent",EErep=5,verbose=TRUE,interaction=TRUE) {
+            
+            X<-object@origX
+            Y<-object@Y
+            features=object@features
+            
+            X<-scale(X[,features])
+            object@scaled=attr(X,"scaled:scale")
+            object@center=attr(X,"scaled:center")
+            object@classifier=classifier
+            
+            object@features=features
+            
             
             listRF<-list()
             #featrank<-mrmr(X ,factor(Y),min(NCOL(X),3*max.features))
@@ -865,7 +969,7 @@ setMethod("initialize",
                 if (classifier=="RF")
                   RF <- randomForest(x =Xb ,y = factor(Yb))
                 if (classifier=="XGB")
-                  RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
+                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",lambda=0.1)
               }else{
                 #rank<-c(Intvars,setdiff(featrank,Intvars))
                 rank<-featrank[1:min(max.features,length(featrank))]
@@ -873,19 +977,18 @@ setMethod("initialize",
                 if (classifier=="RF")
                   RF <- randomForest(x =Xb ,y = factor(Yb),ntree=1000)
                 if (classifier=="XGB")
-                  RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
+                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",lambda=0.1)
               }
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
               if (verbose)
                 cat(" RF", rep, ":",RF$confusion, " : (N,n)=", dim(Xb), "\n")
             } ## for rep
             
-            .Object@mod=listRF
+            object@mod=listRF
             
-            .Object
+            object
           }
 )
-
 
 
 #' predict if there is a connection between node i and node j
