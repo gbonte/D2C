@@ -1534,6 +1534,46 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       eold=e
     }
     
+    if (num==24){
+      nfs=3
+      ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
+      
+      ## AR
+      W=rnorm(nfs)
+      while (any(Mod(polyroot(c(1,-W)))<=1))
+        W=rnorm(nfs)
+      
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]= W[1]*mean(Y[N-fs[1],neigh]) + W[2]*mean(Y[N-fs[2],neigh])+ W[3]*mean(Y[N-fs[3],neigh])+sdev*e
+        
+      }
+      
+    }
+    
+    if (num==25){
+      nfs=1
+      ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
+      
+      ## AR
+      W=rnorm(nfs)
+      while (any(Mod(polyroot(c(1,-W)))<=1))
+        W=rnorm(nfs)
+      
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]= W[1]*mean(Y[N-fs[1],neigh]) +sdev*e
+        
+      }
+      
+    }
+    
+    
+    
     Y<-rbind(Y,y)
     
     if (any(is.nan(Y) | abs(Y)>10000)){
