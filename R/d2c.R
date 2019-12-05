@@ -2,6 +2,33 @@
 
 
 
+epred<-function(X,Y,lin=TRUE,norm=TRUE){
+  
+  N<-NROW(X)
+  n<-NCOL(X)
+  
+  if (n>1){
+    w.const<-which(apply(X,2,sd)<0.01)    
+    if (length(w.const)>0){
+      X<-X[,-w.const]
+    }
+    n<-NCOL(X)
+  }
+  
+  if (lin)
+    return(max(1e-3,regrlin(X,Y)$MSE.loo/var(Y)))
+  
+  
+  XX<-scale(X)
+  if (N<5 | any(is.na(XX)))
+    stop("Error in pred")
+  e<-Y-lazy.pred(XX,Y,XX,conPar=c(min(10,N-2),min(N,20)),
+                 linPar=NULL,class=FALSE,cmbPar=10)
+  
+  
+  return(e)
+  
+}
 
 npred<-function(X,Y,lin=TRUE,norm=TRUE){
   ## normalized mean squared error of the dependency
@@ -79,14 +106,27 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (bivariate){
     return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs),D2C.2(D[,ca],D[,ef])))
   }else {
+    N<-NROW(D)
+    n<-NCOL(D)
     De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
-   if (any(is.na(De))){
+    if (any(is.na(De))){
       print(De)
       stop("Error in descriptor")
     }
+    
+    eca=epred(D[,ca],D[,ef],lin=lin)
+    eef=epred(D[,ef],D[,ca],lin=lin)
+    
+    ED=D
+    ED[,ca]=eca
+    ED[,ef]=eef
+    eDe=D2C.n(ED,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
+    names(eDe)=paste("e",names(eDe),sep="")
+    De<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),De,eDe)
+    
     names(De)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
     return(De)
-    }
+  }
 }
 
 
@@ -256,7 +296,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     ## Information of Mbef on ca given ef
     for (j in 1:length(MBef)){
       I2.i<-c(I2.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)) ## I(zi; Mj^k|zj) equation (8)
-     }
+    }
     
     I2.j<-NULL
     I2.jb<-NULL
