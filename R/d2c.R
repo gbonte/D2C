@@ -103,30 +103,38 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      lin=FALSE,acc=TRUE,struct=FALSE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
                      bivariate=FALSE,maxs=10,boot="mimr" ){
-  if (bivariate){
-    return(c(D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs),D2C.2(D[,ca],D[,ef])))
-  }else {
-    N<-NROW(D)
-    n<-NCOL(D)
-    De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
-    if (any(is.na(De))){
-      print(De)
-      stop("Error in descriptor")
-    }
-    
-    eca=epred(D[,ca],D[,ef],lin=lin)
-    eef=epred(D[,ef],D[,ca],lin=lin)
-    
-    ED=D
-    ED[,ca]=eca
-    ED[,ef]=eef
-    eDe=D2C.n(ED,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
-    names(eDe)=paste("e",names(eDe),sep="")
-    De<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),De,eDe)
-    
-    names(De)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
-    return(De)
+  
+  
+  N<-NROW(D)
+  n<-NCOL(D)
+  De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
+  if (any(is.na(De))){
+    print(De)
+    stop("Error in descriptor")
   }
+  
+  eca=epred(D[,ca],D[,ef],lin=lin)
+  eef=epred(D[,ef],D[,ca],lin=lin)
+  
+  ED=D
+  ED[,ca]=eca
+  ED[,ef]=eef
+  eDe=D2C.n(ED,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
+  names(eDe)=paste("e",names(eDe),sep="")
+  
+  if (bivariate){
+    De2= D2C.2(D[,ca],D[,ef])
+    eDe2=D2C.2(ED[,ca],ED[,ef])
+    names(eDe2)=paste("e",names(eDe2),sep="")
+  }
+  DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),De,eDe)
+  
+  names(DD)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
+  
+  if (bivariate)
+    DD<-c(DD,De2,eDe2)
+  return(DD)
+  
 }
 
 

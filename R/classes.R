@@ -821,74 +821,7 @@ setMethod("initialize",
             .Object@allEdges=allEdges
             return(.Object)
             
-            if (FALSE){
-              
-              X<-scale(X[,features])
-              .Object@scaled=attr(X,"scaled:scale")
-              .Object@center=attr(X,"scaled:center")
-              
-              .Object@features=features
-              
-              .Object@allEdges=allEdges
-              
-              listRF<-list()
-              #featrank<-mrmr(X ,factor(Y),min(NCOL(X),3*max.features))
-              if (classifier=="RF"){
-                RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
-                IM<-importance(RF)[,"MeanDecreaseAccuracy"]
-              }
-              if (classifier=="XGB"){
-                RF <- xgboost(data =X ,label = Y,nrounds=20,objective = "binary:logistic")
-                IM<-numeric(NCOL(X))
-                names(IM)=colnames(X)
-                IM[xgb.importance(model = RF)[,1]]=xgb.importance(model = RF)[,2]
-              }
-              featrank<- sort(IM,decr=TRUE,ind=TRUE)$ix
-              if (verbose)
-                cat("Best descriptors: ", colnames(X)[featrank], "\n")
-              
-              if (classifier=="RF")
-                ratio=1
-              if (classifier=="XGB")
-                ratio=3
-              for (rep in 1:EErep){
-                w0<-which(Y==0)
-                w1<-which(Y==1)
-                if (length(w0)>=ratio*length(w1))
-                  w0<-sample(w0,round(ratio*length(w1)))
-                
-                if (length(w1)>=length(w0))
-                  w1<-sample(w1,round(length(w0)))
-                Xb<-X[c(w0,w1),]
-                Yb<-Y[c(w0,w1)]
-                
-                Intvars<- grep('Int3.',colnames(Xb))
-                if (interaction==FALSE){
-                  rank<-setdiff(featrank,Intvars)
-                  rank<-rank[1:min(max.features,length(rank))]
-                  Xb=Xb[,rank]
-                  if (classifier=="RF")
-                    RF <- randomForest(x =Xb ,y = factor(Yb))
-                  if (classifier=="XGB")
-                    RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
-                }else{
-                  #rank<-c(Intvars,setdiff(featrank,Intvars))
-                  rank<-featrank[1:min(max.features,length(featrank))]
-                  Xb=Xb[,rank]
-                  if (classifier=="RF")
-                    RF <- randomForest(x =Xb ,y = factor(Yb),ntree=1000)
-                  if (classifier=="XGB")
-                    RF=xgboost(data =Xb ,label = Yb,nrounds=20,objective = "binary:logistic")
-                }
-                listRF<-c(listRF,list(list(mod=RF,feat=rank)))
-                if (verbose)
-                  cat(" RF", rep, ":",RF$confusion, " : (N,n)=", dim(Xb), "\n")
-              } ## for rep
-              
-              .Object@mod=listRF
-              
-              .Object
-            }
+          
           }
 )
 
@@ -936,8 +869,14 @@ setMethod("makeModel",
               RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
               IM<-importance(RF)[,"MeanDecreaseAccuracy"]
             }
-            if (classifier=="XGB"){
-              RF <- xgboost(data =X ,label = Y,nrounds=20,objective = "binary:logistic")
+            if (classifier=="XGB.1"){
+              RF <- xgboost(data =X ,label = Y,nrounds=20,objective = "binary:logistic",eta=0.1)
+              IM<-numeric(NCOL(X))
+              names(IM)=colnames(X)
+              IM[xgb.importance(model = RF)[,1]]=xgb.importance(model = RF)[,2]
+            }
+            if (classifier=="XGB.2"){
+              RF <- xgboost(data =X ,label = Y,nrounds=20,objective = "binary:logistic",eta=0.2)
               IM<-numeric(NCOL(X))
               names(IM)=colnames(X)
               IM[xgb.importance(model = RF)[,1]]=xgb.importance(model = RF)[,2]
@@ -946,10 +885,11 @@ setMethod("makeModel",
             if (verbose)
               cat("Best descriptors: ", colnames(X)[featrank], "\n")
             
+            ratio=3
             if (classifier=="RF")
               ratio=1
-            if (classifier=="XGB")
-              ratio=3
+            
+              
             for (rep in 1:EErep){
               w0<-which(Y==0)
               w1<-which(Y==1)
@@ -968,20 +908,24 @@ setMethod("makeModel",
                 Xb=Xb[,rank]
                 if (classifier=="RF")
                   RF <- randomForest(x =Xb ,y = factor(Yb))
-                if (classifier=="XGB")
-                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",lambda=0.1)
+                if (classifier=="XGB.1")
+                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.1)
+                if (classifier=="XGB.2")
+                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.2)
               }else{
                 #rank<-c(Intvars,setdiff(featrank,Intvars))
                 rank<-featrank[1:min(max.features,length(featrank))]
                 Xb=Xb[,rank]
                 if (classifier=="RF")
                   RF <- randomForest(x =Xb ,y = factor(Yb),ntree=1000)
-                if (classifier=="XGB")
-                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",lambda=0.1)
+                if (classifier=="XGB.1")
+                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.1)
+                if (classifier=="XGB.2")
+                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.2)
               }
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
               if (verbose)
-                cat(" RF", rep, ":",RF$confusion, " : (N,n)=", dim(Xb), "\n")
+                cat(classifier, " ", rep, ":",RF$confusion, " : (N,n)=", dim(Xb), "\n")
             } ## for rep
             
             object@mod=listRF
@@ -1059,10 +1003,9 @@ setMethod("predict", signature="D2C",
                 #Response = c( Response, predict(mod, X_descriptor[fs], type="response"))
                 if (object@classifier=="RF")
                   Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])
-                if (object@classifier=="XGB"){
-                  
+                if (length(grep("XGB",object@classifier))>=1)
                   Prob = c(Prob,predict(mod, array(X_descriptor[fs],c(1,length(fs)))))
-                }
+                
               }
             }
             out[["response"]] =round(mean(Prob))
