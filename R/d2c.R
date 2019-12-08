@@ -108,6 +108,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   N<-NROW(D)
   n<-NCOL(D)
   De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
+  names(De)=paste("M",names(De),sep=".")
   if (any(is.na(De))){
     print(De)
     stop("Error in descriptor")
@@ -120,12 +121,13 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   ED[,ca]=eca
   ED[,ef]=eef
   eDe=D2C.n(ED,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
-  names(eDe)=paste("e",names(eDe),sep="")
+  names(eDe)=paste("M.e",names(eDe),sep=".")
   
   if (bivariate){
     De2= D2C.2(D[,ca],D[,ef])
+    names(De2)=paste("B",names(De2),sep=".")
     eDe2=D2C.2(ED[,ca],ED[,ef])
-    names(eDe2)=paste("e",names(eDe2),sep="")
+    names(eDe2)=paste("B.e",names(eDe2),sep=".")
   }
   DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),De,eDe)
   

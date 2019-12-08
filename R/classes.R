@@ -810,18 +810,14 @@ setMethod("initialize",
             Y<-do.call(c,lapply(FF,"[[",2))
             allEdges<-lapply(FF,"[[",3)
             
-            features<-1:NCOL(X)
-            wna<-which(apply(X,2,sd)<0.01)
-            if (length(wna)>0)
-              features<-setdiff(features,wna)
+            
             
             .Object@origX<-X
             .Object@Y=Y
-            .Object@features=features
             .Object@allEdges=allEdges
             return(.Object)
             
-          
+            
           }
 )
 
@@ -837,9 +833,8 @@ setGeneric("makeModel", def=function(object,...) {standardGeneric("makeModel")})
 #' @param ratioEdges  : percentage of existing edges which are added to the training set
 #' @param ratioMissingNode  : percentage of existing nodes which are not considered. This is used to emulate latent variables.
 #' @param goParallel : if TRUE it uses parallelism
-#' @param interaction : if NULL it use feature selection
+#' @param subset : if bivar it uses only bivariate descriptors
 #' @param verbose  : if TRUE it prints the state of progress
-#' @param type : type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}
 #' @param EErep: Easy Ensemble size to deal with unbalancedness
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @examples
@@ -847,15 +842,25 @@ setGeneric("makeModel", def=function(object,...) {standardGeneric("makeModel")})
 setMethod("makeModel",
           "D2C",
           function(object, max.features=20,
-                   goParallel=FALSE,npar=5,
                    classifier="RF",
-                   type="is.parent",EErep=5,verbose=TRUE,interaction=TRUE) {
+                   EErep=5,verbose=TRUE,subset="all") {
             
             X<-object@origX
             Y<-object@Y
-            features=object@features
+            features=1:NCOL(X)
+            if (subset=="bivar")
+              features<- grep('B.',colnames(X))
+            if (subset=="multivar")
+              features<- grep('M.',colnames(X))
             
-            X<-scale(X[,features])
+            X<-X[,features]
+            wna<-which(apply(X,2,sd)<0.01)
+            if (length(wna)>0){
+              features<-setdiff(features,features[wna])
+              X=X[,-wna] 
+            }
+            
+            X<-scale(X)
             object@scaled=attr(X,"scaled:scale")
             object@center=attr(X,"scaled:center")
             object@classifier=classifier
@@ -889,7 +894,7 @@ setMethod("makeModel",
             if (classifier=="RF")
               ratio=1
             
-              
+            
             for (rep in 1:EErep){
               w0<-which(Y==0)
               w1<-which(Y==1)
@@ -901,28 +906,17 @@ setMethod("makeModel",
               Xb<-X[c(w0,w1),]
               Yb<-Y[c(w0,w1)]
               
-              Intvars<- grep('Int3.',colnames(Xb))
-              if (interaction==FALSE){
-                rank<-setdiff(featrank,Intvars)
-                rank<-rank[1:min(max.features,length(rank))]
-                Xb=Xb[,rank]
-                if (classifier=="RF")
-                  RF <- randomForest(x =Xb ,y = factor(Yb))
-                if (classifier=="XGB.1")
-                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.1)
-                if (classifier=="XGB.2")
-                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.2)
-              }else{
-                #rank<-c(Intvars,setdiff(featrank,Intvars))
-                rank<-featrank[1:min(max.features,length(featrank))]
-                Xb=Xb[,rank]
-                if (classifier=="RF")
-                  RF <- randomForest(x =Xb ,y = factor(Yb),ntree=1000)
-                if (classifier=="XGB.1")
-                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.1)
-                if (classifier=="XGB.2")
-                  RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.2)
-              }
+              
+              rank<-featrank
+              rank<-rank[1:min(max.features,length(rank))]
+              Xb=Xb[,rank]
+              if (classifier=="RF")
+                RF <- randomForest(x =Xb ,y = factor(Yb))
+              if (classifier=="XGB.1")
+                RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.1)
+              if (classifier=="XGB.2")
+                RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.2)
+              
               listRF<-c(listRF,list(list(mod=RF,feat=rank)))
               if (verbose)
                 cat(classifier, " ", rep, ":",RF$confusion, " : (N,n)=", dim(Xb), "\n")
@@ -969,10 +963,10 @@ setMethod("predict", signature="D2C",
             Response<-NULL
             Prob<-NULL
             
-            for (rep in 1:10){
+            for (repS in 1:rep){
               ## repetition with different subsets of other variables
               others=setdiff(1:NCOL(data),c(i,j))
-              if (rep>1)
+              if (repS>1)
                 others=sample(others, round(2*length(others)/3))
               D=data[,c(i,j,others)]
               # move the concerned variables to the first two places
