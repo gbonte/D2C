@@ -523,9 +523,9 @@ mimr<-function(X,Y,nmax=5,
 
 
 mimr2<-function(X,Y1,Y2,nmax=5,
-               init=FALSE,lambda=0.5,
-               spouse.removal=TRUE,
-               caus=1){
+                init=FALSE,lambda=0.5,
+                spouse.removal=TRUE,
+                caus=1){
   if (sd(Y1)<1e-5 || sd(Y2)<1e-5)
     return(list(fs1=1:nmax, fs2=1:nmax))
   NMAX<-nmax
@@ -1366,14 +1366,14 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
     if (num==12){
       nfs=2
       ##  Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1))
-     
-        for (i in 1:n){
-          neigh=max(1,i-loc):min(n,i+loc)
-          e=rnorm(1)
-          y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
-            (0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
-        }
-        
+      
+      for (i in 1:n){
+        neigh=max(1,i-loc):min(n,i+loc)
+        e=rnorm(1)
+        y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
+          (0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
+      }
+      
     }
     if (num==13){
       nfs=1
@@ -1391,15 +1391,18 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
       
       ## AR
-      W=rnorm(nfs)
-      while (any(Mod(polyroot(c(1,-W)))<=1))
-        W=rnorm(nfs)
-      
+      if (NROW(Y)<=nn){
+        W=numeric(max(fs[1:nfs])+1)
+        
+        W[fs[1:nfs]+1]=rnorm(nfs)
+        while (any(Mod(polyroot(c(1,-W)))<=1))
+          W[fs[1:nfs]+1]=rnorm(nfs)
+      }
       
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
-        y[i]= W[1]*mean(Y[N-fs[1],neigh]) + W[2]*mean(Y[N-fs[2],neigh])+sdev*e
+        y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) + W[fs[2]+1]*mean(Y[N-fs[2],neigh])+sdev*e
         
       }
       
@@ -1515,7 +1518,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
         e[i]=rnorm(1)
         y[i]=0.9*mean(Y[N-fs[1],neigh])-
           0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
-       
+        
       }
       eold2=eold
       eold=e
@@ -1539,15 +1542,20 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
       
       ## AR
-      W=rnorm(nfs)
-      while (any(Mod(polyroot(c(1,-W)))<=1))
-        W=rnorm(nfs)
+      if (NROW(Y)<=nn){
+        W=numeric(max(fs[1:nfs])+1)
+        
+        W[fs[1:nfs]+1]=rnorm(nfs)
+        while (any(Mod(polyroot(c(1,-W)))<=1))
+          W[fs[1:nfs]+1]=rnorm(nfs)
+      }
       
       
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
-        y[i]= W[1]*mean(Y[N-fs[1],neigh]) + W[2]*mean(Y[N-fs[2],neigh])+ W[3]*mean(Y[N-fs[3],neigh])+sdev*e
+        y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) + W[fs[2]+1]*mean(Y[N-fs[2],neigh])+ 
+          W[fs[3]+1]*mean(Y[N-fs[3],neigh])+sdev*e
         
       }
       
@@ -1558,15 +1566,18 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
       
       ## AR
-      W=rnorm(nfs)
-      while (any(Mod(polyroot(c(1,-W)))<=1))
-        W=rnorm(nfs)
-      
+      if (NROW(Y)<=nn){
+        W=numeric(max(fs[1:nfs])+1)
+        
+        W[fs[1:nfs]+1]=rnorm(nfs)
+        while (any(Mod(polyroot(c(1,-W)))<=1))
+          W[fs[1:nfs]+1]=rnorm(nfs)
+      }
       
       for (i in 1:n){
         neigh=max(1,i-loc):min(n,i+loc)
         e=rnorm(1)
-        y[i]= W[1]*mean(Y[N-fs[1],neigh]) +sdev*e
+        y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) +sdev*e
         
       }
       
@@ -1576,7 +1587,9 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
     
     Y<-rbind(Y,y)
     
+      
     if (any(is.nan(Y) | abs(Y)>10000)){
+      browser()
       cat("num=",num,"\n")
       stop("NAN error in genSTAR")
       

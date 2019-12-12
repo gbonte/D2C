@@ -103,7 +103,7 @@ norminf<-function(y,x1,x2=NULL,lin=TRUE){
 descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      lin=FALSE,acc=TRUE,struct=FALSE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
-                     bivariate=FALSE,maxs=10,boot="mimr" ){
+                     bivariate=FALSE,maxs=10,boot="mimr",errd=FALSE ){
   
   D<-scale(D)
   N<-NROW(D)
@@ -115,7 +115,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     stop("Error in descriptor")
   }
   
-  if (FALSE){
+  if (errd){
     mfs<-setdiff(1:n,c(ca,ef))
     fs<-mfs[rankrho(D[,mfs],D[,ef],nmax=2)]
     eef=epred(D[,mfs],D[,ef],lin=lin)
@@ -132,17 +132,23 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (bivariate){
     De2= D2C.2(D[,ca],D[,ef])
     names(De2)=paste("B",names(De2),sep=".")
-    if (FALSE){
+    if (errd){
       eDe2=D2C.2(ED[,ca],ED[,ef])
       names(eDe2)=paste("B.e",names(eDe2),sep=".")
     }
   }
-  DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),De) ##,eDe)
+  
+  DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),De) 
+  if (errd)
+    DD<-c(DD,eDe)
   
   names(DD)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
   
-  if (bivariate)
-    DD<-c(DD,De2) ##,eDe2)
+  if (bivariate){
+    DD<-c(DD,De2) 
+    if (errd)
+      DD<-c(DD,eDe2)
+  }
   return(DD)
   
 }
