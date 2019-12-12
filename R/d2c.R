@@ -7,6 +7,7 @@ epred<-function(X,Y,lin=TRUE,norm=TRUE){
   N<-NROW(X)
   n<-NCOL(X)
   
+  
   if (n>1){
     w.const<-which(apply(X,2,sd)<0.01)    
     if (length(w.const)>0){
@@ -113,9 +114,12 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     print(De)
     stop("Error in descriptor")
   }
+  mfs<-setdiff(1:n,c(ca,ef))
+  fs<-mfs[rankrho(D[,mfs],D[,ef],nmax=5)]
+  eef=epred(D[,mfs],D[,ef],lin=lin)
   
-  eca=epred(D[,ca],D[,ef],lin=lin)
-  eef=epred(D[,ef],D[,ca],lin=lin)
+  fs<-mfs[rankrho(D[,mfs],D[,ca],nmax=5)]
+  eca=epred(D[,mfs],D[,ca],lin=lin)
   
   ED=D
   ED[,ca]=eca
