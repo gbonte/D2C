@@ -115,10 +115,10 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     stop("Error in descriptor")
   }
   mfs<-setdiff(1:n,c(ca,ef))
-  fs<-mfs[rankrho(D[,mfs],D[,ef],nmax=5)]
+  fs<-mfs[rankrho(D[,mfs],D[,ef],nmax=2)]
   eef=epred(D[,mfs],D[,ef],lin=lin)
   
-  fs<-mfs[rankrho(D[,mfs],D[,ca],nmax=5)]
+  fs<-mfs[rankrho(D[,mfs],D[,ca],nmax=2)]
   eca=epred(D[,mfs],D[,ca],lin=lin)
   
   ED=D
