@@ -448,9 +448,7 @@ setMethod("initialize",
 ##' @param seed : random seed
 setClass("simulatedTS",
          slots = list(list.DAGs="list",list.observationsDAGs="list",
-                      NDAG="numeric", typeser="numeric", functionType="character",
-                      seed="numeric",
-                      additive="logical"))
+                      NDAG="numeric", list.numTS="list", list.fs="list"))
 
 ##' creation of a "simulatedTS" containing a list of DAGs and associated time series observations
 ##' @param .Object : simulatedTS object
@@ -458,7 +456,7 @@ setClass("simulatedTS",
 #' @param noNodes  : number of Nodes of the DAGs. If it is a two-valued vector , the value of Nodes is randomly sampled in the interval
 #' @param N  : number of sampled observations for each DAG. If it is a two-valued vector [a,b], the value of N is randomly sampled in the interval [a,b]
 #' @param sdn : standard deviation of aditive noise. If it is a two-valued vector, the value of N is randomly sampled in the interval
-#' @param typeser : type time series: numbers associated to different processes in function genTS 
+#' @param typeser : type time series: numbers associated to different processes in function genSTAR 
 #' @param seed : random seed
 #' @param verbose : if TRUE it prints out the state of progress
 #' @param goParallel : if TRUE it uses parallelism
@@ -496,7 +494,7 @@ setMethod("initialize",
               `%op%` <-`%do%`
             }
             
-            .Object@seed=seed
+           
             X=NULL
             Y=NULL
             list.DAGs=NULL
@@ -537,6 +535,7 @@ setMethod("initialize",
               netwDAG<-G$DAG 
               nodes(netwDAG)<-as.character(1:NCOL(G$D))
               observationsDAG = G$D
+              fsTS=G$fs
               
               if (verbose){
                 
@@ -545,16 +544,20 @@ setMethod("initialize",
                 
               }
               
-              list(observationsDAG=observationsDAG,netwDAG=netwDAG)
+              list(observationsDAG=observationsDAG,netwDAG=netwDAG,numTS=num,fsTS=fsTS)
             } ## foreach
             
             
             .Object@list.DAGs=lapply(FF,"[[",2)
             .Object@list.observationsDAGs=lapply(FF,"[[",1)
+            .Object@list.numTS=lapply(FF,"[[",3)
+            .Object@list.fs=lapply(FF,"[[",4)
             to.remove=which(unlist(lapply(lapply(.Object@list.DAGs,edgeList),length))==0)
             if (length(to.remove)>0){
               .Object@list.DAGs=.Object@list.DAGs[-to.remove]
               .Object@list.observationsDAGs=.Object@list.observationsDAGs[-to.remove]
+              .Object@list.numTS=Object@list.numTS[-to.remove]
+              .Object@list.fs=Object@list.fs[-to.remove]
             }
             .Object@NDAG=length(.Object@list.DAGs)
             
