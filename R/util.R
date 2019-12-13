@@ -1563,7 +1563,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
         
         W[fs[1:nfs]+1]=rnorm(nfs)
         while (any(Mod(polyroot(c(1,-W)))<=1))
-          W[fs[1:nfs]+1]=rnorm(nfs)
+          W[fs[1:nfs]+1]=rnorm(nfs,sd=0.5)
       }
       
       
