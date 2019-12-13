@@ -1224,7 +1224,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
   ep=0
   doNeigh=numeric(n)
   for (i in 1:n)
-    if (runif(1)<1/n){
+    if (runif(1)<2/n){
       doNeigh[i]=sample(c(-1,1),1)
       if (i==1)
         doNeigh[i]=1
