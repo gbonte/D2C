@@ -1222,15 +1222,18 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
     stop("Too few lags")
   Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
   ep=0
-  doNeigh=numeric(n)
-  for (i in 1:n)
+  doNeigh=list()
+  for (i in 1:n){
     if (runif(1)<2/n){
-      doNeigh[i]=sample(c(-1,1),1)
+      doNeigh[[i]]=sample(-1:1,sample(1:2,1))
       if (i==1)
-        doNeigh[i]=1
+        doNeigh[[i]]=sample(0:1,sample(1:2,1))
       if (i==n)
-        doNeigh[i]=-1
+        doNeigh[[i]]=sample(-1:0,sample(1:2,1))
+    } else {
+      doNeigh[[i]]=0
     }
+  }
   eold=numeric(n)
   eold2=numeric(n)
   th0=rnorm(1)
@@ -1244,11 +1247,8 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
     if (num==1){
       nfs=2
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
+       
         
         e=rnorm(1)
         y[i]=-0.4*(3-mean(Y[N-fs[1],neigh])^2)/(1+mean(Y[N-fs[1],neigh])^2)+
@@ -1262,11 +1262,8 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       
       #Y=c(Y,(0.4-2*exp(-50*Y[N-fs[1]]^2))*Y[N-fs[1]]+(0.5-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sdev*(e+th0*ep))
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
+        
         e=rnorm(1)
         y[i]=(0.4-2*exp(-50*mean(Y[N-fs[1],neigh])^2))*mean(Y[N-fs[1],neigh])+
           (0.5-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sdev*e
@@ -1278,11 +1275,8 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       #Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sin(pi/2*Y[N-fs[3]])+sdev*(e+th0*ep))
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
+        
         e=rnorm(1)
         y[i]=1.5 *sin(pi/2*mean(Y[N-fs[1],neigh]))-
           sin(pi/2*mean(Y[N-fs[2],neigh]))+
@@ -1296,11 +1290,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       #  Y=c(Y,2*exp(-0.1*Y[N-fs[1]]^2)*Y[N-fs[1]]-exp(-0.1*Y[N-fs[2]]^2)*Y[N-fs[2]]+sdev*(e+th0*ep))
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=2*exp(-0.1*mean(Y[N-fs[1],neigh])^2)*mean(Y[N-fs[1],neigh])-
           exp(-0.1*mean(Y[N-fs[2],neigh])^2)*mean(Y[N-fs[2],neigh])+sdev*e
@@ -1313,11 +1303,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       #Y=c(Y,-2*Y[N-fs[1]]*max(0,sign(-Y[N-fs[1]]))+0.4*Y[N-fs[1]]*max(0,sign(Y[N-fs[1]]))+sdev*rnorm(1))
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=-2*mean(Y[N-fs[1],neigh])*max(0,sign(-mean(Y[N-fs[1],neigh])))+
           0.4*mean(Y[N-fs[1],neigh])*max(0,sign(mean(Y[N-fs[1],neigh])))+sdev*e
@@ -1329,11 +1315,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       #Y=c(Y,0.8*log(1+3*Y[N-fs[1]]^2)-0.6*log(1+3*Y[N-fs[2]]^2)+sdev*rnorm(1))
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=0.8*log(1+3*mean(Y[N-fs[1],neigh])^2)-0.6*log(1+3*mean(Y[N-fs[2],neigh])^2)+sdev*e
         
@@ -1344,11 +1326,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       #y[i]=(0.4-2*cos(40*mean(Y[N-5,neigh]))*exp(-30*mean(Y[N-5,neigh])^2))*mean(Y[N-5,neigh])+(0.5-0.5*exp(-50*mean(Y[N-9,neigh])^2))*mean(Y[N-9,neigh])
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=(0.4-2*cos(40*mean(Y[N-fs[1],neigh]))*exp(-30*mean(Y[N-fs[1],neigh])^2))*mean(Y[N-fs[1],neigh])+
           (0.5-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sdev*e
@@ -1360,11 +1338,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       nfs=2
       #Y=c(Y,(0.5-1.1*exp(-50*Y[N-fs[1]]^2))*Y[N]+(0.3-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sdev*rnorm(1))
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=0.5-1.1*exp(-50*mean(Y[N-fs[1],neigh])^2)*mean(Y[N-fs[1],neigh])+
           (0.3-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sdev*e
@@ -1377,11 +1351,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       nfs=2
       ##Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1))
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
           (0.1-0.9*mean(Y[N-fs[1],neigh])+
@@ -1393,11 +1363,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       nfs=1
       ##Y=c(Y,sign(Y[N-fs[1]])+sdev*rnorm(1))
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=sign(mean(Y[N-fs[1],neigh]))+sdev*e
         
@@ -1407,11 +1373,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       nfs=1
       ##Y=c(Y,0.8*Y[N-fs[1]]-0.8*Y[N-fs[1]]/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1)) 
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=0.8*mean(Y[N-fs[1],neigh])-0.8*mean(Y[N-fs[1],neigh])/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
         
@@ -1422,11 +1384,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       ##  Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1))
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
           (0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
@@ -1438,11 +1396,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       ##  Y=c(Y,min(1,max(0,3.8*Y[N-fs[1]]*(1-Y[N-fs[1]])+sdev*rnorm(1))))
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=min(1,max(0,3.8*mean(Y[N-fs[1],neigh])*(1-mean(Y[N-fs[1],neigh]))+sdev*e))
         
@@ -1462,11 +1416,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       }
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) + W[fs[2]+1]*mean(Y[N-fs[2],neigh])+sdev*e
         
@@ -1477,11 +1427,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       nfs=1
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         if (mean(Y[N-fs[1],neigh])<1){
           y[i]=-0.5*mean(Y[N-fs[1],neigh])+sdev*e
@@ -1496,11 +1442,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         if (abs(mean(Y[N-fs[1],neigh]))<=1){
           y[i]=0.9*mean(Y[N-fs[1],neigh])+sdev*e
@@ -1513,11 +1455,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       nfs=1
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         if (state==1){
           y[i]=-0.5*mean(Y[N-fs[1],neigh])+sdev*rnorm(1)
@@ -1536,11 +1474,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       ##Y=c(Y,sqrt(0.000019+0.846*((Y[N-fs[1]])^2+0.3*(Y[N-fs[2]])^2+0.2*(Y[N-fs[3]])^2+0.1*(Y[N-fs[4]])^2) )*sdev*rnorm(1))
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]=sqrt(0.000019+0.846*((mean(Y[N-fs[1],neigh]))^2+
                                     0.3*(mean(Y[N-fs[2],neigh]))^2+
@@ -1556,11 +1490,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       e=numeric(n)
       # y=0.7 y(t-1)*e(t-2)+e(t)
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e[i]=rnorm(1)
         y[i]=0.7*(mean(Y[N-fs[1],neigh]))*sdev*eold2[i]+sdev*e[i]
       }
@@ -1573,11 +1503,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       e=numeric(n)
       # y=0.4 y(t-1)-0.3 y(t-2)+0.5*y(t-1)*e(t-1)+e(t)
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e[i]=rnorm(1)
         y[i]=0.4*(mean(Y[N-fs[1],neigh]))-0.3*(mean(Y[N-fs[2],neigh]))+
           0.5*(mean(Y[N-fs[1],neigh]))*sdev*eold[i]+sdev*e[i]
@@ -1591,11 +1517,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       e=numeric(n)
       # y=0.7 abs(y(t-1))/(abs(y(t-1))+2)+e
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e[i]=rnorm(1)
         y[i]=0.7*abs(mean(Y[N-fs[1],neigh]))/ (abs(mean(Y[N-fs[1],neigh]))+2)+sdev*e[i]
       }
@@ -1608,11 +1530,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       e=numeric(n)
       # y=0.9 y(t-1)- 0.8 y(t-1)/(1+exp(-10 y(t-1))) +e
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e[i]=rnorm(1)
         y[i]=0.9*mean(Y[N-fs[1],neigh])-
           0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
@@ -1626,11 +1544,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       e=numeric(n)
       # y=0.3 y(t-1)+ 0.6 y(t-2)+ (0.1-0.9 y(t-1)+0.8 y(t-2))/(1+exp(-10 y(t-1))) +e
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e[i]=rnorm(1)
         y[i]=0.3*mean(Y[N-fs[1],neigh]) +0.6 *mean(Y[N-fs[2],neigh])+(0.1-0.9*mean(Y[N-fs[1],neigh])+
                                                                         0.8*mean(Y[N-fs[2],neigh]))/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
@@ -1654,11 +1568,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) + W[fs[2]+1]*mean(Y[N-fs[2],neigh])+ 
           W[fs[3]+1]*mean(Y[N-fs[3],neigh])+sdev*e
@@ -1681,11 +1591,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       }
       
       for (i in 1:n){
-        neigh=i
-        if (doNeigh[i]>0)
-          neigh=i:min(n,i+loc)
-        if (doNeigh[i]<0)
-          neigh=max(1,i-loc):i
+        neigh=i+doNeigh[[i]]
         e=rnorm(1)
         y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) +sdev*e
         
@@ -1726,11 +1632,8 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
     for (j in 1:nn){
       for (f in fs){
         if ((j+f)<nn){
-          Neigh=i
-          if (doNeigh[i]>0)
-            Neigh=i:min(n,i+loc)
-          if (doNeigh[i]<0)
-            Neigh=max(1,i-loc):i
+          Neigh=i+doNeigh[[i]]
+          
           for (neigh in Neigh){
             netwDAG <- addEdge(as.character((neigh-1)*nn+j+f+1), as.character((i-1)*nn+j), netwDAG, 1)
             if (verbose)
