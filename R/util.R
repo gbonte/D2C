@@ -1220,7 +1220,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
   ## nodes nn+1:2*nn= series 2
   if (nn<5)
     stop("Too few lags")
-  Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
+  
   ep=0
   doNeigh=list()
   for (i in 1:n){
@@ -1241,378 +1241,374 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
   ## subset of lags 
   state=0
   print(num)
-  for (ii in 1:NN){
-    N=NROW(Y)
-    y=numeric(n)
-    if (num==1){
-      nfs=2
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-       
+  repeat{
+    Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
+    for (ii in 1:NN){
+      N=NROW(Y)
+      y=numeric(n)
+      if (num==1){
+        nfs=2
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          
+          e=rnorm(1)
+          y[i]=-0.4*(3-mean(Y[N-fs[1],neigh])^2)/(1+mean(Y[N-fs[1],neigh])^2)+
+            0.6*(3-(mean(Y[N-fs[2],neigh])-0.5)^3)/(1+(mean(Y[N-fs[2],neigh])-0.5)^4)+sdev*e
+          
+        }
         
-        e=rnorm(1)
-        y[i]=-0.4*(3-mean(Y[N-fs[1],neigh])^2)/(1+mean(Y[N-fs[1],neigh])^2)+
-          0.6*(3-(mean(Y[N-fs[2],neigh])-0.5)^3)/(1+(mean(Y[N-fs[2],neigh])-0.5)^4)+sdev*e
+      }
+      if (num==2){
+        nfs=2
+        
+        #Y=c(Y,(0.4-2*exp(-50*Y[N-fs[1]]^2))*Y[N-fs[1]]+(0.5-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sdev*(e+th0*ep))
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          
+          e=rnorm(1)
+          y[i]=(0.4-2*exp(-50*mean(Y[N-fs[1],neigh])^2))*mean(Y[N-fs[1],neigh])+
+            (0.5-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sdev*e
+          
+        }
+      }
+      if (num==3){
+        nfs=3
+        #Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sin(pi/2*Y[N-fs[3]])+sdev*(e+th0*ep))
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          
+          e=rnorm(1)
+          y[i]=1.5 *sin(pi/2*mean(Y[N-fs[1],neigh]))-
+            sin(pi/2*mean(Y[N-fs[2],neigh]))+
+            sin(pi/2*mean(Y[N-fs[3],neigh]))+sdev*e
+          
+        }
+      }
+      
+      if (num==4){
+        nfs=2
+        #  Y=c(Y,2*exp(-0.1*Y[N-fs[1]]^2)*Y[N-fs[1]]-exp(-0.1*Y[N-fs[2]]^2)*Y[N-fs[2]]+sdev*(e+th0*ep))
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=2*exp(-0.1*mean(Y[N-fs[1],neigh])^2)*mean(Y[N-fs[1],neigh])-
+            exp(-0.1*mean(Y[N-fs[2],neigh])^2)*mean(Y[N-fs[2],neigh])+sdev*e
+          
+        }
+      }
+      
+      if (num==5){
+        nfs=1
+        #Y=c(Y,-2*Y[N-fs[1]]*max(0,sign(-Y[N-fs[1]]))+0.4*Y[N-fs[1]]*max(0,sign(Y[N-fs[1]]))+sdev*rnorm(1))
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=-2*mean(Y[N-fs[1],neigh])*max(0,sign(-mean(Y[N-fs[1],neigh])))+
+            0.4*mean(Y[N-fs[1],neigh])*max(0,sign(mean(Y[N-fs[1],neigh])))+sdev*e
+          
+        }
+      }
+      if (num==6){
+        nfs=2
+        #Y=c(Y,0.8*log(1+3*Y[N-fs[1]]^2)-0.6*log(1+3*Y[N-fs[2]]^2)+sdev*rnorm(1))
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=0.8*log(1+3*mean(Y[N-fs[1],neigh])^2)-0.6*log(1+3*mean(Y[N-fs[2],neigh])^2)+sdev*e
+          
+        }
+      }
+      if (num==7){
+        nfs=2
+        #y[i]=(0.4-2*cos(40*mean(Y[N-5,neigh]))*exp(-30*mean(Y[N-5,neigh])^2))*mean(Y[N-5,neigh])+(0.5-0.5*exp(-50*mean(Y[N-9,neigh])^2))*mean(Y[N-9,neigh])
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=(0.4-2*cos(40*mean(Y[N-fs[1],neigh]))*exp(-30*mean(Y[N-fs[1],neigh])^2))*mean(Y[N-fs[1],neigh])+
+            (0.5-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sdev*e
+          
+          
+        }
+      }
+      if (num==8){
+        nfs=2
+        #Y=c(Y,(0.5-1.1*exp(-50*Y[N-fs[1]]^2))*Y[N]+(0.3-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sdev*rnorm(1))
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=0.5-1.1*exp(-50*mean(Y[N-fs[1],neigh])^2)*mean(Y[N-fs[1],neigh])+
+            (0.3-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sdev*e
+          
+        }
         
       }
       
-    }
-    if (num==2){
-      nfs=2
-      
-      #Y=c(Y,(0.4-2*exp(-50*Y[N-fs[1]]^2))*Y[N-fs[1]]+(0.5-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sdev*(e+th0*ep))
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        
-        e=rnorm(1)
-        y[i]=(0.4-2*exp(-50*mean(Y[N-fs[1],neigh])^2))*mean(Y[N-fs[1],neigh])+
-          (0.5-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sdev*e
-        
-      }
-    }
-    if (num==3){
-      nfs=3
-      #Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sin(pi/2*Y[N-fs[3]])+sdev*(e+th0*ep))
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        
-        e=rnorm(1)
-        y[i]=1.5 *sin(pi/2*mean(Y[N-fs[1],neigh]))-
-          sin(pi/2*mean(Y[N-fs[2],neigh]))+
-          sin(pi/2*mean(Y[N-fs[3],neigh]))+sdev*e
+      if (num==9){
+        nfs=2
+        ##Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1))
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
+            (0.1-0.9*mean(Y[N-fs[1],neigh])+
+               0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
+        }
         
       }
-    }
-    
-    if (num==4){
-      nfs=2
-      #  Y=c(Y,2*exp(-0.1*Y[N-fs[1]]^2)*Y[N-fs[1]]-exp(-0.1*Y[N-fs[2]]^2)*Y[N-fs[2]]+sdev*(e+th0*ep))
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=2*exp(-0.1*mean(Y[N-fs[1],neigh])^2)*mean(Y[N-fs[1],neigh])-
-          exp(-0.1*mean(Y[N-fs[2],neigh])^2)*mean(Y[N-fs[2],neigh])+sdev*e
+      if (num==10){
+        nfs=1
+        ##Y=c(Y,sign(Y[N-fs[1]])+sdev*rnorm(1))
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=sign(mean(Y[N-fs[1],neigh]))+sdev*e
+          
+        }
+      }
+      if (num==11){
+        nfs=1
+        ##Y=c(Y,0.8*Y[N-fs[1]]-0.8*Y[N-fs[1]]/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1)) 
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=0.8*mean(Y[N-fs[1],neigh])-0.8*mean(Y[N-fs[1],neigh])/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
+          
+        }
+      }
+      if (num==12){
+        nfs=2
+        ##  Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1))
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
+            (0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
+        }
         
       }
-    }
-    
-    if (num==5){
-      nfs=1
-      #Y=c(Y,-2*Y[N-fs[1]]*max(0,sign(-Y[N-fs[1]]))+0.4*Y[N-fs[1]]*max(0,sign(Y[N-fs[1]]))+sdev*rnorm(1))
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=-2*mean(Y[N-fs[1],neigh])*max(0,sign(-mean(Y[N-fs[1],neigh])))+
-          0.4*mean(Y[N-fs[1],neigh])*max(0,sign(mean(Y[N-fs[1],neigh])))+sdev*e
+      if (num==13){
+        nfs=1
+        ##  Y=c(Y,min(1,max(0,3.8*Y[N-fs[1]]*(1-Y[N-fs[1]])+sdev*rnorm(1))))
         
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=min(1,max(0,3.8*mean(Y[N-fs[1],neigh])*(1-mean(Y[N-fs[1],neigh]))+sdev*e))
+          
+        }
       }
-    }
-    if (num==6){
-      nfs=2
-      #Y=c(Y,0.8*log(1+3*Y[N-fs[1]]^2)-0.6*log(1+3*Y[N-fs[2]]^2)+sdev*rnorm(1))
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=0.8*log(1+3*mean(Y[N-fs[1],neigh])^2)-0.6*log(1+3*mean(Y[N-fs[2],neigh])^2)+sdev*e
+      if (num==14){
+        nfs=2
+        ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
         
-      }
-    }
-    if (num==7){
-      nfs=2
-      #y[i]=(0.4-2*cos(40*mean(Y[N-5,neigh]))*exp(-30*mean(Y[N-5,neigh])^2))*mean(Y[N-5,neigh])+(0.5-0.5*exp(-50*mean(Y[N-9,neigh])^2))*mean(Y[N-9,neigh])
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=(0.4-2*cos(40*mean(Y[N-fs[1],neigh]))*exp(-30*mean(Y[N-fs[1],neigh])^2))*mean(Y[N-fs[1],neigh])+
-          (0.5-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sdev*e
-        
-        
-      }
-    }
-    if (num==8){
-      nfs=2
-      #Y=c(Y,(0.5-1.1*exp(-50*Y[N-fs[1]]^2))*Y[N]+(0.3-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+sdev*rnorm(1))
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=0.5-1.1*exp(-50*mean(Y[N-fs[1],neigh])^2)*mean(Y[N-fs[1],neigh])+
-          (0.3-0.5*exp(-50*mean(Y[N-fs[2],neigh])^2))*mean(Y[N-fs[2],neigh])+sdev*e
-        
-      }
-      
-    }
-    
-    if (num==9){
-      nfs=2
-      ##Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1))
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
-          (0.1-0.9*mean(Y[N-fs[1],neigh])+
-             0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
-      }
-      
-    }
-    if (num==10){
-      nfs=1
-      ##Y=c(Y,sign(Y[N-fs[1]])+sdev*rnorm(1))
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=sign(mean(Y[N-fs[1],neigh]))+sdev*e
-        
-      }
-    }
-    if (num==11){
-      nfs=1
-      ##Y=c(Y,0.8*Y[N-fs[1]]-0.8*Y[N-fs[1]]/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1)) 
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=0.8*mean(Y[N-fs[1],neigh])-0.8*mean(Y[N-fs[1],neigh])/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
-        
-      }
-    }
-    if (num==12){
-      nfs=2
-      ##  Y=c(Y,0.3*Y[N-fs[1]]+0.6*Y[N-fs[2]]+(0.1-0.9*Y[N-fs[1]]+0.8*Y[N-fs[2]])/(1+exp(-10*Y[N-fs[1]]))+sdev*rnorm(1))
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=0.3*mean(Y[N-fs[1],neigh])+0.6*mean(Y[N-fs[2],neigh])+
-          (0.1-0.9*mean(Y[N-fs[1],neigh])+0.8*mean(Y[N-fs[2],neigh]))/(1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e
-      }
-      
-    }
-    if (num==13){
-      nfs=1
-      ##  Y=c(Y,min(1,max(0,3.8*Y[N-fs[1]]*(1-Y[N-fs[1]])+sdev*rnorm(1))))
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=min(1,max(0,3.8*mean(Y[N-fs[1],neigh])*(1-mean(Y[N-fs[1],neigh]))+sdev*e))
-        
-      }
-    }
-    if (num==14){
-      nfs=2
-      ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
-      
-      ## AR
-      if (NROW(Y)<=nn){
-        W=numeric(max(fs[1:nfs])+1)
-        
-        W[fs[1:nfs]+1]=rnorm(nfs)
-        while (any(Mod(polyroot(c(1,-W)))<=1))
+        ## AR
+        if (NROW(Y)<=nn){
+          W=numeric(max(fs[1:nfs])+1)
+          
           W[fs[1:nfs]+1]=rnorm(nfs)
-      }
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) + W[fs[2]+1]*mean(Y[N-fs[2],neigh])+sdev*e
+          while (any(Mod(polyroot(c(1,-W)))<=1))
+            W[fs[1:nfs]+1]=rnorm(nfs)
+        }
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) + W[fs[2]+1]*mean(Y[N-fs[2],neigh])+sdev*e
+          
+        }
         
       }
-      
-    }
-    if (num==15){
-      nfs=1
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        if (mean(Y[N-fs[1],neigh])<1){
-          y[i]=-0.5*mean(Y[N-fs[1],neigh])+sdev*e
-        } else {
-          y[i]=0.4*mean(Y[N-fs[1],neigh])+sdev*e
+      if (num==15){
+        nfs=1
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          if (mean(Y[N-fs[1],neigh])<1){
+            y[i]=-0.5*mean(Y[N-fs[1],neigh])+sdev*e
+          } else {
+            y[i]=0.4*mean(Y[N-fs[1],neigh])+sdev*e
+          }
         }
       }
-    }
-    
-    if (num==16){
-      nfs=1
-      ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
       
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        if (abs(mean(Y[N-fs[1],neigh]))<=1){
-          y[i]=0.9*mean(Y[N-fs[1],neigh])+sdev*e
-        } else {
-          y[i]=-0.3*mean(Y[N-fs[1],neigh])+sdev*e
+      if (num==16){
+        nfs=1
+        ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          if (abs(mean(Y[N-fs[1],neigh]))<=1){
+            y[i]=0.9*mean(Y[N-fs[1],neigh])+sdev*e
+          } else {
+            y[i]=-0.3*mean(Y[N-fs[1],neigh])+sdev*e
+          }
+        }
+      } 
+      if (num==17){
+        nfs=1
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          if (state==1){
+            y[i]=-0.5*mean(Y[N-fs[1],neigh])+sdev*rnorm(1)
+          } else {
+            y[i]=0.4*mean(Y[N-fs[1],neigh])+sdev*rnorm(1)
+          }
+          if (runif(1)>0.9)
+            state=1-state
         }
       }
-    } 
-    if (num==17){
-      nfs=1
       
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        if (state==1){
-          y[i]=-0.5*mean(Y[N-fs[1],neigh])+sdev*rnorm(1)
-        } else {
-          y[i]=0.4*mean(Y[N-fs[1],neigh])+sdev*rnorm(1)
+      if (num==18){
+        
+        nfs=4
+        #GARCH 
+        ##Y=c(Y,sqrt(0.000019+0.846*((Y[N-fs[1]])^2+0.3*(Y[N-fs[2]])^2+0.2*(Y[N-fs[3]])^2+0.1*(Y[N-fs[4]])^2) )*sdev*rnorm(1))
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]=sqrt(0.000019+0.846*((mean(Y[N-fs[1],neigh]))^2+
+                                      0.3*(mean(Y[N-fs[2],neigh]))^2+
+                                      0.2*(mean(Y[N-fs[3],neigh]))^2+
+                                      0.1*(mean(Y[N-fs[4],neigh]))^2) )*sdev*e
+          
+          
         }
-        if (runif(1)>0.9)
-          state=1-state
       }
-    }
-    
-    if (num==18){
       
-      nfs=4
-      #GARCH 
-      ##Y=c(Y,sqrt(0.000019+0.846*((Y[N-fs[1]])^2+0.3*(Y[N-fs[2]])^2+0.2*(Y[N-fs[3]])^2+0.1*(Y[N-fs[4]])^2) )*sdev*rnorm(1))
+      if (num==19){
+        nfs=1
+        e=numeric(n)
+        # y=0.7 y(t-1)*e(t-2)+e(t)
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e[i]=rnorm(1)
+          y[i]=0.7*(mean(Y[N-fs[1],neigh]))*sdev*eold2[i]+sdev*e[i]
+        }
+        eold2=eold
+        eold=e
+      }
       
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]=sqrt(0.000019+0.846*((mean(Y[N-fs[1],neigh]))^2+
-                                    0.3*(mean(Y[N-fs[2],neigh]))^2+
-                                    0.2*(mean(Y[N-fs[3],neigh]))^2+
-                                    0.1*(mean(Y[N-fs[4],neigh]))^2) )*sdev*e
+      if (num==20){
+        nfs=2
+        e=numeric(n)
+        # y=0.4 y(t-1)-0.3 y(t-2)+0.5*y(t-1)*e(t-1)+e(t)
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e[i]=rnorm(1)
+          y[i]=0.4*(mean(Y[N-fs[1],neigh]))-0.3*(mean(Y[N-fs[2],neigh]))+
+            0.5*(mean(Y[N-fs[1],neigh]))*sdev*eold[i]+sdev*e[i]
+        }
+        eold2=eold
+        eold=e
+      }
+      
+      if (num==21){
+        nfs=1
+        e=numeric(n)
+        # y=0.7 abs(y(t-1))/(abs(y(t-1))+2)+e
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e[i]=rnorm(1)
+          y[i]=0.7*abs(mean(Y[N-fs[1],neigh]))/ (abs(mean(Y[N-fs[1],neigh]))+2)+sdev*e[i]
+        }
+        eold2=eold
+        eold=e
+      }
+      
+      if (num==22){
+        nfs=1
+        e=numeric(n)
+        # y=0.9 y(t-1)- 0.8 y(t-1)/(1+exp(-10 y(t-1))) +e
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e[i]=rnorm(1)
+          y[i]=0.9*mean(Y[N-fs[1],neigh])-
+            0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
+          
+        }
+        eold2=eold
+        eold=e
+      }
+      if (num==23){
+        nfs=2
+        e=numeric(n)
+        # y=0.3 y(t-1)+ 0.6 y(t-2)+ (0.1-0.9 y(t-1)+0.8 y(t-2))/(1+exp(-10 y(t-1))) +e
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e[i]=rnorm(1)
+          y[i]=0.3*mean(Y[N-fs[1],neigh]) +0.6 *mean(Y[N-fs[2],neigh])+(0.1-0.9*mean(Y[N-fs[1],neigh])+
+                                                                          0.8*mean(Y[N-fs[2],neigh]))/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
+        }
+        eold2=eold
+        eold=e
+      }
+      
+      if (num==24){
+        nfs=3
+        ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
         
-        
-      }
-    }
-    
-    if (num==19){
-      nfs=1
-      e=numeric(n)
-      # y=0.7 y(t-1)*e(t-2)+e(t)
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e[i]=rnorm(1)
-        y[i]=0.7*(mean(Y[N-fs[1],neigh]))*sdev*eold2[i]+sdev*e[i]
-      }
-      eold2=eold
-      eold=e
-    }
-    
-    if (num==20){
-      nfs=2
-      e=numeric(n)
-      # y=0.4 y(t-1)-0.3 y(t-2)+0.5*y(t-1)*e(t-1)+e(t)
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e[i]=rnorm(1)
-        y[i]=0.4*(mean(Y[N-fs[1],neigh]))-0.3*(mean(Y[N-fs[2],neigh]))+
-          0.5*(mean(Y[N-fs[1],neigh]))*sdev*eold[i]+sdev*e[i]
-      }
-      eold2=eold
-      eold=e
-    }
-    
-    if (num==21){
-      nfs=1
-      e=numeric(n)
-      # y=0.7 abs(y(t-1))/(abs(y(t-1))+2)+e
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e[i]=rnorm(1)
-        y[i]=0.7*abs(mean(Y[N-fs[1],neigh]))/ (abs(mean(Y[N-fs[1],neigh]))+2)+sdev*e[i]
-      }
-      eold2=eold
-      eold=e
-    }
-    
-    if (num==22){
-      nfs=1
-      e=numeric(n)
-      # y=0.9 y(t-1)- 0.8 y(t-1)/(1+exp(-10 y(t-1))) +e
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e[i]=rnorm(1)
-        y[i]=0.9*mean(Y[N-fs[1],neigh])-
-          0.8*mean(Y[N-fs[1],neigh])/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
-        
-      }
-      eold2=eold
-      eold=e
-    }
-    if (num==23){
-      nfs=2
-      e=numeric(n)
-      # y=0.3 y(t-1)+ 0.6 y(t-2)+ (0.1-0.9 y(t-1)+0.8 y(t-2))/(1+exp(-10 y(t-1))) +e
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e[i]=rnorm(1)
-        y[i]=0.3*mean(Y[N-fs[1],neigh]) +0.6 *mean(Y[N-fs[2],neigh])+(0.1-0.9*mean(Y[N-fs[1],neigh])+
-                                                                        0.8*mean(Y[N-fs[2],neigh]))/ (1+exp(-10*mean(Y[N-fs[1],neigh])))+sdev*e[i]
-      }
-      eold2=eold
-      eold=e
-    }
-    
-    if (num==24){
-      nfs=3
-      ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
-      
-      ## AR
-      if (NROW(Y)<=nn){
-        W=numeric(max(fs[1:nfs])+1)
-        
-        W[fs[1:nfs]+1]=rnorm(nfs)
-        while (any(Mod(polyroot(c(1,-W)))<=1))
-          W[fs[1:nfs]+1]=rnorm(nfs,sd=0.5)
-      }
-      
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) + W[fs[2]+1]*mean(Y[N-fs[2],neigh])+ 
-          W[fs[3]+1]*mean(Y[N-fs[3],neigh])+sdev*e
-        
-      }
-      
-    }
-    
-    if (num==25){
-      nfs=1
-      ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
-      
-      ## AR
-      if (NROW(Y)<=nn){
-        W=numeric(max(fs[1:nfs])+1)
-        
-        W[fs[1:nfs]+1]=rnorm(nfs)
-        while (any(Mod(polyroot(c(1,-W)))<=1))
+        ## AR
+        if (NROW(Y)<=nn){
+          W=numeric(max(fs[1:nfs])+1)
+          
           W[fs[1:nfs]+1]=rnorm(nfs)
-      }
-      
-      for (i in 1:n){
-        neigh=i+doNeigh[[i]]
-        e=rnorm(1)
-        y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) +sdev*e
+          while (any(Mod(polyroot(c(1,-W)))<=1))
+            W[fs[1:nfs]+1]=rnorm(nfs,sd=0.5)
+        }
+        
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) + W[fs[2]+1]*mean(Y[N-fs[2],neigh])+ 
+            W[fs[3]+1]*mean(Y[N-fs[3],neigh])+sdev*e
+          
+        }
         
       }
       
-    }
-    
-    
-    
-    Y<-rbind(Y,y)
-    
-    
-    if (any(is.nan(Y) | abs(Y)>10000)){
-      browser()
-      cat("num=",num,"\n")
-      stop("NAN error in genSTAR")
+      if (num==25){
+        nfs=1
+        ##   Y=c(Y,1-1.4*Y[N-fs[1]]*Y[N-fs[1]] + 0.3*(Y[N-fs[2]])+0.001*sdev*rnorm(1))
+        
+        ## AR
+        if (NROW(Y)<=nn){
+          W=numeric(max(fs[1:nfs])+1)
+          
+          W[fs[1:nfs]+1]=rnorm(nfs)
+          while (any(Mod(polyroot(c(1,-W)))<=1))
+            W[fs[1:nfs]+1]=rnorm(nfs)
+        }
+        
+        for (i in 1:n){
+          neigh=i+doNeigh[[i]]
+          e=rnorm(1)
+          y[i]= W[fs[1]+1]*mean(Y[N-fs[1],neigh]) +sdev*e
+          
+        }
+        
+      }
       
-    }
+      Y<-rbind(Y,y)
+      
+      
+    } ## for i
+    if (! (any(is.nan(Y) | abs(Y)>10000)))
+      break
+      
     
-  } ## for i
-  
+  }## repeat
   
   
   
