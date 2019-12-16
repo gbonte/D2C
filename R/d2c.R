@@ -103,7 +103,7 @@ norminf<-function(y,x1,x2=NULL,lin=TRUE){
 descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      lin=FALSE,acc=TRUE,struct=FALSE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
-                     bivariate=FALSE,maxs=10,boot="mimr",errd=FALSE ){
+                     bivariate=FALSE,maxs=10,boot="mimr",errd=FALSE, delta=TRUE ){
   
   D<-scale(D)
   N<-NROW(D)
@@ -129,6 +129,20 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     eDe=D2C.n(ED,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
     names(eDe)=paste("M.e",names(eDe),sep=".")
   }
+  
+  if (delta){
+    
+    eef=diff(D[,ef])
+    eca=D[2:NROW(D),ca]
+    
+    ED=D[2:NROW(D),]
+    ED[,ca]=eca
+    ED[,ef]=eef
+    dDe=D2C.n(ED,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
+    names(dDe)=paste("D.e",names(dDe),sep=".")
+  }
+  
+  
   if (bivariate){
     De2= D2C.2(D[,ca],D[,ef])
     names(De2)=paste("B",names(De2),sep=".")
@@ -139,10 +153,15 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   }
   
   DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),De) 
+  names(DD)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
   if (errd)
     DD<-c(DD,eDe)
   
-  names(DD)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
+  if (delta)
+    DD<-c(DD,dDe)
+  
+  
+  
   
   if (bivariate){
     DD<-c(DD,De2) 

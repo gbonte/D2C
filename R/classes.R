@@ -11,7 +11,8 @@
 setClass("D2C.descriptor",
          slots = list(lin="logical", acc="logical",
                       struct="logical",pq="numeric",
-                      bivariate="logical",ns="numeric",
+                      bivariate="logical",residual="logical", 
+                      diff="logical",ns="numeric",
                       maxs="numeric",boot="character"))
 
 ##' creation of a D2C.descriptor
@@ -22,6 +23,8 @@ setClass("D2C.descriptor",
 ##' @param struct	\{TRUE, FALSE\}: if TRUE it uses the ranking in the Markov Blanket as a descriptor
 ##' @param pq :a vector of quantiles used to compute the descriptors
 ##' @param bivariate \{TRUE, FALSE\}: if TRUE it includes also the descriptors of the bivariate dependence
+##' @param residual \{TRUE, FALSE\}: if TRUE it includes also the residual in the descriptor computation
+##' @param diff \{TRUE, FALSE\}: if TRUE it includes also the difference values in the descriptor computation (only for time series)
 ##' @param ns : size of the Markov Blanket returned by the mIMR algorithm
 ##' @param boot : bootstrap algorithm
 ##' @param maxs : max size of distribution samples
@@ -37,7 +40,7 @@ setMethod("initialize",
           "D2C.descriptor",
           function(.Object, lin=TRUE, acc=TRUE,
                    struct=FALSE,pq=c(0.1, 0.25, 0.5, 0.75, 0.9),
-                   bivariate=FALSE,ns=4,boot="mrmr2",maxs=20)
+                   bivariate=FALSE,ns=4,boot="mrmr2",maxs=20,diff=FALSE, residual=FALSE)
           {
             
             .Object@lin <- lin
@@ -48,6 +51,8 @@ setMethod("initialize",
             .Object@ns <- ns
             .Object@maxs <- maxs
             .Object@boot <- boot
+            .Object@residual <- residual
+            .Object@diff <- diff
             .Object
           }
 )
@@ -728,7 +733,8 @@ setMethod("initialize",
                     
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot,
+                                  errd=descr@residual, delta=descr@diff)
                     
                     
                     if (type=="is.parent")
@@ -755,7 +761,8 @@ setMethod("initialize",
                     
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot,
+                                  errd=descr@residual, delta=descr@diff)
                     
                     
                     if (type=="is.parent")
@@ -783,7 +790,8 @@ setMethod("initialize",
                     
                     d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                                   struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot)
+                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot,
+                                  errd=descr@residual, delta=descr@diff)
                     
                     labelEdge[j] =0
                     if (type=="is.parent")
@@ -991,7 +999,8 @@ setMethod("predict", signature="D2C",
                                         struct = object@descr@struct,
                                         pq = object@descr@pq, 
                                         bivariate =object@descr@bivariate, 
-                                        boot=object@descr@boot)
+                                        boot=object@descr@boot,
+                                        errd=object@descr@residual, delta=object@descr@diff)
               
               if (any(is.infinite(X_descriptor)))
                 stop("Error in D2C::predict: infinite value ")
@@ -1149,7 +1158,8 @@ setMethod(f="updateD2C",
                 
                 d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
                               struct=descr@struct,bivariate=descr@bivariate,
-                              pq=descr@pq,maxs=descr@maxs,ns=descr@ns,boot=descr@boot)
+                              pq=descr@pq,maxs=descr@maxs,ns=descr@ns,boot=descr@boot,
+                              errd=descr@residual, delta=descr@diff)
                 
                 
                 
