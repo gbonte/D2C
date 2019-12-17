@@ -133,9 +133,9 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (delta){
     
     eef=diff(D[,ef])
-    eca=D[2:NROW(D),ca]
+    eca=D[1:(NROW(D)-1),ca]
     
-    ED=D[2:NROW(D),]
+    ED=D[1:(NROW(D)-1),]
     ED[,ca]=eca
     ED[,ef]=eef
     dDe=D2C.n(ED,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
