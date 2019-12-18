@@ -454,7 +454,7 @@ setMethod("initialize",
 setClass("simulatedTS",
          slots = list(list.DAGs="list",list.observationsDAGs="list",
                       NDAG="numeric", list.numTS="list",
-                      list.fs="list", list.Y="list", list.doNeigh="list"))
+                      list.fs="list", list.Y="list", list.doNeigh="list",noNodes="numeric"))
 
 ##' creation of a "simulatedTS" containing a list of DAGs and associated time series observations
 ##' @param .Object : simulatedTS object
@@ -500,7 +500,7 @@ setMethod("initialize",
               `%op%` <-`%do%`
             }
             
-           
+            
             X=NULL
             Y=NULL
             list.DAGs=NULL
@@ -509,7 +509,7 @@ setMethod("initialize",
               return(.Object)
             
             FF<-foreach (i=1:NDAG) %op%{
-            ##        for (i in 1:NDAG){
+              ##        for (i in 1:NDAG){
               set.seed(seed+i)
               
               nseries.i<-nseries
@@ -573,7 +573,7 @@ setMethod("initialize",
               Object@list.doNeigh=Object@list.doNeigh[-to.remove]
             }
             .Object@NDAG=length(.Object@list.DAGs)
-            
+            .Object@noNodes=noNodes
             .Object
           }
 )
@@ -599,6 +599,7 @@ setMethod(f="update",
             
           }
 )
+
 
 
 #########################################
@@ -629,6 +630,7 @@ setClass("D2C",
 #' @param verbose  : if TRUE it prints the state of progress
 #' @param type : type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}
 #' @param EErep: Easy Ensemble size to deal with unbalancedness
+#' @param  rev: if TRUE, it uses both directions of the edge to train the learner (i.e. if i is parent of j, it is also true that j is a child of i)
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @examples
 #' require(RBGL)
@@ -648,7 +650,7 @@ setMethod("initialize",
                    ratioMissingNode=0,
                    ratioEdges=1,max.features=20,
                    goParallel=FALSE,npar=5,
-                   type="is.parent") {
+                   type="is.parent", rev=TRUE) {
             
             #generate a training set
             # NDAG the number of network to use
@@ -713,14 +715,12 @@ setMethod("initialize",
                 if (verbose)
                   cat("nEdges=", nEdges, " ")
                 
-                rev<-TRUE  
-                ### if TRUE, it uses both directions of the edge to train the learner 
-                ### (i.e. if i is parent of j, it is also true that j is a child of i)
+                
                 
                 if (rev)
                   labelEdge = numeric(2*nEdges)
                 else
-                  labelEdge = numeric(nEdges)
+                  labelEdge = NULL
                 
                 ##compute the descriptor for the edges
                 X.out = NULL
@@ -784,33 +784,52 @@ setMethod("initialize",
                     
                   }
                 } else {    ### if rev
-                  for(j in 1:nEdges){
-                    I =as(edgesM[j,1],"numeric") ;
-                    J =as(edgesM[j,2],"numeric") ;
-                    
-                    d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
-                                  struct=descr@struct,bivariate=descr@bivariate,
-                                  pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot,
-                                  errd=descr@residual, delta=descr@diff)
-                    
-                    labelEdge[j] =0
-                    if (type=="is.parent")
-                      if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
-                        labelEdge[j] =1
-                    if (type=="is.child")
-                      if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
-                        labelEdge[j] =1
-                    if (type=="is.ancestor")
-                      if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
-                        labelEdge[j] =1
-                    if (type=="is.descendant")
-                      if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
-                        labelEdge[j] =1
-                    if (type=="is.mb")
-                      if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
-                        labelEdge[j] =1
-                    X.out = rbind(X.out,d)
-                    
+                  for (j in 1:nEdges){
+                    I =as(edgesM[j,1],"numeric") ; # parent
+                    J =as(edgesM[j,2],"numeric") ; # child
+                    fs<-timecauses(NCOL(observationsDAG),sDAG@noNodes,J)
+                    if (is.element(I,fs)){
+                      dfs<-unique(c(I,J,fs))
+                      ## it considers the edge only if this is temporally feasible
+                      d<-descriptor(observationsDAG,I,J,lin=descr@lin,acc=descr@acc,
+                                    struct=descr@struct,bivariate=descr@bivariate,
+                                    pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot,
+                                    errd=descr@residual, delta=descr@diff)
+                      
+                      
+                      if (type=="is.parent")
+                        if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2])){
+                          labelEdge =c(labelEdge,1)
+                        }else{
+                          labelEdge =c(labelEdge,0)
+                        }
+                      if (type=="is.child")
+                        if (is.child(iDAG2,edgesM[j,1],edgesM[j,2])){
+                          labelEdge =c(labelEdge,1)
+                        }else{
+                          labelEdge =c(labelEdge,0)
+                        }
+                      if (type=="is.ancestor")
+                        if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2])){
+                          labelEdge =c(labelEdge,1)
+                        }else{
+                          labelEdge =c(labelEdge,0)
+                        }
+                      if (type=="is.descendant")
+                        if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2])){
+                          labelEdge =c(labelEdge,1)
+                        }else{
+                          labelEdge =c(labelEdge,0)
+                        }
+                      if (type=="is.mb")
+                        if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2])){
+                          labelEdge =c(labelEdge,1)
+                        }else{
+                          labelEdge =c(labelEdge,0)
+                        }
+                      X.out = rbind(X.out,d)
+                      
+                    }
                   }
                 } ## if rev
                 

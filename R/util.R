@@ -1645,3 +1645,18 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
   list(D=M$inp,DAG=netwDAG,fs=fs,Y=Y,doNeigh=doNeigh)
 }
 
+## return the set of temporal possible causes for the effect
+timecauses<-function(nD,nn,ind.effect){
+  #nn=6 
+  n=nD/nn
+  #ind.effn2mfrow()ect=10
+  tt<-ind.effect%%nn
+  nn
+  ind.causes<-NULL
+  
+  for (i in 1:n){
+    if (tt<nn)
+      ind.causes<-c(ind.causes,(i-1)*nn+seq(tt+1,nn))
+  }
+  return(ind.causes)
+}
