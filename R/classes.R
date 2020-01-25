@@ -626,7 +626,6 @@ setClass("D2C",
 #' @param ratioEdges  : percentage of existing edges which are added to the training set
 #' @param ratioMissingNode  : percentage of existing nodes which are not considered. This is used to emulate latent variables.
 #' @param goParallel : if TRUE it uses parallelism
-#' @param interaction : if NULL it use feature selection
 #' @param verbose  : if TRUE it prints the state of progress
 #' @param type : type of predicted dependency. It takes values in \{ \code{is.parent, is.child, is.ancestor, is.descendant, is.mb} \}
 #' @param EErep: Easy Ensemble size to deal with unbalancedness
@@ -890,6 +889,10 @@ setMethod("makeModel",
               features<- grep('B.',colnames(X))
             if (subset=="multivar")
               features<- grep('M.',colnames(X))
+            if (subset=="noInt"){
+              featInt<- grep('Int.',colnames(X))
+              features<-setdiff(features,featInt)
+            }
             
             X<-X[,features]
             wna<-which(apply(X,2,sd)<0.01)
