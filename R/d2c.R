@@ -195,45 +195,6 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
   
   
   
-  if (struct){
-    
-    ## position of effect in the MBca 
-    if (is.element(ef,MBca))
-      pos.ef<-(which(MBca==ef))/(ns)
-    else
-      pos.ef<-2
-    
-    ## position of ca in the MBef
-    if (is.element(ca,MBef))
-      pos.ca<-(which(MBef==ca))/(ns)
-    else
-      pos.ca<-2
-    
-    sx.ef<-NULL
-    ## position of variables of MBef in MBca 
-    for (i in 1:length(MBef)){
-      if (is.element(MBef[i],MBca))
-        sx.ef<-c(sx.ef,(which(MBca==MBef[i]))/(ns))
-      else
-        sx.ef<-c(sx.ef,2)
-      
-    }
-    
-    ## position of variables of MBca in MBef
-    sx.ca<-NULL
-    for (i in 1:length(MBca)){
-      if (is.element(MBca[i],MBef))
-        sx.ca<-c(sx.ca,(which(MBef==MBca[i]))/(ns))
-      else
-        sx.ca<-c(sx.ca,2)      
-    }
-    
-    
-    x<-c(x,pos.ca,pos.ef,quantile(sx.ca,probs=pq),quantile(sx.ef,probs=pq))
-    namesx<-c(namesx,"pos.ca","pos.ef",paste0("sx.ca",1:length(pq)),
-              paste0("sx.ef",1:length(pq)))
-  } ## if struct
-  
   MBca<-setdiff(1:n,ca)
   MBef<-setdiff(1:n,ef)
   MBca2=MBca
@@ -288,7 +249,46 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
   }
   
- 
+  
+  if (struct){
+    
+    ## position of effect in the MBca 
+    if (is.element(ef,MBca))
+      pos.ef<-(which(MBca==ef))/(ns)
+    else
+      pos.ef<-2
+    
+    ## position of ca in the MBef
+    if (is.element(ca,MBef))
+      pos.ca<-(which(MBef==ca))/(ns)
+    else
+      pos.ca<-2
+    
+    sx.ef<-NULL
+    ## position of variables of MBef in MBca 
+    for (i in 1:length(MBef)){
+      if (is.element(MBef[i],MBca))
+        sx.ef<-c(sx.ef,(which(MBca==MBef[i]))/(ns))
+      else
+        sx.ef<-c(sx.ef,2)
+      
+    }
+    
+    ## position of variables of MBca in MBef
+    sx.ca<-NULL
+    for (i in 1:length(MBca)){
+      if (is.element(MBca[i],MBef))
+        sx.ca<-c(sx.ca,(which(MBef==MBca[i]))/(ns))
+      else
+        sx.ca<-c(sx.ca,2)      
+    }
+    
+    
+    x<-c(x,pos.ca,pos.ef,quantile(sx.ca,probs=pq),quantile(sx.ef,probs=pq))
+    namesx<-c(namesx,"pos.ca","pos.ef",paste0("sx.ca",1:length(pq)),
+              paste0("sx.ef",1:length(pq)))
+  } ## if struct
+  
   MBca<-setdiff(MBca,ef)
   MBef<-setdiff(MBef,ca)
   
