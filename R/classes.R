@@ -885,6 +885,7 @@ setMethod("makeModel",
             X<-object@origX
             Y<-object@Y
             features=1:NCOL(X)
+            
             if (subset=="bivar")
               features<- grep('B.',colnames(X))
             if (subset=="multivar")
@@ -895,12 +896,17 @@ setMethod("makeModel",
             }
             
             X<-X[,features]
-            wna<-which(apply(X,2,sd)<0.01)
+            wna<-which(apply(X,2,sd)<0.001)
             if (length(wna)>0){
               features<-setdiff(features,features[wna])
               X=X[,-wna] 
             }
-            
+            wna<-which(is.na(apply(X,2,mean)))
+            if (length(wna)>0){
+              features<-setdiff(features,features[wna])
+              X=X[,-wna] 
+            }
+           
             X<-scale(X)
             object@scaled=attr(X,"scaled:scale")
             object@center=attr(X,"scaled:center")

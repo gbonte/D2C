@@ -37,11 +37,11 @@ print(dim(trainDAG@list.observationsDAGs[[1]]))
 ## ----echo=TRUE,eval=TRUE-------------------------------------------------
 descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE)
 
-trainD2C<-new("D2C",sDAG=trainDAG, 
+D2C<-new("D2C",sDAG=trainDAG, 
               descr=descr.example,ratioEdges=0.1,max.features=30,verbose=TRUE)
 
 
-
+trainD2C<-makeModel(D2C,classifier="RF")
 
 ## ----echo=TRUE,results=FALSE---------------------------------------------
 print(dim(trainD2C@X))

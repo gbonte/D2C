@@ -31,6 +31,34 @@ epred<-function(X,Y,lin=TRUE,norm=TRUE){
   
 }
 
+stab<-function(X,Y,lin=TRUE,R=10){
+  X=(X-min(X))/(max(X)-min(X)+1e-4)
+  Y=(Y-min(Y))/(max(Y)-min(Y)+1e-4)
+  
+  Xhat<-NULL
+  Yhat<-NULL
+  for (r in 1:R){
+    rX = sample(X, 100, replace=TRUE, 
+                prob=dnorm(X,mean=runif(1),sd=0.25)+dnorm(X,mean=runif(1),sd=0.25))
+    rY=Y[match(rX,X)]
+    D=data.frame(cbind(rX,rY))
+    colnames(D)<-c("X","Y")
+    L<-lm(Y~X+1,data=D)
+    L2<-lm(X~Y+1,data=D)
+    
+    Xts=seq(0,1,by=0.01)
+    Yts=seq(0,1,by=0.01)
+    pY<-predict(L,newdata=data.frame(X=Xts))
+    pX<-predict(L2,newdata=data.frame(Y=Yts))
+    Yhat<-rbind(Yhat,pY)
+    Xhat<-rbind(Xhat,pX)
+    
+  }
+ 
+  return(sign(mean(apply(Yhat,2,sd))- mean(apply(Xhat,2,sd)) ))
+}
+
+
 npred<-function(X,Y,lin=TRUE,norm=TRUE){
   ## normalized mean squared error of the dependency
   N<-NROW(X)
@@ -103,7 +131,7 @@ norminf<-function(y,x1,x2=NULL,lin=TRUE){
 descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      lin=FALSE,acc=TRUE,struct=FALSE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
-                     bivariate=FALSE,maxs=10,boot="mimr",errd=FALSE, delta=TRUE ){
+                     bivariate=FALSE,maxs=10,boot="mimr",errd=FALSE, delta=FALSE ){
   
   D<-scale(D)
   N<-NROW(D)
@@ -130,18 +158,6 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     names(eDe)=paste("M.e",names(eDe),sep=".")
   }
   
-  if (delta){
-    
-    eef=diff(D[,ef])
-    eca=D[1:(NROW(D)-1),ca]
-    
-    ED=D[1:(NROW(D)-1),]
-    ED[,ca]=eca
-    ED[,ef]=eef
-    dDe=D2C.n(ED,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
-    names(dDe)=paste("D.e",names(dDe),sep=".")
-  }
-  
   
   if (bivariate){
     De2= D2C.2(D[,ca],D[,ef])
@@ -152,16 +168,13 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     }
   }
   
-  DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),De) 
-  names(DD)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
+  DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),stab(D[,ca],D[,ef]), stab(D[,ef],D[,ca]),De) 
+  names(DD)[1:6]=c('N', 'n/N','kurtosis1','kurtosis2','stab1','stab2')
+  
   if (errd)
     DD<-c(DD,eDe)
   
-  if (delta)
-    DD<-c(DD,dDe)
-  
-  
-  
+    
   
   if (bivariate){
     DD<-c(DD,De2) 
