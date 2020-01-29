@@ -26,6 +26,7 @@ setClass("D2C.descriptor",
 ##' @param bivariate \{TRUE, FALSE\}: if TRUE it includes also the descriptors of the bivariate dependence
 ##' @param residual \{TRUE, FALSE\}: if TRUE it includes also the residual in the descriptor computation
 ##' @param diff \{TRUE, FALSE\}: if TRUE it includes also the difference values in the descriptor computation (only for time series)
+##' @param stabD \{TRUE, FALSE\}: if TRUE it includes also the stability in the descriptor computation 
 ##' @param ns : size of the Markov Blanket returned by the mIMR algorithm
 ##' @param boot : bootstrap algorithm
 ##' @param maxs : max size of distribution samples
