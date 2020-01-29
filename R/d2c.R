@@ -131,7 +131,9 @@ norminf<-function(y,x1,x2=NULL,lin=TRUE){
 descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      lin=FALSE,acc=TRUE,struct=FALSE, 
                      pq= c(0.1,0.25,0.5,0.75,0.9),
-                     bivariate=FALSE,maxs=10,boot="mimr",errd=FALSE, delta=FALSE ){
+                     bivariate=FALSE,maxs=10,boot="mimr",errd=FALSE, 
+                     delta=FALSE, 
+                     stabD=FALSE ){
   
   D<-scale(D)
   N<-NROW(D)
@@ -168,9 +170,14 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     }
   }
   
-  DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),stab(D[,ca],D[,ef]), stab(D[,ef],D[,ca]),De) 
-  names(DD)[1:6]=c('N', 'n/N','kurtosis1','kurtosis2','stab1','stab2')
-  
+  if (stabD){
+    DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),
+          stab(D[,ca],D[,ef]), stab(D[,ef],D[,ca]),De) 
+    names(DD)[1:6]=c('N', 'n/N','kurtosis1','kurtosis2','stab1','stab2')
+  } else {
+    DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),De) 
+    names(DD)[1:4]=c('N', 'n/N','kurtosis1','kurtosis2')
+  }
   if (errd)
     DD<-c(DD,eDe)
   
