@@ -17,7 +17,7 @@ epred<-function(X,Y,lin=TRUE,norm=TRUE){
   }
   
   if (lin)
-    return(max(1e-3,regrlin(X,Y)$MSE.loo/var(Y)))
+    return(regrlin(X,Y)$Y.hat)
   
   
   XX<-scale(X)
@@ -37,9 +37,12 @@ stab<-function(X,Y,lin=TRUE,R=10){
   
   Xhat<-NULL
   Yhat<-NULL
+  
   for (r in 1:R){
+    m1=runif(1)
+    m2=runif(1)
     rX = sample(X, 100, replace=TRUE, 
-                prob=dnorm(X,mean=runif(1),sd=0.25)+dnorm(X,mean=runif(1),sd=0.25))
+                prob=dnorm(X,mean=m1,sd=0.25)+dnorm(X,mean=m2,sd=0.25))
     rY=Y[match(rX,X)]
     D=data.frame(cbind(rX,rY))
     colnames(D)<-c("X","Y")
@@ -146,28 +149,29 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   }
   
   if (errd){
-    mfs<-setdiff(1:n,c(ca,ef))
-    fs<-mfs[rankrho(D[,mfs],D[,ef],nmax=2)]
-    eef=epred(D[,mfs],D[,ef],lin=lin)
+    mfs<-1:n
+    fs<-mfs[mimr(D[,mfs],D[,ef],nmax=2)]
+    eef=epred(D[,fs],D[,ef],lin=lin)
     
-    fs<-mfs[rankrho(D[,mfs],D[,ca],nmax=2)]
-    eca=epred(D[,mfs],D[,ca],lin=lin)
+    fs<-mfs[mimr(D[,mfs],D[,ca],nmax=2)]
+    eca=epred(D[,fs],D[,ca],lin=lin)
+    eDe=NULL
     
-    ED=D
-    ED[,ca]=eca
-    ED[,ef]=eef
-    eDe=D2C.n(ED,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
-    names(eDe)=paste("M.e",names(eDe),sep=".")
+    eDe=c(eDe, norminf(eef,eca,D[,ca],lin=lin)-norminf(eef,eca,lin=lin))
+    eDe=c(eDe, norminf(eef,eca,D[,ef],lin=lin)-norminf(eef,eca,lin=lin))
+    eDe=c(eDe, norminf(eef,D[,ca],D[,ef],lin=lin)-norminf(eef,D[,ca],lin=lin))
+    eDe=c(eDe, norminf(eca,D[,ef],D[,ca],lin=lin)-norminf(eca,D[,ef],lin=lin))
+
+    
+    names(eDe)=c("M.e1","M.e2","M.e3","M.e4")
+   
   }
   
   
   if (bivariate){
     De2= D2C.2(D[,ca],D[,ef])
     names(De2)=paste("B",names(De2),sep=".")
-    if (errd){
-      eDe2=D2C.2(ED[,ca],ED[,ef])
-      names(eDe2)=paste("B.e",names(eDe2),sep=".")
-    }
+    
   }
   
   if (stabD){
@@ -185,8 +189,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   
   if (bivariate){
     DD<-c(DD,De2) 
-    if (errd)
-      DD<-c(DD,eDe2)
+    
   }
   return(DD)
   
