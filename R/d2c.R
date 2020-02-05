@@ -257,6 +257,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       MBef2<-ind2[mimr(D[,ind2],D[,ef],nmax=ns,caus=-1)]
       MBef<-ind2[mimr(D[,ind2],D[,ef],nmax=2*ns,init=TRUE)]
       MBef<-setdiff(MBef,MBef2)   ## remove putative effects
+      
       MBef<-MBef[1:min(ns,length(MBef))]
     }
     
@@ -432,6 +433,20 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     gini.delta<- norminf(D[,ef],E.ca,D[,MBef],lin=lin)
     gini.delta2<- norminf(D[,ca],E.ef,D[,MBca],lin=lin)
     
+    E3.i<-NULL
+    ## Information of MBef2 on MBca given ca
+    for (i in 1:length(MBca))
+      for (j in 1:length(MBef2)){
+        E3.i<-c(E3.i,(norminf(D[,MBca[i]],D[,MBef2[j]],D[,ca],lin=lin)))
+      }
+    
+    E3.j<-NULL
+    ## Information of MBef on MBca2 given ef
+    for (i in 1:length(MBca2))
+      for (j in 1:length(MBef)){
+        E3.j<-c(E3.j,(norminf(D[,MBca2[i]],D[,MBef[j]],D[,ef],lin=lin)))
+      }
+    
     
     if (FALSE){
       
@@ -469,19 +484,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       }
       
       
-      E3.i<-NULL
-      ## Information of MBef2 on MBca given ca
-      for (i in 1:length(MBca))
-        for (j in 1:length(MBef2)){
-          E3.i<-c(E3.i,(norminf(D[,MBca[i]],D[,MBef2[j]],D[,ca],lin=lin)))
-        }
       
-      E3.j<-NULL
-      ## Information of MBef on MBca2 given ef
-      for (i in 1:length(MBca2))
-        for (j in 1:length(MBef)){
-          E3.j<-c(E3.j,(norminf(D[,MBca2[i]],D[,MBef[j]],D[,ef],lin=lin)))
-        }
       
       
       G1.i<-NULL
@@ -534,13 +537,13 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
          quantile(I3.i,probs=pq,na.rm=TRUE),quantile(I3.j,probs=pq,na.rm=TRUE),
          quantile(Int3.i,probs=pq,na.rm=TRUE),quantile(Int3.j,probs=pq,na.rm=TRUE),
          gini.delta,gini.delta2,
-         gini.ca.ef,gini.ef.ca
+         gini.ca.ef,gini.ef.ca,
          #quantile(Int1.i,probs=pq,na.rm=TRUE),quantile(Int1.j,probs=pq,na.rm=TRUE),
          #quantile(Int2.i,probs=pq,na.rm=TRUE),quantile(Int2.j,probs=pq,na.rm=TRUE),
          # quantile(G1.i,probs=pq,na.rm=TRUE),quantile(G1.j,probs=pq,na.rm=TRUE),
          # quantile(G2.i,probs=pq,na.rm=TRUE),quantile(G2.j,probs=pq,na.rm=TRUE),
          # quantile(G3.i,probs=pq,na.rm=TRUE),quantile(G3.j,probs=pq,na.rm=TRUE),
-         #quantile(E3.i,probs=pq,na.rm=TRUE),quantile(E3.j,probs=pq,na.rm=TRUE)
+         quantile(E3.i,probs=pq,na.rm=TRUE),quantile(E3.j,probs=pq,na.rm=TRUE)
     )
     
     namesx<-c(namesx,"delta","delta2",
@@ -552,13 +555,13 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
               paste0("I3.i",1:length(pq)), paste0("I3.j",1:length(pq)),
               paste0("Int3.i",1:length(pq)), paste0("Int3.j",1:length(pq)),
               "gini.delta","gini.delta2",
-              "gini.ca.ef","gini.ef.ca"
+              "gini.ca.ef","gini.ef.ca",
               #paste0("Int1.i",1:length(pq)), paste0("Int1.j",1:length(pq)),
               #paste0("Int2.i",1:length(pq)), paste0("Int2.j",1:length(pq)),
               #   paste0("G1.i",1:length(pq)), paste0("G1.j",1:length(pq)),
               #    paste0("G2.i",1:length(pq)), paste0("G2.j",1:length(pq)),
               #    paste0("G3.i",1:length(pq)), paste0("G3.j",1:length(pq)),
-              #paste0("E3.i",1:length(pq)), paste0("E3.j",1:length(pq))
+              paste0("E3.i",1:length(pq)), paste0("E3.j",1:length(pq))
     )
   } ## if acc
   
