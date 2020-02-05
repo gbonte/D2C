@@ -448,7 +448,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       }
     
     
-    if (FALSE){
+    
       
       
       Int1.i<-NULL
@@ -484,7 +484,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
       }
       
       
-      
+      if (FALSE){
       
       
       G1.i<-NULL
@@ -538,8 +538,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
          quantile(Int3.i,probs=pq,na.rm=TRUE),quantile(Int3.j,probs=pq,na.rm=TRUE),
          gini.delta,gini.delta2,
          gini.ca.ef,gini.ef.ca,
-         #quantile(Int1.i,probs=pq,na.rm=TRUE),quantile(Int1.j,probs=pq,na.rm=TRUE),
-         #quantile(Int2.i,probs=pq,na.rm=TRUE),quantile(Int2.j,probs=pq,na.rm=TRUE),
+         quantile(Int1.i,probs=pq,na.rm=TRUE),quantile(Int1.j,probs=pq,na.rm=TRUE),
+         quantile(Int2.i,probs=pq,na.rm=TRUE),quantile(Int2.j,probs=pq,na.rm=TRUE),
          # quantile(G1.i,probs=pq,na.rm=TRUE),quantile(G1.j,probs=pq,na.rm=TRUE),
          # quantile(G2.i,probs=pq,na.rm=TRUE),quantile(G2.j,probs=pq,na.rm=TRUE),
          # quantile(G3.i,probs=pq,na.rm=TRUE),quantile(G3.j,probs=pq,na.rm=TRUE),
@@ -556,8 +556,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
               paste0("Int3.i",1:length(pq)), paste0("Int3.j",1:length(pq)),
               "gini.delta","gini.delta2",
               "gini.ca.ef","gini.ef.ca",
-              #paste0("Int1.i",1:length(pq)), paste0("Int1.j",1:length(pq)),
-              #paste0("Int2.i",1:length(pq)), paste0("Int2.j",1:length(pq)),
+              paste0("Int1.i",1:length(pq)), paste0("Int1.j",1:length(pq)),
+              paste0("Int2.i",1:length(pq)), paste0("Int2.j",1:length(pq)),
               #   paste0("G1.i",1:length(pq)), paste0("G1.j",1:length(pq)),
               #    paste0("G2.i",1:length(pq)), paste0("G2.j",1:length(pq)),
               #    paste0("G3.i",1:length(pq)), paste0("G3.j",1:length(pq)),
