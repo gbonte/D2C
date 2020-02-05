@@ -57,7 +57,7 @@ stab<-function(X,Y,lin=TRUE,R=10){
     Xhat<-rbind(Xhat,pX)
     
   }
- 
+  
   return(sign(mean(apply(Yhat,2,sd))- mean(apply(Xhat,2,sd)) ))
 }
 
@@ -161,10 +161,10 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     eDe=c(eDe, norminf(eef,eca,D[,ef],lin=lin)-norminf(eef,eca,lin=lin))
     eDe=c(eDe, norminf(eef,D[,ca],D[,ef],lin=lin)-norminf(eef,D[,ca],lin=lin))
     eDe=c(eDe, norminf(eca,D[,ef],D[,ca],lin=lin)-norminf(eca,D[,ef],lin=lin))
-
+    
     
     names(eDe)=c("M.e1","M.e2","M.e3","M.e4")
-   
+    
   }
   
   
@@ -185,7 +185,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (errd)
     DD<-c(DD,eDe)
   
-    
+  
   
   if (bivariate){
     DD<-c(DD,De2) 
@@ -435,56 +435,71 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
     E3.i<-NULL
     ## Information of MBef2 on MBca given ca
-    for (i in 1:length(MBca))
-      for (j in 1:length(MBef2)){
-        E3.i<-c(E3.i,(norminf(D[,MBca[i]],D[,MBef2[j]],D[,ca],lin=lin)))
-      }
+    
+    IJ<-expand.grid(1:length(MBca),1:length(MBef2))
+    IJ<-IJ[which(IJ[,1]<IJ[,2]),]
+    IJ<-IJ[sample(1:NROW(IJ),min(maxs,NROW(IJ))),]
+    
+    
+    for (r in 1:NROW(IJ)){
+      i=IJ[r,1]
+      j=IJ[r,2]
+      E3.i<-c(E3.i,(norminf(D[,MBca[i]],D[,MBef2[j]],D[,ca],lin=lin)))
+    }
     
     E3.j<-NULL
+    IJ<-expand.grid(1:length(MBca2),1:length(MBef))
+    IJ<-IJ[which(IJ[,1]<IJ[,2]),]
+    IJ<-IJ[sample(1:NROW(IJ),min(maxs,NROW(IJ))),]
     ## Information of MBef on MBca2 given ef
-    for (i in 1:length(MBca2))
-      for (j in 1:length(MBef)){
-        E3.j<-c(E3.j,(norminf(D[,MBca2[i]],D[,MBef[j]],D[,ef],lin=lin)))
-      }
+    for (r in 1:NROW(IJ)){
+      i=IJ[r,1]
+      j=IJ[r,2]
+      E3.j<-c(E3.j,(norminf(D[,MBca2[i]],D[,MBef[j]],D[,ef],lin=lin)))
+    }
     
     
     
-      
-      
-      Int1.i<-NULL
-      ## 
-      for (j in 1:length(MBef)){
-        Int1.i<-c(Int1.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)-norminf(D[,ca], D[,MBef[j]],lin=lin)) ## I(zi; Mj^k|zj)-I(zi; Mj^k)
-      }
-      
-      Int1.j<-NULL
-      ## 
-      for (j in 1:length(MBca)){
-        Int1.j<-c(Int1.j, norminf(D[,ef], D[,MBca[j]],D[,ca],lin=lin)
-                  -norminf(D[,ef], D[,MBca[j]],lin=lin)) ## I(zj; Mi^k|zi)- I(zj; Mi^k)
-      }
-      
-      
-      Int2.i<-NULL
-      ## 
-      for (r in 1:NROW(IJ)){
-        i=IJ[r,1]
-        j=IJ[r,2]
-        Int2.i<-c(Int2.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin)
-                          -norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zi)-I(Mi^k; Mj^k)
-      }
-      
-      Int2.j<-NULL
-      ## 
-      for (r in 1:NROW(IJ)){
-        i=IJ[r,1]
-        j=IJ[r,2]
-        Int2.j<-c(Int2.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin)
-                          -norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zj)-I(Mi^k; Mj^k)
-      }
-      
-      
-      if (FALSE){
+    
+    
+    Int1.i<-NULL
+    ## 
+    for (j in 1:length(MBef)){
+      Int1.i<-c(Int1.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)-norminf(D[,ca], D[,MBef[j]],lin=lin)) ## I(zi; Mj^k|zj)-I(zi; Mj^k)
+    }
+    
+    Int1.j<-NULL
+    ## 
+    for (j in 1:length(MBca)){
+      Int1.j<-c(Int1.j, norminf(D[,ef], D[,MBca[j]],D[,ca],lin=lin)
+                -norminf(D[,ef], D[,MBca[j]],lin=lin)) ## I(zj; Mi^k|zi)- I(zj; Mi^k)
+    }
+    
+    
+    Int2.i<-NULL
+    ## 
+    for (r in 1:NROW(IJ)){
+      i=IJ[r,1]
+      j=IJ[r,2]
+      Int2.i<-c(Int2.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin)
+                        -norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zi)-I(Mi^k; Mj^k)
+    }
+    
+    IJ<-expand.grid(1:length(MBca),1:length(MBef))
+    IJ<-IJ[which(IJ[,1]<IJ[,2]),]
+    IJ<-IJ[sample(1:NROW(IJ),min(maxs,NROW(IJ))),]
+    
+    Int2.j<-NULL
+    ## 
+    for (r in 1:NROW(IJ)){
+      i=IJ[r,1]
+      j=IJ[r,2]
+      Int2.j<-c(Int2.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin)
+                        -norminf(D[,MBca[i]],D[,MBef[j]],lin=lin))) ## I(Mi^k; Mj^k|zj)-I(Mi^k; Mj^k)
+    }
+    
+    
+    if (FALSE){
       
       
       G1.i<-NULL
