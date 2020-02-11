@@ -174,7 +174,10 @@ setMethod("compute", signature="DAG.network",
                   D[,i]<-  H(apply(Xin,1,sum))
                 }
                 set.seed(seed)
-                D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
+                if (sd(D[,i])<0.01)
+                  D[,i]<-replicate(N,sigma())
+                else
+                  D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
                 
               }
             } ## for i
@@ -413,7 +416,7 @@ setMethod("initialize",
               
               observationsDAG = compute(DAG,N=N.i)
               if (any(is.na(observationsDAG) | is.infinite(observationsDAG)))
-                  stop("simulatedDAG: error in data generation")
+                stop("simulatedDAG: error in data generation")
               
               if (quantize.i)
                 observationsDAG<-apply(observationsDAG,2,quantization)
@@ -544,7 +547,7 @@ setMethod("initialize",
                 G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               
               if (any(is.na(G$D) | is.infinite(G$D)))
-                  stop("error in data generation")
+                stop("error in data generation")
               netwDAG<-G$DAG 
               nodes(netwDAG)<-as.character(1:NCOL(G$D))
               observationsDAG = G$D
@@ -913,7 +916,7 @@ setMethod("makeModel",
               features<-setdiff(features,features[wna])
               X=X[,-wna] 
             }
-           
+            
             X<-scale(X)
             object@scaled=attr(X,"scaled:scale")
             object@center=attr(X,"scaled:center")
