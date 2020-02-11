@@ -16,13 +16,15 @@ epred<-function(X,Y,lin=TRUE,norm=TRUE){
     n<-NCOL(X)
   }
   
-  if (lin)
-    return(regrlin(X,Y)$Y.hat)
+  
   
   
   XX<-scale(X)
   if (N<5 | any(is.na(XX)))
     stop("Error in pred")
+  if (lin)
+    return(regrlin(XX,Y)$Y.hat)
+  
   e<-Y-lazy.pred(XX,Y,XX,conPar=c(min(10,N-2),min(N,20)),
                  linPar=NULL,class=FALSE,cmbPar=10)
   
@@ -71,6 +73,10 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
     w.const<-which(apply(X,2,sd)<0.01)    
     if (length(w.const)>0){
       X<-X[,-w.const]
+    }
+    w.na<-which(is.na(apply(X,2,sum)))    
+    if (length(w.na)>0){
+      X<-X[,-w.na]
     }
     n<-NCOL(X)
   }
