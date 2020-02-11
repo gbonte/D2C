@@ -412,6 +412,8 @@ setMethod("initialize",
               
               
               observationsDAG = compute(DAG,N=N.i)
+              if (any(is.na(observationsDAG) || is.infinite(observationsDAG)))
+                  stop("simulatedDAG: error in data generation")
               
               if (quantize.i)
                 observationsDAG<-apply(observationsDAG,2,quantization)
@@ -541,7 +543,8 @@ setMethod("initialize",
               else
                 G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               
-              
+              if (any(is.na(G$D) || is.infinite(G$D)))
+                  stop("error in data generation")
               netwDAG<-G$DAG 
               nodes(netwDAG)<-as.character(1:NCOL(G$D))
               observationsDAG = G$D

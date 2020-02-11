@@ -85,8 +85,10 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
   
   
   XX<-scale(X)
-  if (N<5 | any(is.na(XX)))
+  if (N<5 | any(is.na(XX))){
+    print(X)
     stop("Error in npred")
+  }
   if (lin)
     return(max(1e-3,regrlin(XX,Y)$MSE.loo/var(Y)))
   e<-Y-lazy.pred(XX,Y,XX,conPar=c(min(10,N-2),min(N,20)),
@@ -145,7 +147,14 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
                      delta=FALSE, 
                      stabD=FALSE ){
   
+  
+  
   D<-scale(D)
+  if (any(is.na(D) || is.infinite(D)) ){
+    print(D)
+    stop("Error in descriptor")
+  }
+  
   N<-NROW(D)
   n<-NCOL(D)
   De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
