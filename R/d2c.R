@@ -79,6 +79,9 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
       X<-X[,-w.na]
     }
     n<-NCOL(X)
+  } else {
+    if (any(is.na(X)))
+      return(1)
   }
   
   
@@ -87,6 +90,8 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
   XX<-scale(X)
   if (N<5 | any(is.na(XX))){
     print(X)
+    browser()
+    return(var(Y))
     stop("Error in npred")
   }
   if (lin)
@@ -150,7 +155,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   
   
   D<-scale(D)
-  if (any(is.na(D) || is.infinite(D)) ){
+  if (any(is.na(D) | is.infinite(D)) ){
     print(D)
     stop("Error in descriptor")
   }

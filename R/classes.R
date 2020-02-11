@@ -181,7 +181,7 @@ setMethod("compute", signature="DAG.network",
             col.numeric<-as(colnames(D),"numeric")
             D<-D[,topologicalOrder[order(col.numeric)]]
             
-            return(D)
+            return(scale(D))
           })
 
 #' @docType methods
@@ -412,7 +412,7 @@ setMethod("initialize",
               
               
               observationsDAG = compute(DAG,N=N.i)
-              if (any(is.na(observationsDAG) || is.infinite(observationsDAG)))
+              if (any(is.na(observationsDAG) | is.infinite(observationsDAG)))
                   stop("simulatedDAG: error in data generation")
               
               if (quantize.i)
@@ -543,7 +543,7 @@ setMethod("initialize",
               else
                 G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               
-              if (any(is.na(G$D) || is.infinite(G$D)))
+              if (any(is.na(G$D) | is.infinite(G$D)))
                   stop("error in data generation")
               netwDAG<-G$DAG 
               nodes(netwDAG)<-as.character(1:NCOL(G$D))
