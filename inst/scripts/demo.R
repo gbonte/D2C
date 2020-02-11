@@ -8,19 +8,19 @@ require(graph)
 
 set.seed(0)
 
-noNodes<-c(100,150)
+noNodes<-c(10,50)
 ## range of number of nodes
 
-N<-c(100,200)
+N<-c(150,1000)
 ## range of number of samples
 
-sd.noise<-c(0.2,0.5)
+sd.noise<-c(0.1,0.5)
 ## range of values for standard deviation of additive noise 
 
 NDAG=50
 ## number of DAGs to be created and simulated
 
-
+type="is.ancestor"
 trainDAG<-new("simulatedDAG",NDAG=NDAG, N=N, noNodes=noNodes,
               functionType = c("linear","quadratic","sigmoid"), 
               seed=0,sdn=sd.noise,quantize=c(TRUE,FALSE),verbose=TRUE)
@@ -38,7 +38,7 @@ print(dim(trainDAG@list.observationsDAGs[[1]]))
 descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE)
 
 D2C<-new("D2C",sDAG=trainDAG, 
-              descr=descr.example,ratioEdges=0.1,max.features=30,verbose=TRUE)
+              descr=descr.example,ratioEdges=0.1,max.features=30,type=type,verbose=TRUE)
 
 
 trainD2C<-makeModel(D2C,classifier="RF")

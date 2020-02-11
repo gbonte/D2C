@@ -32,15 +32,15 @@ N<-c(150,300)
 
 NDAG=100
 ## number of DAGs to be created and simulated
-NDAG.test=50
-nseries=c(5,10)
+NDAG.test=20
+nseries=c(5,20)
 sdev<-c(0.1,0.3)
 
 goParallel=TRUE
 savefile<-TRUE
 namefile<-"../D2Cdata2/traintestSTAR.RData"
 nfeat=30
-maxs=20
+maxs=50
 ncores=1
 if (goParallel){
   ncores=5
@@ -64,20 +64,20 @@ if (TRUE){
   
   
   descr<-new("D2C.descriptor",bivariate=FALSE,ns=8,maxs=maxs,acc=TRUE,
-             lin=TRUE,struct=TRUE, boot="rank",residual=TRUE,diff=FALSE)
+             lin=TRUE,struct=TRUE, boot="rank",residual=FALSE,diff=FALSE,stabD=FALSE)
   descr2<-new("D2C.descriptor",bivariate=FALSE,ns=8,maxs=maxs,acc=TRUE,
-             lin=FALSE,struct=TRUE, boot="mimr",residual=TRUE,diff=FALSE)
+             lin=TRUE,struct=TRUE, boot="rank",residual=FALSE,diff=FALSE,stabD=TRUE)
   D2C<-new("D2C",sDAG=trainDAG,
-           descr=descr,ratioEdges=0.5,
+           descr=descr,ratioEdges=0.15,
            max.features=nfeat, type=type,goParallel=goParallel,
            verbose=TRUE,npar=min(NDAG,ncores),rev=FALSE)
-  D2C2<-D2C #new("D2C",sDAG=trainDAG,
-           #descr=descr2,ratioEdges=0.15,
-           #max.features=nfeat, type=type,goParallel=goParallel,
-           #verbose=TRUE,npar=min(NDAG,ncores),rev=FALSE)
+  D2C2<-new("D2C",sDAG=trainDAG,
+           descr=descr2,ratioEdges=0.15,
+           max.features=nfeat, type=type,goParallel=goParallel,
+           verbose=TRUE,npar=min(NDAG,ncores),rev=FALSE)
   
   trainD2C<-makeModel(D2C,classifier="RF")
-  trainD2C.2<-makeModel(D2C2,classifier="RF",subset="noInt")
+  trainD2C.2<-makeModel(D2C2,classifier="RF")
   
   
   
@@ -124,7 +124,7 @@ for ( r in 1:testDAG@NDAG){
   print("Done IAMB")
   Ahat.PC<-(amat(si.hiton.pc(data.frame(observedData),alpha=0.01)))
   
-  if (n<100){
+  if (n<1000){
     Ahat.GS<-(amat(gs(data.frame(observedData))))
     
     
