@@ -155,10 +155,16 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   
   
   D<-scale(D)
-  if (any(is.na(D) | is.infinite(D)) ){
+  if (any(is.na(D) ) ){
     print(D)
-    stop("Error in descriptor")
+    stop("Error NA in descriptor")
   }
+  
+  if (any(is.infinite(D)) ){
+    print(D)
+    stop("Error Inf in descriptor")
+  }
+  
   
   N<-NROW(D)
   n<-NCOL(D)

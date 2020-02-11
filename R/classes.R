@@ -415,11 +415,13 @@ setMethod("initialize",
               
               
               observationsDAG = compute(DAG,N=N.i)
-              if (any(is.na(observationsDAG) | is.infinite(observationsDAG)))
-                stop("simulatedDAG: error in data generation")
+              
               
               if (quantize.i)
                 observationsDAG<-apply(observationsDAG,2,quantization)
+              
+              if (any(is.na(observationsDAG) | is.infinite(observationsDAG)))
+                stop("simulatedDAG: error in data generation")
               
               if (verbose){
                 
@@ -691,6 +693,8 @@ setMethod("initialize",
                 observationsDAG =sDAG@list.observationsDAGs[[ii]]
                 if (verbose)
                   cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG), " ")
+                if (any(apply(observationsDAG,2,sd)<0.001))
+                  cat(" constant values in DAG data ")
                 
                 Nodes = nodes(DAG)
                 
