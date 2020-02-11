@@ -95,7 +95,7 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
     stop("Error in npred")
   }
   if (lin)
-    return(max(1e-3,regrlin(XX,Y)$MSE.loo/var(Y)))
+    return(max(1e-3,regrlin(XX,Y)$MSE.loo/(1e-3+var(Y))))
   e<-Y-lazy.pred(XX,Y,XX,conPar=c(min(10,N-2),min(N,20)),
                  linPar=NULL,class=FALSE,cmbPar=10)
   #  Itr=sample(1:N,min(50,round(2*N/3)))
