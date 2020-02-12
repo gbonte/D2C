@@ -700,7 +700,7 @@ setMethod("initialize",
                 
                 DAG = sDAG@list.DAGs[[ii]]
                 observationsDAG =sDAG@list.observationsDAGs[[ii]]
-                if (NROW(observationsDAG)>10){
+                if (NROW(observationsDAG)>50){
                   if (verbose)
                     cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG), " ")
                   if (any(apply(observationsDAG,2,sd)<0.001))
