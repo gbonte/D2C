@@ -258,7 +258,8 @@ setMethod("counterfact", signature="DAG.network",
                   
                 }
               } # if beforeknock
-            }
+            } 
+            
             
             return(D)
             
