@@ -183,7 +183,7 @@ setMethod("compute", signature="DAG.network",
             col.numeric<-as(colnames(D),"numeric")
             D<-D[,topologicalOrder[order(col.numeric)]]
             Dmax<-apply(abs(D),1,max)
-            wtoo<-which(Dmax>maxV)
+            wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
             if (length(wtoo)>0)
               D<-D[-wtoo,] ## remove divergent samples
             return(D)
