@@ -171,6 +171,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
   names(De)=paste("M",names(De),sep=".")
   if (any(is.na(De))){
+    print(D)
     print(De)
     stop("Error in descriptor")
   }
