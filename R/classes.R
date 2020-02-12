@@ -259,9 +259,7 @@ setMethod("counterfact", signature="DAG.network",
                 }
               } # if beforeknock
             }
-            Dmax<-apply(abs(D),1,max)
-            wtoo<-which(Dmax>maxV)
-            D<-D[-wtoo,] ## remove divergent samples
+            
             return(D)
             
           })
