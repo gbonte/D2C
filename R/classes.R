@@ -175,7 +175,7 @@ setMethod("compute", signature="DAG.network",
                 }
                 set.seed(seed)
                 
-                D[,i] <- scale(D[,i] + replicate(N,sigma()))  ## additive random noise
+                D[,i] <- (D[,i] + replicate(N,sigma()))  ## additive random noise
                 
               }
             } ## for i
@@ -245,12 +245,12 @@ setMethod("counterfact", signature="DAG.network",
                     }
                   }
                   if (!object@additive){
-                    ##D[,i]<-  H(D[,i])
-                    D[,i]<- kernel.fct(Xin)
+                    H = edgeData(self=DAG,from=inEdg[1],to=i,attr="H")[[1]]
+                    D[,i]<-  H(apply(Xin,1,sum))
                   }
                   set.seed(seed) 
                   
-                  D[,i] <- scale(D[,i] + replicate(N,sigma()))  ## additive random noise
+                  D[,i] <- (D[,i] + replicate(N,sigma()))  ## additive random noise
                   
                 }
               } # if beforeknock
