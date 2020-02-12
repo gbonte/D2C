@@ -172,10 +172,10 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   names(De)=paste("M",names(De),sep=".")
   wna<-which(is.na(De))
   if (length(wna)>0){
-    De[wna]<-0
+    De[wna]<-0 
     print(D)
     print(De)
-    warning("NA in descriptor")
+    warning("NA in descriptor ")
   }
   
   if (errd){
