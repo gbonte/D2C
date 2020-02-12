@@ -420,14 +420,14 @@ setMethod("initialize",
               ## it iterates until there is a dataset sufficiently large
               cnt=0
               while(1){
-                set.seed(seed+cnt)
+                set.seed(seed+i+cnt)
                 DAG = new("DAG.network",
                         network=netwDAG,H=H,additive=additive.i,sdn=sdn.i,weights=weights,maxV=maxV)
              
                 cnt=cnt+1
                 observationsDAG = compute(DAG,N=N.i)
                 if (! (is.null(observationsDAG) | is.vector(observationsDAG)))
-                  if (NROW(observationsDAG)>round(N.i/2))
+                  if (NROW(observationsDAG)>max(10,round(N.i/2)-cnt))
                     break;
               }
               
