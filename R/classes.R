@@ -174,17 +174,15 @@ setMethod("compute", signature="DAG.network",
                   D[,i]<-  H(apply(Xin,1,sum))
                 }
                 set.seed(seed)
-                if (sd(D[,i])<0.01)
-                  D[,i]<-replicate(N,sigma())
-                else
-                  D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
+                
+                D[,i] <- scale(D[,i] + replicate(N,sigma()))  ## additive random noise
                 
               }
             } ## for i
             col.numeric<-as(colnames(D),"numeric")
             D<-D[,topologicalOrder[order(col.numeric)]]
             
-            return(scale(D))
+            return(D)
           })
 
 #' @docType methods
@@ -230,7 +228,7 @@ setMethod("counterfact", signature="DAG.network",
                   }
                   if (is.element(i,knocked))
                     D[,i]<-delta
-                } else  {
+                } else  {  ##  if (length(inEdg)==0
                   D[,i]<-bias
                   Xin<-NULL
                   for(j in  inEdg)
@@ -251,10 +249,10 @@ setMethod("counterfact", signature="DAG.network",
                     D[,i]<- kernel.fct(Xin)
                   }
                   set.seed(seed)
-                  D[,i] <- scale(D[,i]) + replicate(N,sigma())  ## additive random noise
+                  D[,i] <- scale(D[,i] + replicate(N,sigma()))  ## additive random noise
                   
                 }
-              }
+              } # if beforeknock
             }
             
             return(D)
