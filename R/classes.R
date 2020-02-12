@@ -73,7 +73,7 @@ setMethod("initialize",
 
 ##' An S4 class to store DAG.network
 ##' @param network : object of class "graph"
-setClass("DAG.network",  slots = list(network = "graph",additive="logical"))
+setClass("DAG.network",  slots = list(network = "graph",additive="logical",maxV="numeric"))
 
 
 ##' creation of a DAG.network
@@ -83,6 +83,7 @@ setClass("DAG.network",  slots = list(network = "graph",additive="logical"))
 ##' @param H : function describing the type of the dependency.
 ##' @param additive : if TRUE the output is the sum of the H transformation of the inputs, otherwise it is the H transformation of the sum of the inputs.
 ##' @param weights : [lower,upper], lower and upper bound of the values of the linear weights
+##' @param maxV: maxim absolute value
 ##' @export
 setMethod("initialize", signature="DAG.network",
           function(.Object, network,
@@ -91,9 +92,10 @@ setMethod("initialize", signature="DAG.network",
                      return(rnorm(n = 1,sd = sdn))},
                    H=function(x) return(H_Rn(1)),
                    additive= TRUE,
-                   weights=c(0.8,2)){
+                   weights=c(0.8,2),maxV=5){
             DAG = network
             .Object@additive=additive
+            .Object@maxV=maxV
             if(!is.DAG(DAG)) {
               stop("it is not a DAG")
             } else  {
@@ -125,17 +127,16 @@ setGeneric("compute", function(object,...) {standardGeneric("compute")})
 ##' generate N samples according to the network distribution
 ##' @name compute
 ##' @param N: the number of samples generated according to the network
-##' @param knocked: the set of manipulated (e.g. knocked genes) nodes 
 ##' @param object: a DAG.network object
 ##' @return a N*nNodes matrix
 ##' @export
 setMethod("compute", signature="DAG.network",  
-          function(object, N=50,
-                   knocked=NULL){
+          function(object, N=50){
             if(!is.numeric(N))
               stop("N is not numeric")
             
             DAG = object@network
+            maxV= object@maxV
             nNodes <- numNodes(DAG)
             
             topologicalOrder <-tsort(DAG)
@@ -150,7 +151,7 @@ setMethod("compute", signature="DAG.network",
               seed = nodeData(DAG,n=i,attr="seed")[[1]]
               inEdg <-  inEdges(node=i,object=DAG)[[1]]
               
-              if (length(inEdg)==0 || is.element(i,knocked)){
+              if (length(inEdg)==0 ){
                 set.seed(seed)
                 D[,i]<-bias + replicate(N,sigma())
               } else  {
@@ -181,7 +182,10 @@ setMethod("compute", signature="DAG.network",
             } ## for i
             col.numeric<-as(colnames(D),"numeric")
             D<-D[,topologicalOrder[order(col.numeric)]]
-            
+            Dmax<-apply(abs(D),1,max)
+            wtoo<-which(Dmax>maxV)
+            if (length(wtoo)>0)
+              D<-D[-wtoo,] ## remove divergent samples
             return(D)
           })
 
@@ -202,7 +206,7 @@ setMethod("counterfact", signature="DAG.network",
             
             DAG = object@network
             nNodes <- numNodes(DAG)
-            
+            maxV= object@maxV
             topologicalOrder <-tsort(DAG)
             posknock<-min(match(knocked,topologicalOrder))
             beforeknock<-numeric(nNodes)
@@ -250,13 +254,16 @@ setMethod("counterfact", signature="DAG.network",
                   }
                   set.seed(seed) 
                   
-                  D[,i] <- (D[,i] + replicate(N,sigma()))  ## additive random noise
+                  D[,i] <- (D[,i] + replicate(N,sigma()))  ## use of sigmoid function to saturate + additive random noise
                   
                 }
               } # if beforeknock
             }
-            
+            Dmax<-apply(abs(D),1,max)
+            wtoo<-which(Dmax>maxV)
+            D<-D[-wtoo,] ## remove divergent samples
             return(D)
+            
           })
 
 
@@ -274,7 +281,7 @@ setMethod("counterfact", signature="DAG.network",
 setClass("simulatedDAG",
          slots = list(list.DAGs="list",list.observationsDAGs="list",
                       NDAG="numeric", functionType="character",seed="numeric",
-                      additive="logical"))
+                      additive="logical",weights="numeric"))
 
 
 
@@ -292,7 +299,9 @@ setClass("simulatedDAG",
 #'  @param maxpar.pc  : maximum number of parents expressed as a percentage of the number of nodes
 #'  @param goParallel : if TRUE it uses parallelism
 #'  @param additive : if TRUE the output is the sum of the H transformation of the inputs, othervise it is the H transformation of the sum of the inputs.
-#' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
+#' @param weights : [lower,upper], lower and upper bound of the values of the linear weights
+#'  @param maxV : max accepted value
+#'  @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
 #' @examples
 #' require(RBGL)
 #' require(gRbase)
@@ -310,7 +319,8 @@ setMethod("initialize",
                    noNodes=sample(10:20,size=1),functionType="linear",
                    quantize=FALSE,maxpar.pc=0.05,
                    verbose=TRUE,N=sample(100:500,size=1),
-                   seed=1234,sdn=0.5, goParallel=FALSE,additive=FALSE)
+                   seed=1234,sdn=0.5, goParallel=FALSE,additive=FALSE,
+                   weights=c(0.5,1),maxV=5)
           {
             
             ##generate a training set
@@ -410,7 +420,7 @@ setMethod("initialize",
               
               
               DAG = new("DAG.network",
-                        network=netwDAG,H=H,additive=additive.i,sdn=sdn.i)
+                        network=netwDAG,H=H,additive=additive.i,sdn=sdn.i,weights=weights,maxV=maxV)
               
               
               observationsDAG = compute(DAG,N=N.i)
@@ -419,13 +429,14 @@ setMethod("initialize",
               if (quantize.i)
                 observationsDAG<-apply(observationsDAG,2,quantization)
               
-              if (any(is.na(observationsDAG) | is.infinite(observationsDAG)))
-                stop("simulatedDAG: error in data generation")
-              
+              if (any(is.na(observationsDAG) ))
+                stop("simulatedDAG: NA in data generation")
+              if (any(is.infinite(observationsDAG)))
+                stop("simulatedDAG: inf in data generation")
               if (verbose){
                 
                 cat("simulatedDAG: DAG number:",i,"generated: #nodes=", length(V),
-                    "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", N.i, "\n")
+                    "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", NROW(observationsDAG), "\n")
                 
               }
               

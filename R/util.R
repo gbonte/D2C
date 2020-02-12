@@ -55,6 +55,10 @@ is.what<-function(iDAG,i,j,type){
   
 }
 
+Sigm<-function(x,W=1){
+  E=exp(x)
+  return(2*W*E/(1+E)-W)
+}
 
 rankrho<-function(X,Y,nmax=5,regr=FALSE,first=NULL){
   ## mutual information ranking
