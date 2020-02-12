@@ -89,10 +89,7 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
   
   XX<-scale(X)
   if (N<5 | any(is.na(XX))){
-    print(X)
-    browser()
     return(var(Y))
-    stop("Error in npred")
   }
   if (lin)
     return(max(1e-3,regrlin(XX,Y)$MSE.loo/(1e-3+var(Y))))
@@ -156,12 +153,12 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   
   D<-scale(D)
   if (any(is.na(D) ) ){
-    print(D)
+    
     stop("Error NA in descriptor")
   }
   
   if (any(is.infinite(D)) ){
-    print(D)
+    
     stop("Error Inf in descriptor")
   }
   
@@ -173,11 +170,9 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   wna<-which(is.na(De))
 
   if (length(wna)>0){
-    De[wna]<-0 
-    print(D)
     print(De)
     warning("NA in descriptor ")
-
+    De[wna]<-0 
   }
   
   if (errd){
