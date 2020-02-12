@@ -248,7 +248,8 @@ setMethod("counterfact", signature="DAG.network",
                     ##D[,i]<-  H(D[,i])
                     D[,i]<- kernel.fct(Xin)
                   }
-                  set.seed(seed)
+                  set.seed(seed) 
+                  
                   D[,i] <- scale(D[,i] + replicate(N,sigma()))  ## additive random noise
                   
                 }
