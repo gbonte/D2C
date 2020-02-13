@@ -192,7 +192,7 @@ setMethod("compute", signature="DAG.network",
 #' @docType methods
 setGeneric("counterfact", function(object,...) {standardGeneric("counterfact")})
 ##' generate N samples according to the network distribution by modifying the original dataset
-##' @name compute
+##' @name counterfact
 ##' @param DN: original dataset
 ##' @param knocked: the set of manipulated (e.g. knocked genes) nodes 
 ##' @param object: a DAG.network object
