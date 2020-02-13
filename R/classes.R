@@ -153,7 +153,7 @@ setMethod("compute", signature="DAG.network",
               
               if (length(inEdg)==0 ){
                 set.seed(seed)
-                D[,i]<-bias + replicate(N,sigma())
+                D[,i]<-bias + rnorm(N,sd=1) #replicate(N,sigma())
               } else  {
                 D[,i]<-bias
                 Xin<-NULL
@@ -228,7 +228,7 @@ setMethod("counterfact", signature="DAG.network",
                 if (length(inEdg)==0 || is.element(i,knocked)){
                   if (length(inEdg)==0){
                     set.seed(seed)
-                    D[,i]<-bias + replicate(N,sigma(seed))
+                    D[,i]<-bias + rnorm(N,sd=1)# replicate(N,sigma(seed))
                   }
                   if (is.element(i,knocked))
                     D[,i]<-delta
