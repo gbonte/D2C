@@ -109,6 +109,7 @@ setMethod("initialize", signature="DAG.network",
               nodeDataDefaults(DAG,"seed") <-NA
               edgeDataDefaults(DAG,"H") <- function(x) return(x)
               for( n in nodes(DAG)){
+                set.seed(as.numeric(Sys.time()))
                 nodeData(DAG,n=n,"seed")<-runif(1,1,10000)
                 nodeData(DAG,n=n,"sigma")<-function(x) {
                   return(rnorm(n = 1,sd = runif(1,0.9*sdn,sdn)))}
@@ -182,7 +183,7 @@ setMethod("compute", signature="DAG.network",
                   if (length(inEdg)==1)
                     D[,i]<-  H(Xin)
                   else
-                    D[,i]<-  H(apply(Xin,1,mean))
+                    D[,i]<-  H(apply(Xin,1,sum))
                   
                 }
                 set.seed(seed)
@@ -266,7 +267,7 @@ setMethod("counterfact", signature="DAG.network",
                     if (length(inEdg)==1)
                       D[,i]<-  H(Xin)
                     else
-                      D[,i]<-  H(apply(Xin,1,mean))
+                      D[,i]<-  H(apply(Xin,1,sum))
                     
                   }
                   set.seed(seed) 
@@ -364,7 +365,7 @@ setMethod("initialize",
             
             FF<-foreach (i=1:NDAG) %op%{
               ##      for (i in 1:NDAG){
-              set.seed(seed+i)
+              set.seed(as.numeric(Sys.time()))
               
               N.i<-N
               if (length(N)>1)
@@ -437,7 +438,7 @@ setMethod("initialize",
               ## it iterates until there is a dataset sufficiently large
               cnt=0
               while(1){
-                set.seed(seed+i+cnt)
+                set.seed(as.numeric(Sys.time()))
                 DAG = new("DAG.network",
                           network=netwDAG,H=H,additive=additive.i,sdn=sdn.i,weights=weights,maxV=maxV)
                 

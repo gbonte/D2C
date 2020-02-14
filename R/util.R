@@ -126,7 +126,7 @@ H_Rn <- function(n){
 kernel.fct<- function(X,knl=anovadot(sigma=runif(1,0.5,2),degree=sample(1:2,1)),lambda=0.01){
   save.seed <- get(".Random.seed", .GlobalEnv)
   N<-NROW(X)
-  set.seed(round(sum(abs(X))))
+  set.seed(as.numeric(Sys.time()))
   Y<-rnorm(N,sd=1)
   K<-kernelMatrix(knl,X)
   Yhat<-K%*%ginv(K+lambda*N*diag(N))%*%Y
