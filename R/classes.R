@@ -73,12 +73,15 @@ setMethod("initialize",
 
 ##' An S4 class to store DAG.network
 ##' @param network : object of class "graph"
-setClass("DAG.network",  slots = list(network = "graph",additive="logical",maxV="numeric"))
+setClass("DAG.network",  slots = list(network = "graph",additive="logical",maxV="numeric",
+                                      exosdn="numeric"))
 
 
 ##' creation of a DAG.network
 ##' @name DAG network
 ##' @param network : object of class "igraph"
+##' @param sdn : error noise
+##' @param exosdn :  sdvar  exogenous inputs
 ##' @param sigma : function returning the additive noise
 ##' @param H : function describing the type of the dependency.
 ##' @param additive : if TRUE the output is the sum of the H transformation of the inputs, otherwise it is the H transformation of the sum of the inputs.
@@ -88,6 +91,7 @@ setClass("DAG.network",  slots = list(network = "graph",additive="logical",maxV=
 setMethod("initialize", signature="DAG.network",
           function(.Object, network,
                    sdn=0.5,
+                   exosdn=1,
                    sigma=function(x) {
                      return(rnorm(n = 1,sd = sdn))},
                    H=function(x) return(H_Rn(1)),
@@ -96,6 +100,7 @@ setMethod("initialize", signature="DAG.network",
             DAG = network
             .Object@additive=additive
             .Object@maxV=maxV
+            .Object@exosdn=exosdn
             if(!is.DAG(DAG)) {
               stop("it is not a DAG")
             } else  {
@@ -103,9 +108,11 @@ setMethod("initialize", signature="DAG.network",
               nodeDataDefaults(DAG,"sigma") <-sigma
               nodeDataDefaults(DAG,"seed") <-NA
               edgeDataDefaults(DAG,"H") <- function(x) return(x)
-              for( n in nodes(DAG))
+              for( n in nodes(DAG)){
                 nodeData(DAG,n=n,"seed")<-runif(1,1,10000)
-              
+                nodeData(DAG,n=n,"sigma")<-function(x) {
+                  return(rnorm(n = 1,sd = runif(1,0.9*sdn,sdn)))}
+              }
               for( edge in edgeList(DAG)){
                 edgeData(DAG, from=edge[1], to=edge[2], attr="weight") <- runif(1,weights[1],weights[2])*sample(c(-1,1),1)
                 ## setting of random linear weights within the specified bounds
@@ -134,7 +141,7 @@ setMethod("compute", signature="DAG.network",
           function(object, N=50){
             if(!is.numeric(N))
               stop("N is not numeric")
-            
+            save.seed <- get(".Random.seed", .GlobalEnv)
             DAG = object@network
             maxV= object@maxV
             nNodes <- numNodes(DAG)
@@ -153,7 +160,7 @@ setMethod("compute", signature="DAG.network",
               
               if (length(inEdg)==0 ){
                 set.seed(seed)
-                D[,i]<-bias + rnorm(N,sd=1) #replicate(N,sigma())
+                D[,i]<-bias + rnorm(N,sd=object@exosdn) #replicate(N,sigma())
               } else  {
                 D[,i]<-bias
                 Xin<-NULL
@@ -166,13 +173,17 @@ setMethod("compute", signature="DAG.network",
                     D[,i]<- D[,i] + H(D[,j]) *  inputWeight
                   }else{
                     ## it stacks inputs in a matrix
-                    Xin<-cbind(Xin,D[,j])
+                    Xin<-cbind(Xin,D[,j]*  inputWeight)
                     
                   }
                 }
                 if (!object@additive){
                   H = edgeData(self=DAG,from=inEdg[1],to=i,attr="H")[[1]]
-                  D[,i]<-  H(apply(Xin,1,sum))
+                  if (length(inEdg)==1)
+                    D[,i]<-  H(Xin)
+                  else
+                    D[,i]<-  H(apply(Xin,1,mean))
+                  
                 }
                 set.seed(seed)
                 
@@ -186,6 +197,7 @@ setMethod("compute", signature="DAG.network",
             wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
             if (length(wtoo)>0)
               D<-D[-wtoo,] ## remove divergent samples
+            assign(".Random.seed", save.seed, .GlobalEnv)
             return(D)
           })
 
@@ -203,7 +215,7 @@ setMethod("counterfact", signature="DAG.network",
                    knocked=NULL){
             if(!is.numeric(N))
               stop("N is not numeric")
-            
+            save.seed <- get(".Random.seed", .GlobalEnv)
             DAG = object@network
             nNodes <- numNodes(DAG)
             maxV= object@maxV
@@ -220,6 +232,7 @@ setMethod("counterfact", signature="DAG.network",
               
               i=topologicalOrder[ii]
               if (beforeknock[ii]==0){
+                
                 bias = nodeData(DAG,n=i,attr="bias")[[1]]
                 sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
                 seed = nodeData(DAG,n=i,attr="seed")[[1]]
@@ -227,8 +240,7 @@ setMethod("counterfact", signature="DAG.network",
                 
                 if (length(inEdg)==0 || is.element(i,knocked)){
                   if (length(inEdg)==0){
-                    set.seed(seed)
-                    D[,i]<-bias + rnorm(N,sd=1)# replicate(N,sigma(seed))
+                    D[,i]<-DN[,i] 
                   }
                   if (is.element(i,knocked))
                     D[,i]<-delta
@@ -244,23 +256,28 @@ setMethod("counterfact", signature="DAG.network",
                     if (object@additive){
                       D[,i]<- D[,i] + H(D[,j]) *  inputWeight
                     }else{
-                      Xin<-cbind(Xin,D[,j])
+                      Xin<-cbind(Xin,D[,j]*  inputWeight)
                       ##D[,i]<- D[,i] + (D[,j]) *  inputWeight
                     }
                   }
                   if (!object@additive){
+                    
                     H = edgeData(self=DAG,from=inEdg[1],to=i,attr="H")[[1]]
-                    D[,i]<-  H(apply(Xin,1,sum))
+                    if (length(inEdg)==1)
+                      D[,i]<-  H(Xin)
+                    else
+                      D[,i]<-  H(apply(Xin,1,mean))
+                    
                   }
                   set.seed(seed) 
                   
-                  D[,i] <- (D[,i] + replicate(N,sigma()))  ## use of sigmoid function to saturate + additive random noise
+                  D[,i] <- D[,i] + replicate(N,sigma())  ## use of sigmoid function to saturate + additive random noise
                   
                 }
               } # if beforeknock
             } 
             
-            
+            assign(".Random.seed", save.seed, .GlobalEnv)
             return(D)
             
           })
@@ -422,8 +439,8 @@ setMethod("initialize",
               while(1){
                 set.seed(seed+i+cnt)
                 DAG = new("DAG.network",
-                        network=netwDAG,H=H,additive=additive.i,sdn=sdn.i,weights=weights,maxV=maxV)
-             
+                          network=netwDAG,H=H,additive=additive.i,sdn=sdn.i,weights=weights,maxV=maxV)
+                
                 cnt=cnt+1
                 observationsDAG = compute(DAG,N=N.i)
                 if (! (is.null(observationsDAG) | is.vector(observationsDAG)))

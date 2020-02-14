@@ -59,7 +59,7 @@ stab<-function(X,Y,lin=TRUE,R=10){
     Xhat<-rbind(Xhat,pX)
     
   }
- 
+  
   return(sign(mean(apply(Yhat,2,sd))- mean(apply(Xhat,2,sd)) ))
 }
 
@@ -168,10 +168,11 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
   names(De)=paste("M",names(De),sep=".")
   wna<-which(is.na(De))
-
+  
   if (length(wna)>0){
     print(De)
     warning("NA in descriptor ")
+    
     De[wna]<-0 
   }
   
@@ -188,10 +189,10 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     eDe=c(eDe, norminf(eef,eca,D[,ef],lin=lin)-norminf(eef,eca,lin=lin))
     eDe=c(eDe, norminf(eef,D[,ca],D[,ef],lin=lin)-norminf(eef,D[,ca],lin=lin))
     eDe=c(eDe, norminf(eca,D[,ef],D[,ca],lin=lin)-norminf(eca,D[,ef],lin=lin))
-
+    
     
     names(eDe)=c("M.e1","M.e2","M.e3","M.e4")
-   
+    
   }
   
   
@@ -212,7 +213,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (errd)
     DD<-c(DD,eDe)
   
-    
+  
   
   if (bivariate){
     DD<-c(DD,De2) 
@@ -261,7 +262,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     MBca2=MBca
     
     if (boot=="mimr"){
-      MBca2<-ind[mimr(D[,ind],D[,ca],nmax=ns,caus=-1)] ## putative list of effects
+      MBca2<-ind[mimr(D[,ind],D[,ca],nmax=min(ns,round(n/2)),caus=-1)] ## putative list of effects
       MBca<-ind[mimr(D[,ind],D[,ca],nmax=2*ns,init=TRUE)] 
       MBca<-setdiff(MBca,MBca2) ## remove putative effects
       MBca<-MBca[1:min(length(MBca),ns)]
@@ -281,7 +282,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     
     MBef2<-MBef
     if (boot=="mimr"){
-      MBef2<-ind2[mimr(D[,ind2],D[,ef],nmax=ns,caus=-1)]
+      MBef2<-ind2[mimr(D[,ind2],D[,ef],nmax=min(ns,round(n/2)),caus=-1)]
       MBef<-ind2[mimr(D[,ind2],D[,ef],nmax=2*ns,init=TRUE)]
       MBef<-setdiff(MBef,MBef2)   ## remove putative effects
       MBef<-MBef[1:min(ns,length(MBef))]
@@ -368,7 +369,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     for (m in MBca)
       delta2.i<- c(delta2.i,norminf(D[,ca],D[,ef],D[,c(m,MBef)],lin=lin)) #I(zi;zj|Mi^k)
     
-    
+   
     
     I1.i<-NULL
     ## Information of Mbef on ca (i)
@@ -589,7 +590,8 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     )
   } ## if acc
   
-  
+  if (any(is.na(x)))
+    browser()
   if (length(namesx)!=length(x)){
     print(x)
     stop("error in D2C.n")

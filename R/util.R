@@ -101,11 +101,11 @@ quantization<-function(x,nbin=1){
 
 H_sigmoid <- function(n=2)
 {
-  a = runif(n+1,min = -5,max = 5)
+  a = runif(n+1,min = -1,max = 1)
   f <- function(x)
   {
     X  = x^(0:n)
-    return ( 1/(1+exp(sum(X * a))))
+    return ( -1+2/(1+exp(mean(X * a))))
   }
   return(Vectorize(f))
 }
@@ -124,12 +124,14 @@ H_Rn <- function(n){
 
 
 kernel.fct<- function(X,knl=anovadot(sigma=runif(1,0.5,2),degree=sample(1:2,1)),lambda=0.01){
-  
+  save.seed <- get(".Random.seed", .GlobalEnv)
   N<-NROW(X)
+  set.seed(round(sum(abs(X))))
   Y<-rnorm(N,sd=1)
   K<-kernelMatrix(knl,X)
   Yhat<-K%*%ginv(K+lambda*N*diag(N))%*%Y
-  
+  assign(".Random.seed", save.seed, .GlobalEnv)
+  return(Yhat)
 }
 
 H_kernel <- function()
