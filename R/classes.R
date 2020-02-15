@@ -94,7 +94,8 @@ setMethod("initialize", signature="DAG.network",
                    exosdn=1,
                    sigma=function(x) {
                      return(rnorm(n = 1,sd = sdn))},
-                   H=function(x) return(H_Rn(1)),
+                   H=c(function(x) return(H_Rn(1)),
+                       function(x) return(H_Rn(2))),
                    additive= TRUE,
                    weights=c(0.8,2),maxV=5){
             DAG = network
@@ -117,7 +118,14 @@ setMethod("initialize", signature="DAG.network",
               for( edge in edgeList(DAG)){
                 edgeData(DAG, from=edge[1], to=edge[2], attr="weight") <- runif(1,weights[1],weights[2])*sample(c(-1,1),1)
                 ## setting of random linear weights within the specified bounds
-                edgeData(DAG, from=edge[1], to=edge[2],attr="H") <- H()
+                
+                if (length(H)>1){
+                  Hi<-sample(H,1)
+                }else{
+                  Hi<-H
+                }
+                
+                edgeData(DAG, from=edge[1], to=edge[2],attr="H") <- Hi[[1]]()
                 
               }
             }
@@ -150,7 +158,7 @@ setMethod("compute", signature="DAG.network",
             topologicalOrder <-tsort(DAG)
             
             D <- matrix(NA,nrow=N,ncol=nNodes)
-            colnames(D) <- topologicalOrder
+            colnames(D) <- 1:nNodes
             
             
             for (i in topologicalOrder){
@@ -192,13 +200,14 @@ setMethod("compute", signature="DAG.network",
                 
               }
             } ## for i
-            col.numeric<-as(colnames(D),"numeric")
-            D<-D[,topologicalOrder[order(col.numeric)]]
+            #col.numeric<-as(colnames(D),"numeric")
+            #D<-D[,topologicalOrder[order(col.numeric)]]
             Dmax<-apply(abs(D),1,max)
             wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
             if (length(wtoo)>0)
               D<-D[-wtoo,] ## remove divergent samples
             assign(".Random.seed", save.seed, .GlobalEnv)
+            
             return(D)
           })
 
@@ -365,7 +374,7 @@ setMethod("initialize",
             
             FF<-foreach (i=1:NDAG) %op%{
               ##      for (i in 1:NDAG){
-              set.seed(as.numeric(Sys.time()))
+              set.seed(seed+i)
               
               N.i<-N
               if (length(N)>1)
@@ -401,21 +410,23 @@ setMethod("initialize",
               
               maxpar = round(maxpar.pc.i*noNodes)
               
-              
-              if(functionType.i=="linear"){
-                H = function() return(H_Rn(1))
-                
-              }else if(functionType.i=="quadratic"){
-                H = function() return(H_Rn(2))
-                
-              }else if(functionType.i=="sigmoid"){
-                H = function() return(H_sigmoid(1))
-                
-              } else if(functionType.i=="kernel"){
-                H = function() return(H_kernel())
-                
+              HH<-NULL
+              for (functionType.i in functionType){
+                if(functionType.i=="linear"){
+                  H = function() return(H_Rn(1))
+                  
+                }else if(functionType.i=="quadratic"){
+                  H = function() return(H_Rn(2))
+                  
+                }else if(functionType.i=="sigmoid"){
+                  H = function() return(H_sigmoid(1))
+                  
+                } else if(functionType.i=="kernel"){
+                  H = function() return(H_kernel())
+                  
+                }
+                HH<-c(HH,H)
               }
-              
               wgt = runif(n = 1,min = 0.85,max = 1)
               netwDAG<-random_dag(V,maxpar = maxpar,wgt)  
               ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
@@ -440,7 +451,8 @@ setMethod("initialize",
               while(1){
                 set.seed(as.numeric(Sys.time()))
                 DAG = new("DAG.network",
-                          network=netwDAG,H=H,additive=additive.i,sdn=sdn.i,weights=weights,maxV=maxV)
+                          network=netwDAG,H=HH,additive=additive.i,
+                          sdn=sdn.i,weights=weights,maxV=maxV)
                 
                 cnt=cnt+1
                 observationsDAG = compute(DAG,N=N.i)
