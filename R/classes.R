@@ -120,12 +120,12 @@ setMethod("initialize", signature="DAG.network",
                 ## setting of random linear weights within the specified bounds
                 
                 if (length(H)>1){
-                  Hi<-sample(H,1)
+                  Hi<-sample(H,1)[[1]]
                 }else{
                   Hi<-H
                 }
                 
-                edgeData(DAG, from=edge[1], to=edge[2],attr="H") <- Hi[[1]]()
+                edgeData(DAG, from=edge[1], to=edge[2],attr="H") <- Hi()
                 
               }
             }

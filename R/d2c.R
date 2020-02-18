@@ -340,13 +340,20 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
               paste0("sx.ef",1:length(pq)))
   } ## if struct
   
+  
+  
   MBca<-setdiff(MBca,ef)
   MBef<-setdiff(MBef,ca)
+  
+  CC<-intersect(MBca,MBef) ## potential common causes
   
   MBca2<-setdiff(MBca2,ef)
   MBef2<-setdiff(MBef2,ca)
   
   if (acc){
+    comcau<-1
+    if (length(CC)>0)
+      comcau<-norminf(D[,ef],D[,ca],D[,CC],lin=lin) ## common cause assessment
     
     ## relevance of ca for ef
     ca.ef<-norminf(D[,ca],D[,ef],lin=lin) #I(zi;zj)
@@ -554,7 +561,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
         }
     } ## if FALSE
     
-    x<-c(x,delta,delta2,
+    x<-c(x,comcau,delta,delta2,
          quantile(delta.i,probs=pq,na.rm=TRUE),
          quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
@@ -571,7 +578,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
          #quantile(E3.i,probs=pq,na.rm=TRUE),quantile(E3.j,probs=pq,na.rm=TRUE)
     )
     
-    namesx<-c(namesx,"delta","delta2",
+    namesx<-c(namesx,"comcau","delta","delta2",
               paste("delta.i",1:length(pq)),
               paste("delta2.i",1:length(pq)),
               "ca.ef","ef.ca",
