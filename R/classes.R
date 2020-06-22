@@ -6,7 +6,7 @@
 #########################################
 ########   class D2C.descriptor
 #########################################
-
+ 
 ##' An S4 class to store the descriptor parameters
 setClass("D2C.descriptor",
          slots = list(lin="logical", acc="logical",
