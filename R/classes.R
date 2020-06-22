@@ -157,58 +157,64 @@ setMethod("compute", signature="DAG.network",
             
             topologicalOrder <-tsort(DAG)
             
-            D <- matrix(NA,nrow=N,ncol=nNodes)
+            D <- matrix(NA,nrow=2*N,ncol=nNodes)
             colnames(D) <- 1:nNodes
-            
-            
-            for (i in topologicalOrder){
-              bias = nodeData(DAG,n=i,attr="bias")[[1]]
-              sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
-              seed = nodeData(DAG,n=i,attr="seed")[[1]]
-              inEdg <-  inEdges(node=i,object=DAG)[[1]]
-              
-              if (length(inEdg)==0 ){
-                set.seed(seed)
-                D[,i]<-bias + rnorm(N,sd=object@exosdn) #replicate(N,sigma())
-              } else  {
-                D[,i]<-bias
-                Xin<-NULL
-                for(j in  inEdg){
-                  ## it computes the linear combination of the inputs
-                  inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
-                  H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
-                  
-                  if (object@additive){
-                    D[,i]<- D[,i] + H(D[,j]) *  inputWeight
-                  }else{
-                    ## it stacks inputs in a matrix
-                    Xin<-cbind(Xin,D[,j]*  inputWeight)
+            DD<-NULL
+            Nsamples<-0
+            it<-0
+            while (Nsamples < N){
+              it<-it+1
+              for (i in topologicalOrder){
+                bias = nodeData(DAG,n=i,attr="bias")[[1]]
+                sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
+                seed = nodeData(DAG,n=i,attr="seed")[[1]]+it
+                inEdg <-  inEdges(node=i,object=DAG)[[1]]
+                
+                if (length(inEdg)==0 ){
+                  set.seed(seed)
+                  D[,i]<-bias + rnorm(2*N,sd=object@exosdn) #replicate(N,sigma())
+                } else  {
+                  D[,i]<-bias
+                  Xin<-NULL
+                  for (j in  inEdg){
+                    ## it computes the linear combination of the inputs
+                    inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
+                    H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
+                    
+                    if (object@additive){
+                      D[,i]<- D[,i] + H(D[,j]) *  inputWeight
+                    }else{
+                      ## it stacks inputs in a matrix
+                      Xin<-cbind(Xin,D[,j]*  inputWeight)
+                      
+                    }
+                  }
+                  if (!object@additive){
+                    H = edgeData(self=DAG,from=inEdg[1],to=i,attr="H")[[1]]
+                    if (length(inEdg)==1)
+                      D[,i]<-  H(Xin)
+                    else
+                      D[,i]<-  H(apply(Xin,1,sum))
                     
                   }
-                }
-                if (!object@additive){
-                  H = edgeData(self=DAG,from=inEdg[1],to=i,attr="H")[[1]]
-                  if (length(inEdg)==1)
-                    D[,i]<-  H(Xin)
-                  else
-                    D[,i]<-  H(apply(Xin,1,sum))
+                  set.seed(seed)
+                  
+                  D[,i] <- (D[,i] + replicate(2*N,sigma())/it)  ## additive random noise
                   
                 }
-                set.seed(seed)
-                
-                D[,i] <- (D[,i] + replicate(N,sigma()))  ## additive random noise
-                
-              }
-            } ## for i
-            #col.numeric<-as(colnames(D),"numeric")
-            #D<-D[,topologicalOrder[order(col.numeric)]]
-            Dmax<-apply(abs(D),1,max)
-            wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
-            if (length(wtoo)>0)
-              D<-D[-wtoo,] ## remove divergent samples
+              } ## for i
+              #col.numeric<-as(colnames(D),"numeric")
+              #D<-D[,topologicalOrder[order(col.numeric)]]
+              Dmax<-apply(abs(D),1,max)
+              wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
+              if (length(wtoo)>0)
+                DD<-rbind(DD,D[-wtoo,]) ## remove divergent samples
+              Nsamples=NROW(DD)
+              print(Nsamples)
+            }
             assign(".Random.seed", save.seed, .GlobalEnv)
             
-            return(D)
+            return(DD[1:N,])
           })
 
 #' @docType methods
