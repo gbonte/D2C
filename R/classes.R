@@ -219,8 +219,7 @@ setMethod("compute", signature="DAG.network",
               #  browser()
             }
             assign(".Random.seed", save.seed, .GlobalEnv)
-            if (NROW(DD)<N)
-              browser()
+           
             return(DD[1:N,])
           })
 
