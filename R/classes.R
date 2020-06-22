@@ -208,9 +208,12 @@ setMethod("compute", signature="DAG.network",
               Dmax<-apply(abs(D),1,max)
               wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
               if (length(wtoo)>0)
-                DD<-rbind(DD,D[-wtoo,]) ## remove divergent samples
+                D=D[-wtoo,]
+              DD<-rbind(DD,D) ## remove divergent samples
               Nsamples=NROW(DD)
               print(Nsamples)
+              #if (Nsamples==0)
+              #  browser()
             }
             assign(".Random.seed", save.seed, .GlobalEnv)
             
