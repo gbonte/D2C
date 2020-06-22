@@ -211,7 +211,7 @@ setMethod("compute", signature="DAG.network",
                 D=D[-wtoo,]
               DD<-rbind(DD,D) ## remove divergent samples
               Nsamples=NROW(DD)
-              print(Nsamples)
+              print(Nsamples) 
               #if (Nsamples==0)
               #  browser()
             }
