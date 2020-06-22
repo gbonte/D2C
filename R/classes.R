@@ -220,7 +220,11 @@ setMethod("compute", signature="DAG.network",
             }
             assign(".Random.seed", save.seed, .GlobalEnv)
            
-            return(DD[1:N,])
+            if (N==0)
+              return(DD)
+            if (N>NROW(DD))
+              DD=DD[1:N,]
+            return(DD)
           })
 
 #' @docType methods
