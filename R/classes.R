@@ -157,12 +157,13 @@ setMethod("compute", signature="DAG.network",
             
             topologicalOrder <-tsort(DAG)
             
-            D <- matrix(NA,nrow=2*N,ncol=nNodes)
-            colnames(D) <- 1:nNodes
+            
             DD<-NULL
             Nsamples<-0
             it<-0
             while (Nsamples < N){
+              D <- matrix(NA,nrow=2*N,ncol=nNodes)
+              colnames(D) <- 1:nNodes
               it<-it+1
               for (i in topologicalOrder){
                 bias = nodeData(DAG,n=i,attr="bias")[[1]]
@@ -172,7 +173,10 @@ setMethod("compute", signature="DAG.network",
                 
                 if (length(inEdg)==0 ){
                   set.seed(seed)
-                  D[,i]<-bias + rnorm(2*N,sd=object@exosdn) #replicate(N,sigma())
+                  dr=rnorm(2*N,sd=object@exosdn)
+                  if (length(dr)!=NROW(D))
+                    browser()
+                  D[,i]<-bias + dr  #replicate(N,sigma())
                 } else  {
                   D[,i]<-bias
                   Xin<-NULL
@@ -217,7 +221,8 @@ setMethod("compute", signature="DAG.network",
               #  browser()
             }
             assign(".Random.seed", save.seed, .GlobalEnv)
-            
+            if (NROW(DD)<N)
+              browser()
             return(DD[1:N,])
           })
 
@@ -384,7 +389,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-              ##      for (i in 1:NDAG){
+             ##       for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
