@@ -209,7 +209,8 @@ setMethod("compute", signature="DAG.network",
               wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
               if (length(wtoo)>0)
                 D=D[-wtoo,]
-              DD<-rbind(DD,D) ## remove divergent samples
+              if (NROW(D)>0)
+                DD<-rbind(DD,D) ## remove divergent samples
               Nsamples=NROW(DD)
               print(Nsamples) 
               #if (Nsamples==0)
@@ -372,6 +373,7 @@ setMethod("initialize",
             }
             .Object@functionType=functionType
             .Object@seed=seed
+            .Object@weights=weights
             X=NULL
             Y=NULL
             list.DAGs=NULL
