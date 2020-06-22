@@ -161,7 +161,7 @@ setMethod("compute", signature="DAG.network",
             DD<-NULL
             Nsamples<-0
             it<-0
-            while (Nsamples < N & it <10){
+            while (Nsamples < N & it <2){
               D <- matrix(NA,nrow=2*N,ncol=nNodes)
               colnames(D) <- 1:nNodes
               it<-it+1
