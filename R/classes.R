@@ -161,7 +161,7 @@ setMethod("compute", signature="DAG.network",
             DD<-NULL
             Nsamples<-0
             it<-0
-            while (Nsamples < N){
+            while (Nsamples < N & it <10){
               D <- matrix(NA,nrow=2*N,ncol=nNodes)
               colnames(D) <- 1:nNodes
               it<-it+1
@@ -174,8 +174,6 @@ setMethod("compute", signature="DAG.network",
                 if (length(inEdg)==0 ){
                   set.seed(seed)
                   dr=rnorm(2*N,sd=object@exosdn)
-                  if (length(dr)!=NROW(D))
-                    browser()
                   D[,i]<-bias + dr  #replicate(N,sigma())
                 } else  {
                   D[,i]<-bias
@@ -213,8 +211,8 @@ setMethod("compute", signature="DAG.network",
               wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
               if (length(wtoo)>0)
                 D=D[-wtoo,]
-              if (NROW(D)>0)
-                DD<-rbind(DD,D) ## remove divergent samples
+  
+              DD<-rbind(DD,D) ## remove divergent samples
               Nsamples=NROW(DD)
               print(Nsamples) 
               #if (Nsamples==0)
