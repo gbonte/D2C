@@ -214,7 +214,7 @@ setMethod("compute", signature="DAG.network",
   
               DD<-rbind(DD,D) ## remove divergent samples
               Nsamples=NROW(DD)
-              print(Nsamples) 
+              #print(Nsamples) 
               #if (Nsamples==0)
               #  browser()
             }
@@ -222,7 +222,7 @@ setMethod("compute", signature="DAG.network",
            
             if (N==0)
               return(DD)
-            if (N>NROW(DD))
+            if (N<=NROW(DD))
               DD=DD[1:N,]
             return(DD)
           })
@@ -390,7 +390,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-             ##       for (i in 1:NDAG){
+            ##        for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
