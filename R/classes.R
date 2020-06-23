@@ -6,7 +6,7 @@
 #########################################
 ########   class D2C.descriptor
 #########################################
- 
+
 ##' An S4 class to store the descriptor parameters
 setClass("D2C.descriptor",
          slots = list(lin="logical", acc="logical",
@@ -42,7 +42,7 @@ setMethod("initialize",
           "D2C.descriptor",
           function(.Object, lin=TRUE, acc=TRUE,
                    struct=FALSE,pq=c(0.1, 0.25, 0.5, 0.75, 0.9),
-                   bivariate=FALSE,ns=4,boot="mrmr2",maxs=20,diff=FALSE, residual=FALSE, 
+                   bivariate=FALSE,ns=4,boot="rank",maxs=20,diff=FALSE, residual=FALSE, 
                    stabD=FALSE)
           {
             
@@ -211,7 +211,7 @@ setMethod("compute", signature="DAG.network",
               wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
               if (length(wtoo)>0)
                 D=D[-wtoo,]
-  
+              
               DD<-rbind(DD,D) ## remove divergent samples
               Nsamples=NROW(DD)
               #print(Nsamples) 
@@ -219,7 +219,7 @@ setMethod("compute", signature="DAG.network",
               #  browser()
             }
             assign(".Random.seed", save.seed, .GlobalEnv)
-           
+            
             if (N==0)
               return(DD)
             if (N<=NROW(DD))
@@ -390,7 +390,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-            ##        for (i in 1:NDAG){
+            ##for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -419,13 +419,9 @@ setMethod("initialize",
                 additive.i<-sample(additive,1)
               
               
-              V=1:noNodes.i
-              
-              maxpar.pc.i<-pmin(0.99,maxpar.pc)
-              if (length(maxpar.pc.i)>1)
-                maxpar.pc.i<-sample(maxpar.pc,1)
-              
-              maxpar = round(maxpar.pc.i*noNodes)
+              sdn.ii=sdn.i
+              weights.i=weights
+              maxV.i=maxV
               
               HH<-NULL
               for (functionType.i in functionType){
@@ -444,37 +440,57 @@ setMethod("initialize",
                 }
                 HH<-c(HH,H)
               }
-              wgt = runif(n = 1,min = 0.85,max = 1)
-              netwDAG<-random_dag(V,maxpar = maxpar,wgt)  
-              ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
               
-              nodes(netwDAG)<-as.character(V)
-              
-              cnt<-1
-              while (sum(unlist(lapply(graph::edges(netwDAG),length)))<2 ){
-                maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
-                netwDAG<-random_dag(V,maxpar = maxpar,1)
-                nodes(netwDAG)<-as.character(V)
-                cnt<-cnt+1
-                if (cnt>50){
-                  netwDAG<-new("graphNEL", nodes=as.character(1:noNodes.i), edgemode="directed")
-                  netwDAG <- addEdge("1", "3", netwDAG, 1)
-                  netwDAG <- addEdge("2", "3", netwDAG, 1)
-                }
-              }
-              
-              ## it iterates until there is a dataset sufficiently large
-              cnt=0
+              cnt2=0
               while(1){
+                V=1:max(4,noNodes.i-cnt2)
+                
+                maxpar.pc.i<-pmin(0.99,maxpar.pc)
+                if (length(maxpar.pc.i)>1)
+                  maxpar.pc.i<-sample(maxpar.pc,1)
+                
+                maxpar = round(maxpar.pc.i*noNodes)
+                
+                
+                wgt = runif(n = 1,min = 0.85,max = 1)
+                
+                
+                netwDAG<-random_dag(V,maxpar = maxpar,wgt)  
+                ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
+                
+                nodes(netwDAG)<-as.character(V)
+                
+                cnt<-1
+                while (sum(unlist(lapply(graph::edges(netwDAG),length)))<2 ){
+                  maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
+                  netwDAG<-random_dag(V,maxpar = maxpar,1)
+                  nodes(netwDAG)<-as.character(V)
+                  cnt<-cnt+1
+                  if (cnt>50){
+                    netwDAG<-new("graphNEL", nodes=as.character(1:noNodes.i), edgemode="directed")
+                    netwDAG <- addEdge("1", "3", netwDAG, 1)
+                    netwDAG <- addEdge("2", "3", netwDAG, 1)
+                  }
+                }
+                
+                ## it iterates until there is a dataset sufficiently large
+                
+                
+                
                 set.seed(as.numeric(Sys.time()))
+                
                 DAG = new("DAG.network",
                           network=netwDAG,H=HH,additive=additive.i,
-                          sdn=sdn.i,weights=weights,maxV=maxV)
+                          sdn=sdn.ii,weights=weights.i,maxV=max(maxV.i,1))
+                HH = function() return(H_Rn(1))
+                sdn.ii=0.99*sdn.ii
+                weights.i=0.99*weights.i
+                maxV.i=maxV.i-1
+                cnt2=cnt2+1
                 
-                cnt=cnt+1
-                observationsDAG = compute(DAG,N=N.i)
+                observationsDAG = compute(DAG,N=max(20,N.i-cnt2))
                 if (! (is.null(observationsDAG) | is.vector(observationsDAG)))
-                  if (NROW(observationsDAG)>max(10,round(N.i/2)-cnt))
+                  if (NROW(observationsDAG)>max(10,round(N.i/2)-cnt2))
                     break;
               }
               
