@@ -10,16 +10,17 @@ Details in http://jmlr.org/papers/v16/bontempi15a.html
 
 To use it in your R code
 
-- library(devtools)
+* library(devtools)
 
-- install_github("gbonte/D2C")
+* install_github("gbonte/D2C")
 
-- require(D2C)
+* require(D2C)
 
-- if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-   BiocManager::install("graph", version = "3.8")
-   BiocManager::install("Rgraphviz", version = "3.8")
+* if (!requireNamespace("BiocManager", quietly = TRUE))
+    * install.packages("BiocManager")
+* BiocManager::install("graph")
+* BiocManager::install("Rgraphviz")
+* BiocManager::install("RBGL")
 
 
 ---------------
@@ -39,7 +40,7 @@ load(url("https://dl.dropboxusercontent.com/u/15579987/D2Cdata/namefile.RData"))
 
 
 
-—-----------------------
+
 ### Author 
 
 Pr. Gianluca Bontempi
