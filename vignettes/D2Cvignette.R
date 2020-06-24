@@ -12,7 +12,7 @@
  ## range of number of nodes
  
  N<-c(100,200)
-##  range of number of samples
+##  range of number of samples 
  
  sd.noise<-c(0.2,0.5)
 ##  range of values for standard deviation of additive noise
