@@ -13,8 +13,9 @@ shiny::shinyUI(fluidPage(
   ),
   
   column(4,wellPanel(
-    sliderInput(inputId = "nNode", label = "nNodes",  value = 15, min=1, max=100),
+    sliderInput(inputId = "nNode", label = "nNodes",  value = 15, min=4, max=100),
     sliderInput(inputId = "maxPar", label = "maxPar",  value = 2, min=1, max=10),
+    checkboxInput("additive", "Additive", FALSE),
     h3(textOutput("nEdges"))))
   ,
   
