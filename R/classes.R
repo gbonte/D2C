@@ -929,11 +929,11 @@ setMethod("initialize",
                           X.out = rbind(X.out,d)
                           
                         }
-                      }
+                      }  
                     } ## if rev
                     N0=length(which(labelEdge==0))
                     N1=length(which(labelEdge==1))
-                  }
+                  } ## while
                   if (verbose)
                     cat("Descriptor (N,n)=", dim(X.out), 
                         "N0=",length(which(labelEdge==0)), 
