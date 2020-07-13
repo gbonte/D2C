@@ -799,15 +799,15 @@ setMethod("initialize",
                   N0=0
                   N1=0
                   while(N0<10 | N1<10){
-                    if (type=="is.parent"){
+                    
                       edgesM = matrix(unlist(sample(edgeList(DAG2),
                                                     size = sz,replace = F)),ncol=2,byrow = TRUE)
                       edgesM = rbind(edgesM,t(replicate(n =2*sz ,
                                                         sample(keepNode,size=2,replace = FALSE)))) ## random edges
-                    } else {
-                      
-                      edgesM = t(replicate(n =4*sz ,
-                                           sample(keepNode,size=2,replace = FALSE))) ## random edges
+                     
+                    if (type!="is.parent") {
+                      edgesM = rbind(edgesM,t(replicate(n =2*sz ,
+                                           sample(keepNode,size=2,replace = FALSE)))) ## random edges
                     }
                     nEdges =  NROW(edgesM)
                     
