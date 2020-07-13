@@ -798,7 +798,7 @@ setMethod("initialize",
                   sz=max(1,round(nEdge*ratioEdges))
                   N0=0
                   N1=0
-                  while(N0==0 | N1==0){
+                  while(N0<10 | N1<10){
                     if (type=="is.parent"){
                       edgesM = matrix(unlist(sample(edgeList(DAG2),
                                                     size = sz,replace = F)),ncol=2,byrow = TRUE)
