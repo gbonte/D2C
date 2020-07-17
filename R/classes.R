@@ -799,7 +799,7 @@ setMethod("initialize",
                   N0=0
                   N1=0
                   cnt=0
-                  while(cnt < 10 & (N0<10 | N1<10)){
+                  while(cnt < 2 & (N0<10 | N1<10)){
                       cnt=cnt+1
                       edgesM = matrix(unlist(sample(edgeList(DAG2),
                                                     size = sz,replace = F)),ncol=2,byrow = TRUE)
