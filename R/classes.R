@@ -798,8 +798,9 @@ setMethod("initialize",
                   sz=max(1,round(nEdge*ratioEdges))
                   N0=0
                   N1=0
-                  while(N0<10 | N1<10){
-                    
+                  cnt=0
+                  while(cnt < 2 & (N0<10 | N1<10)){
+                      cnt=cnt+1
                       edgesM = matrix(unlist(sample(edgeList(DAG2),
                                                     size = sz,replace = F)),ncol=2,byrow = TRUE)
                       edgesM = rbind(edgesM,t(replicate(n =2*sz ,
@@ -984,7 +985,7 @@ setGeneric("makeModel", def=function(object,...) {standardGeneric("makeModel")})
 #' @export
 setMethod("makeModel",
           "D2C",
-          function(object, max.features=20,
+          function(object, max.features=30,
                    classifier="RF",
                    EErep=5,verbose=TRUE,subset="all") {
             
