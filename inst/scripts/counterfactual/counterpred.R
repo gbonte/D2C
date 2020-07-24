@@ -114,7 +114,7 @@ for (r in 1:100000){
       while (L<100 | max(abs(DY))>4){
         ## max(abs(DY)): it avoids ill conditioned configurations with excessive outcome variation 
         maxN=sample(50:1000,1)
-        set.seed(as.numeric(Sys.time())+cnt)
+        set.seed(r+cnt)
         cnt=cnt+1
         HH=sample(c(Hs,H1,H2),1)[[1]]
         DAG = new("DAG.network",network=rDAG,

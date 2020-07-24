@@ -1,9 +1,8 @@
 # D2C
 
-Code related to the D2C algorithm introduced in the WCCI20 paper 
-"Learning causal dependencies in large-variate time series" 
+Code related to the D2CF algorithm introduced in the MBC20 paper 
+"Beyond uncounfoundness in predicting counterfactuals: a machine learning approach" 
 
-https://www.researchgate.net/publication/341152130_Learning_causal_dependencies_in_large-variate_time_series
 
 ### Author 
 
