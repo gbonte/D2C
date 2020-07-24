@@ -97,7 +97,7 @@ setMethod("initialize", signature="DAG.network",
                    H=c(function(x) return(H_Rn(1)),
                        function(x) return(H_Rn(2))),
                    additive= TRUE,
-                   weights=c(0.8,2),maxV=5){
+                   weights=c(0.8,2),maxV=5,seed=NULL){
             DAG = network
             .Object@additive=additive
             .Object@maxV=maxV
@@ -110,7 +110,10 @@ setMethod("initialize", signature="DAG.network",
               nodeDataDefaults(DAG,"seed") <-NA
               edgeDataDefaults(DAG,"H") <- function(x) return(x)
               for( n in nodes(DAG)){
-                set.seed(as.numeric(Sys.time()))
+                if (is.null(seed))
+                  set.seed(as.numeric(Sys.time()))
+                else
+                  set.seed(seed)
                 nodeData(DAG,n=n,"seed")<-runif(1,1,10000)
                 nodeData(DAG,n=n,"sigma")<-function(x) {
                   return(rnorm(n = 1,sd = runif(1,0.9*sdn,sdn)))}
