@@ -301,7 +301,7 @@ setMethod("counterfact", signature="DAG.network",
                   }
                   set.seed(seed) 
                   
-                  D[,i] <- D[,i] + replicate(N,sigma())/object@it  ## use of sigmoid function to saturate + additive random noise
+                  D[,i] <- (D[,i] + replicate(N,sigma())/object@it)  ## use of sigmoid function to saturate + additive random noise
                   
                 }
               } # if beforeknock
