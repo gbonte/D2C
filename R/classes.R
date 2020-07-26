@@ -168,6 +168,7 @@ setMethod("compute", signature="DAG.network",
               D <- matrix(NA,nrow=2*N,ncol=nNodes)
               colnames(D) <- 1:nNodes
               it<-it+1
+              object@it=it
               for (i in topologicalOrder){
                 bias = nodeData(DAG,n=i,attr="bias")[[1]]
                 sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
@@ -300,7 +301,7 @@ setMethod("counterfact", signature="DAG.network",
                   }
                   set.seed(seed) 
                   
-                  D[,i] <- D[,i] + replicate(N,sigma())  ## use of sigmoid function to saturate + additive random noise
+                  D[,i] <- D[,i] + replicate(N,sigma())/object@it  ## use of sigmoid function to saturate + additive random noise
                   
                 }
               } # if beforeknock
