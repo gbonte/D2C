@@ -74,7 +74,7 @@ setMethod("initialize",
 ##' An S4 class to store DAG.network
 ##' @param network : object of class "graph"
 setClass("DAG.network",  slots = list(network = "graph",additive="logical",maxV="numeric",
-                                      exosdn="numeric"))
+                                      exosdn="numeric",it="numeric"))
 
 
 ##' creation of a DAG.network
