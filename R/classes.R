@@ -1,7 +1,7 @@
 #' @import RBGL gRbase randomForest xgboost Rgraphviz methods foreach kernlab MASS igraph graph e1071
- 
 
- 
+
+
 
 #########################################
 ########   class D2C.descriptor
@@ -150,85 +150,75 @@ setGeneric("compute", function(object,...) {standardGeneric("compute")})
 ##' @return a N*nNodes matrix
 ##' @export
 setMethod("compute", signature="DAG.network",  
-          function(object, N=50){
+          function(object, N=50,bound=TRUE){
             if(!is.numeric(N))
               stop("N is not numeric")
             save.seed <- get(".Random.seed", .GlobalEnv)
             DAG = object@network
             maxV= object@maxV
             nNodes <- numNodes(DAG)
-            
             topologicalOrder <-tsort(DAG)
-            
             
             DD<-NULL
             Nsamples<-0
-            it<-0
-            while (Nsamples < N & it <2){
-              D <- matrix(NA,nrow=2*N,ncol=nNodes)
-              colnames(D) <- 1:nNodes
-              it<-it+1
-              object@it=it
-              for (i in topologicalOrder){
-                bias = nodeData(DAG,n=i,attr="bias")[[1]]
-                sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
-                seed = nodeData(DAG,n=i,attr="seed")[[1]]+it
-                inEdg <-  inEdges(node=i,object=DAG)[[1]]
-                
-                if (length(inEdg)==0 ){
-                  set.seed(seed)
-                  dr=rnorm(2*N,sd=object@exosdn)
-                  D[,i]<-bias + dr  #replicate(N,sigma())
-                } else  {
-                  D[,i]<-bias
-                  Xin<-NULL
-                  for (j in  inEdg){
-                    ## it computes the linear combination of the inputs
-                    inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
-                    H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
-                    
-                    if (object@additive){
-                      D[,i]<- D[,i] + H(D[,j]) *  inputWeight
-                    }else{
-                      ## it stacks inputs in a matrix
-                      Xin<-cbind(Xin,D[,j]*  inputWeight)
-                      
-                    }
-                  }
-                  if (!object@additive){
-                    H = edgeData(self=DAG,from=inEdg[1],to=i,attr="H")[[1]]
-                    if (length(inEdg)==1)
-                      D[,i]<-  H(Xin)
-                    else
-                      D[,i]<-  H(apply(Xin,1,sum))
-                    
-                  }
-                  set.seed(seed)
+            
+            #while (Nsamples < N & it <2){
+            D <- matrix(NA,nrow=N,ncol=nNodes)
+            colnames(D) <- 1:nNodes
+            
+            
+            for (i in topologicalOrder){
+              bias = nodeData(DAG,n=i,attr="bias")[[1]]
+              sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
+              seed = nodeData(DAG,n=i,attr="seed")[[1]]
+              inEdg <-  inEdges(node=i,object=DAG)[[1]]
+              
+              if (length(inEdg)==0 ){
+                set.seed(seed)
+                dr=rnorm(N,sd=object@exosdn)
+                D[,i]<-bias + dr  #replicate(N,sigma())
+              } else  {
+                D[,i]<-bias
+                Xin<-NULL
+                for (j in  inEdg){
+                  ## it computes the linear combination of the inputs
+                  inputWeight = edgeData(self=DAG,from=j,to=i,attr="weight")[[1]]
+                  H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
                   
-                  D[,i] <- (D[,i] + replicate(2*N,sigma())/it)  ## additive random noise
+                  if (object@additive){
+                    D[,i]<- D[,i] + H(D[,j]) *  inputWeight
+                  }else{
+                    ## it stacks inputs in a matrix
+                    Xin<-cbind(Xin,D[,j]*  inputWeight)
+                    
+                  }
+                }
+                if (!object@additive){
+                  H = edgeData(self=DAG,from=inEdg[1],to=i,attr="H")[[1]]
+                  if (length(inEdg)==1)
+                    D[,i]<-  H(Xin)
+                  else
+                    D[,i]<-  H(apply(Xin,1,sum))
                   
                 }
-              } ## for i
-              #col.numeric<-as(colnames(D),"numeric")
-              #D<-D[,topologicalOrder[order(col.numeric)]]
-              Dmax<-apply(abs(D),1,max)
-              wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
-              if (length(wtoo)>0)
-                D=D[-wtoo,]
-              
-              DD<-rbind(DD,D) ## remove divergent samples
-              Nsamples=NROW(DD)
-              #print(Nsamples) 
-              #if (Nsamples==0)
-              #  browser()
-            }
+                set.seed(seed)
+                
+                D[,i] <- (D[,i] + replicate(N,sigma()))  ## additive random noise
+                
+              }
+            } ## for i
+            #col.numeric<-as(colnames(D),"numeric")
+            #D<-D[,topologicalOrder[order(col.numeric)]]
+            Dmax<-apply(abs(D),1,max)
+            wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
+            if (length(wtoo)>0 & bound)
+              D=D[-wtoo,]
+            
+           
             assign(".Random.seed", save.seed, .GlobalEnv)
             
-            if (N==0)
-              return(DD)
-            if (N<=NROW(DD))
-              DD=DD[1:N,]
-            return(DD)
+            
+            return(D)
           })
 
 #' @docType methods
@@ -284,6 +274,7 @@ setMethod("counterfact", signature="DAG.network",
                     H = edgeData(self=DAG,from=j,to=i,attr="H")[[1]]
                     
                     if (object@additive){
+                      
                       D[,i]<- D[,i] + H(D[,j]) *  inputWeight
                     }else{
                       Xin<-cbind(Xin,D[,j]*  inputWeight)
@@ -297,16 +288,17 @@ setMethod("counterfact", signature="DAG.network",
                       D[,i]<-  H(Xin)
                     else
                       D[,i]<-  H(apply(Xin,1,sum))
-                    
+                  #  browser()
                   }
                   set.seed(seed) 
                   
-                  D[,i] <- (D[,i] + replicate(N,sigma())/object@it)  ## use of sigmoid function to saturate + additive random noise
+                  D[,i] <- (D[,i] + replicate(N,sigma()))  ## use of sigmoid function to saturate + additive random noise
                   
                 }
               } # if beforeknock
             } 
-            
+           
+          
             assign(".Random.seed", save.seed, .GlobalEnv)
             return(D)
             
@@ -804,15 +796,15 @@ setMethod("initialize",
                   N1=0
                   cnt=0
                   while(cnt < 2 & (N0<10 | N1<10)){
-                      cnt=cnt+1
-                      edgesM = matrix(unlist(sample(edgeList(DAG2),
-                                                    size = sz,replace = F)),ncol=2,byrow = TRUE)
-                      edgesM = rbind(edgesM,t(replicate(n =2*sz ,
-                                                        sample(keepNode,size=2,replace = FALSE)))) ## random edges
-                     
+                    cnt=cnt+1
+                    edgesM = matrix(unlist(sample(edgeList(DAG2),
+                                                  size = sz,replace = F)),ncol=2,byrow = TRUE)
+                    edgesM = rbind(edgesM,t(replicate(n =2*sz ,
+                                                      sample(keepNode,size=2,replace = FALSE)))) ## random edges
+                    
                     if (type!="is.parent") {
                       edgesM = rbind(edgesM,t(replicate(n =2*sz ,
-                                           sample(keepNode,size=2,replace = FALSE)))) ## random edges
+                                                        sample(keepNode,size=2,replace = FALSE)))) ## random edges
                     }
                     nEdges =  NROW(edgesM)
                     
