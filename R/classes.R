@@ -826,7 +826,7 @@ setMethod("initialize",
                               added=added+1
                               edgesM = rbind(edgesM,c(n1,n2)) 
                           }
-                          if (added>sz)
+                          if (added>sz) 
                             break;
                         }
                       }
