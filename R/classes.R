@@ -803,25 +803,33 @@ setMethod("initialize",
                                                       sample(keepNode,size=2,replace = FALSE)))) ## random edges
                     
                     if (type!="is.parent") {
-                      
-                      for (n1 in Nodes)
+                      added=0
+                      for (n1 in Nodes){
                         for (n2 in setdiff(Nodes,n1)){
                           if (type=="is.ancestor"){
                             if (is.ancestor(iDAG2,n1,n2) & (!is.parent(iDAG2,n1,n2))){
                               edgesM = rbind(edgesM,c(n1,n2))
+                              added=added+1
                               cat("+") 
                             }
                             
                           }
                           if (type=="is.descendant"){
-                            if (is.descendant(iDAG2,n1,n2) & (!is.parent(iDAG2,n2,n1)) )
+                            if (is.descendant(iDAG2,n1,n2) & (!is.parent(iDAG2,n2,n1)) ){
                               edgesM = rbind(edgesM,c(n1,n2)) 
+                              added=added+1
+                              cat("+")
+                            }
                           }
                           if (type=="is.mb"){
                             if (is.mb(iDAG2,n1,n2)  )
+                              added=added+1
                               edgesM = rbind(edgesM,c(n1,n2)) 
                           }
+                          if (added>nEdges)
+                            break;
                         }
+                      }
                       #edgesM = rbind(edgesM,t(replicate(n =2*sz ,
                       #                         sample(keepNode,size=2,replace = FALSE)))) ## random edges
                     }
