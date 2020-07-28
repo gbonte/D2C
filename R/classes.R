@@ -838,6 +838,10 @@ setMethod("initialize",
                   if (verbose)
                     cat("nEdges=", nEdges, " ")
                   
+                  labelEdge = NULL
+                  ##compute the descriptor for the edges
+                  X.out = NULL
+                  
                   cnt=0
                   while(cnt < 5) {
                     cnt=cnt+1
@@ -846,10 +850,7 @@ setMethod("initialize",
                     ## iteration over different dataset sizes
                     
                
-                    labelEdge = NULL
-                    
-                    ##compute the descriptor for the edges
-                    X.out = NULL
+                   
                     
                     if (rev){
                       for(j in 1:nEdges){
