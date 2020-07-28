@@ -799,10 +799,11 @@ setMethod("initialize",
                     cnt=cnt+1
                     edgesM = matrix(unlist(sample(edgeList(DAG2),
                                                   size = sz,replace = F)),ncol=2,byrow = TRUE)
-                    edgesM = rbind(edgesM,t(replicate(n =2*sz ,
-                                                      sample(keepNode,size=2,replace = FALSE)))) ## random edges
-                    
-                    if (type!="is.parent") {
+                    if (type=="is.parent") {
+                      edgesM = rbind(edgesM,t(replicate(n =2*sz ,
+                                                        sample(keepNode,size=2,replace = FALSE)))) ## random edges
+                      
+                    }else {
                       added=0
                       for (n1 in Nodes){
                         for (n2 in setdiff(Nodes,n1)){
@@ -824,10 +825,10 @@ setMethod("initialize",
                           if (type=="is.mb"){
                             if (is.mb(iDAG2,n1,n2)  )
                               added=added+1
-                              edgesM = rbind(edgesM,c(n1,n2)) 
+                            edgesM = rbind(edgesM,c(n1,n2)) 
                           }
-
-                          if (added>25)  
+                          
+                          if (added>sz)  
                             break;
                         }
                       }
