@@ -214,7 +214,7 @@ setMethod("compute", signature="DAG.network",
             if (length(wtoo)>0 & bound)
               D=D[-wtoo,]
             
-           
+            
             assign(".Random.seed", save.seed, .GlobalEnv)
             
             
@@ -288,7 +288,7 @@ setMethod("counterfact", signature="DAG.network",
                       D[,i]<-  H(Xin)
                     else
                       D[,i]<-  H(apply(Xin,1,sum))
-                  #  browser()
+                    #  browser()
                   }
                   set.seed(seed) 
                   
@@ -297,8 +297,8 @@ setMethod("counterfact", signature="DAG.network",
                 }
               } # if beforeknock
             } 
-           
-          
+            
+            
             assign(".Random.seed", save.seed, .GlobalEnv)
             return(D)
             
@@ -803,8 +803,25 @@ setMethod("initialize",
                                                       sample(keepNode,size=2,replace = FALSE)))) ## random edges
                     
                     if (type!="is.parent") {
-                      edgesM = rbind(edgesM,t(replicate(n =2*sz ,
-                                                        sample(keepNode,size=2,replace = FALSE)))) ## random edges
+                      
+                      for (n1 in Nodes)
+                        for (n2 in setdiff(Nodes,n1)){
+                          if (type=="is.ancestor"){
+                            if (is.ancestor(iDAG2,n1,n2) & (!is.parent(iDAG2,n1,n2)))
+                              edgesM = rbind(edgesM,c(n1,n2))
+                            cat("+")
+                          }
+                          if (type=="is.descendant"){
+                            if (is.descendant(iDAG2,n1,n2) & (!is.parent(iDAG2,n2,n1)) )
+                              edgesM = rbind(edgesM,c(n1,n2)) 
+                          }
+                          if (type=="is.mb"){
+                            if (is.mb(iDAG2,n1,n2)  )
+                              edgesM = rbind(edgesM,c(n1,n2)) 
+                          }
+                        }
+                      #edgesM = rbind(edgesM,t(replicate(n =2*sz ,
+                      #                         sample(keepNode,size=2,replace = FALSE)))) ## random edges
                     }
                     nEdges =  NROW(edgesM)
                     
