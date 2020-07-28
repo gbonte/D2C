@@ -807,9 +807,11 @@ setMethod("initialize",
                       for (n1 in Nodes)
                         for (n2 in setdiff(Nodes,n1)){
                           if (type=="is.ancestor"){
-                            if (is.ancestor(iDAG2,n1,n2) & (!is.parent(iDAG2,n1,n2)))
+                            if (is.ancestor(iDAG2,n1,n2) & (!is.parent(iDAG2,n1,n2))){
                               edgesM = rbind(edgesM,c(n1,n2))
-                            cat("+")
+                              cat("+") 
+                            }
+                            
                           }
                           if (type=="is.descendant"){
                             if (is.descendant(iDAG2,n1,n2) & (!is.parent(iDAG2,n2,n1)) )
@@ -895,7 +897,8 @@ setMethod("initialize",
                             labelEdge[2*j] =1
                         X.out = rbind(X.out,d)
                         
-                      }
+                      } ## for j
+                      
                     } else {    ### if rev
                       for (j in 1:nEdges){
                         I =as(edgesM[j,1],"numeric") ; # parent
