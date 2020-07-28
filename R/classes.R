@@ -766,13 +766,13 @@ setMethod("initialize",
                 set.seed(ii)
                 
                 DAG = sDAG@list.DAGs[[ii]]
-                observationsDAG =sDAG@list.observationsDAGs[[ii]]
-                if (!is.vector(observationsDAG)){
-                  if (NROW(observationsDAG)<30)
-                    observationsDAG=observationsDAG[sample(NROW(observationsDAG),50,rep=TRUE),]
+                observationsDAG0 =sDAG@list.observationsDAGs[[ii]]
+                if (!is.vector(observationsDAG0)){
+                  if (NROW(observationsDAG0)<30)
+                    observationsDAG0=observationsDAG0[sample(NROW(observationsDAG),50,rep=TRUE),]
                   if (verbose)
-                    cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG), " ")
-                  if (any(apply(observationsDAG,2,sd)<0.001))
+                    cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG0), " ")
+                  if (any(apply(observationsDAG0,2,sd)<0.001))
                     cat(" constant values in DAG data ")
                   
                   Nodes = nodes(DAG)
@@ -794,58 +794,59 @@ setMethod("initialize",
                   sz=max(1,round(nEdge*ratioEdges))
                   N0=0
                   N1=0
-                  cnt=0
-                  while(cnt < 2 & (N0<10 | N1<10)){
-                    cnt=cnt+1
-                    edgesM = matrix(unlist(sample(edgeList(DAG2),
-                                                  size = sz,replace = F)),ncol=2,byrow = TRUE)
-                    if (type=="is.parent") {
-                      edgesM = rbind(edgesM,t(replicate(n =2*sz ,
-                                                        sample(keepNode,size=2,replace = FALSE)))) ## random edges
-                      
-                    }else {
-                      added=0
-                      for (n1 in Nodes){
-                        for (n2 in setdiff(Nodes,n1)){
-                          if (type=="is.ancestor"){
-                            if (is.ancestor(iDAG2,n1,n2) & (!is.parent(iDAG2,n1,n2))){
-                              edgesM = rbind(edgesM,c(n1,n2))
-                              added=added+1
-                              cat("+") 
-                            }
-                            
-                          }
-                          if (type=="is.descendant"){
-                            if (is.descendant(iDAG2,n1,n2) & (!is.parent(iDAG2,n2,n1)) ){
-                              edgesM = rbind(edgesM,c(n1,n2)) 
-                              added=added+1
-                              cat("+")
-                            }
-                          }
-                          if (type=="is.mb"){
-                            if (is.mb(iDAG2,n1,n2)  )
-                              added=added+1
-                            edgesM = rbind(edgesM,c(n1,n2)) 
+                  
+                  edgesM = matrix(unlist(sample(edgeList(DAG2),
+                                                size = sz,replace = F)),ncol=2,byrow = TRUE)
+                  if (type=="is.parent") {
+                    edgesM = rbind(edgesM,t(replicate(n =2*sz ,
+                                                      sample(keepNode,size=2,replace = FALSE)))) ## random edges
+                    
+                  }else {
+                    added=0
+                    for (n1 in Nodes){
+                      for (n2 in setdiff(Nodes,n1)){
+                        if (type=="is.ancestor"){
+                          if (is.ancestor(iDAG2,n1,n2) & (!is.parent(iDAG2,n1,n2))){
+                            edgesM = rbind(edgesM,c(n1,n2))
+                            added=added+1
+                            cat("+") 
                           }
                           
-                          if (added>sz)  
-                            break;
                         }
+                        if (type=="is.descendant"){
+                          if (is.descendant(iDAG2,n1,n2) & (!is.parent(iDAG2,n2,n1)) ){
+                            edgesM = rbind(edgesM,c(n1,n2)) 
+                            added=added+1
+                            cat("+")
+                          }
+                        }
+                        if (type=="is.mb"){
+                          if (is.mb(iDAG2,n1,n2)  )
+                            added=added+1
+                          edgesM = rbind(edgesM,c(n1,n2)) 
+                        }
+                        
+                        if (added>sz)  
+                          break;
                       }
-                      #edgesM = rbind(edgesM,t(replicate(n =2*sz ,
-                      #                         sample(keepNode,size=2,replace = FALSE)))) ## random edges
                     }
-                    nEdges =  NROW(edgesM)
+                    #edgesM = rbind(edgesM,t(replicate(n =2*sz ,
+                    #                         sample(keepNode,size=2,replace = FALSE)))) ## random edges
+                  }
+                  nEdges =  NROW(edgesM)
+                  
+                  if (verbose)
+                    cat("nEdges=", nEdges, " ")
+                  
+                  cnt=0
+                  while(cnt < 5) {
+                    cnt=cnt+1
+                    observationDAG=observationsDAG0[sample(NROW(observationsDAG0),
+                                                           round((10-cnt)*NROW(observationsDAG0)/10)),]
+                    ## iteration over different dataset sizes
                     
-                    if (verbose)
-                      cat("nEdges=", nEdges, " ")
-                    
-                    
-                    
-                    if (rev)
-                      labelEdge = numeric(2*nEdges)
-                    else
-                      labelEdge = NULL
+               
+                    labelEdge = NULL
                     
                     ##compute the descriptor for the edges
                     X.out = NULL
@@ -861,23 +862,40 @@ setMethod("initialize",
                                       pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot,
                                       errd=descr@residual, delta=descr@diff, stabD=descr@stabD)
                         
+                        X.out = rbind(X.out,d)
+                        ## update descriptor input matrix
                         
                         if (type=="is.parent")
-                          if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2]))
-                            labelEdge[(2*j)-1] =1
+                          if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
                         if (type=="is.child")
-                          if (is.child(iDAG2,edgesM[j,1],edgesM[j,2]))
-                            labelEdge[(2*j)-1] =1
+                          if (is.child(iDAG2,edgesM[j,1],edgesM[j,2])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
                         if (type=="is.ancestor")
-                          if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2]))
-                            labelEdge[(2*j)-1] =1
+                          if (is.ancestor(iDAG2,edgesM[j,1],edgesM[j,2])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
                         if (type=="is.descendant")
-                          if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2]))
-                            labelEdge[(2*j)-1] =1
+                          if (is.descendant(iDAG2,edgesM[j,1],edgesM[j,2])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
                         if (type=="is.mb")
-                          if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2]))
-                            labelEdge[(2*j)-1] =1
-                        X.out = rbind(X.out,d)
+                          if (is.mb(iDAG2,edgesM[j,1],edgesM[j,2])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
+                        
                         
                         ## reverse edge
                         I =as(edgesM[j,2],"numeric") ;
@@ -889,23 +907,39 @@ setMethod("initialize",
                                       pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot,
                                       errd=descr@residual, delta=descr@diff,stabD=descr@stabD)
                         
+                        X.out = rbind(X.out,d)
                         
                         if (type=="is.parent")
-                          if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1]))
-                            labelEdge[2*j] =1
+                          if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
                         if (type=="is.child")
-                          if (is.child(iDAG2,edgesM[j,2],edgesM[j,1]))
-                            labelEdge[2*j] =1
+                          if (is.child(iDAG2,edgesM[j,2],edgesM[j,1])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
                         if (type=="is.ancestor")
-                          if (is.ancestor(iDAG2,edgesM[j,2],edgesM[j,1]))
-                            labelEdge[2*j] =1
+                          if (is.ancestor(iDAG2,edgesM[j,2],edgesM[j,1])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
                         if (type=="is.descendant")
-                          if (is.descendant(iDAG2,edgesM[j,2],edgesM[j,1]))
-                            labelEdge[2*j] =1
+                          if (is.descendant(iDAG2,edgesM[j,2],edgesM[j,1])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
                         if (type=="is.mb")
-                          if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1]))
-                            labelEdge[2*j] =1
-                        X.out = rbind(X.out,d)
+                          if (is.mb(iDAG2,edgesM[j,2],edgesM[j,1])){
+                            labelEdge =c(labelEdge,1)
+                          }else{
+                            labelEdge =c(labelEdge,0)
+                          }
+                       
                         
                       } ## for j
                       
@@ -960,7 +994,7 @@ setMethod("initialize",
                     } ## if rev
                     N0=length(which(labelEdge==0))
                     N1=length(which(labelEdge==1))
-                  } ## while
+                  } ## while cnt
                   if (verbose)
                     cat("Descriptor (N,n)=", dim(X.out), 
                         "N0=",length(which(labelEdge==0)), 
