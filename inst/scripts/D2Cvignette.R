@@ -1,6 +1,8 @@
 
 rm(list=ls())
 library(D2C)
+require(foreach)
+require(doParallel)
 require(RBGL)
 require(gRbase)
 require(igraph)
@@ -17,7 +19,7 @@ N<-c(100,200)
 sd.noise<-c(0.2,0.5)
 ##  range of values for standard deviation of additive noise
 
-NDAG=200
+NDAG=20
 ##  number of DAGs to be created and simulated
 
 

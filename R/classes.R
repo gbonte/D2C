@@ -719,7 +719,7 @@ setClass("D2C",
 #' @param EErep: Easy Ensemble size to deal with unbalancedness
 #' @param  rev: if TRUE, it uses both directions of the edge to train the learner (i.e. if i is parent of j, it is also true that j is a child of i)
 #' @references Gianluca Bontempi, Maxime Flauder (2015) From dependency to causality: a machine learning approach. JMLR, 2015, \url{http://jmlr.org/papers/v16/bontempi15a.html}
-#' @examples
+#' @examples 
 #' require(RBGL)
 #' require(gRbase)
 #'  require(foreach)
@@ -759,6 +759,7 @@ setMethod("initialize",
             
             iter=1
             while ( iter <=sDAG@NDAG){
+             
               iFF<-foreach (ii=iter:min(sDAG@NDAG,iter+npar-1)) %dopar%{
                 ##  FF<-foreach (ii=1:sDAG@NDAG) %op%{
                 ## for (ii in iter:min(sDAG@NDAG,iter+npar-1))  {   ### D2C
@@ -769,7 +770,7 @@ setMethod("initialize",
                 observationsDAG0 =sDAG@list.observationsDAGs[[ii]]
                 if (!is.vector(observationsDAG0)){
                   if (NROW(observationsDAG0)<30)
-                    observationsDAG0=observationsDAG0[sample(NROW(observationsDAG),50,rep=TRUE),]
+                    observationsDAG0=observationsDAG0[sample(NROW(observationsDAG0),50,rep=TRUE),]
                   if (verbose)
                     cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG0), " ")
                   if (any(apply(observationsDAG0,2,sd)<0.001))
@@ -845,7 +846,7 @@ setMethod("initialize",
                   cnt=0
                   while(cnt < 5) {
                     cnt=cnt+1
-                    observationDAG=observationsDAG0[sample(NROW(observationsDAG0),
+                    observationsDAG=observationsDAG0[sample(NROW(observationsDAG0),
                                                            round((10-cnt)*NROW(observationsDAG0)/10)),]
                     ## iteration over different dataset sizes
                     
@@ -1024,7 +1025,7 @@ setMethod("initialize",
             
             
           }
-)
+)  ## initialize D2C
 
 #' @docType methods
 setGeneric("makeModel", def=function(object,...) {standardGeneric("makeModel")})
