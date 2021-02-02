@@ -29,7 +29,7 @@ trainDAG<-new("simulatedDAG",NDAG=NDAG, N=N, noNodes=noNodes,
 
 
 
-print(trainDAG@NDAG)
+print(trainDAG@NDAG) 
 
 
 print(trainDAG@list.DAGs[[1]])
