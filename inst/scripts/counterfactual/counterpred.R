@@ -16,8 +16,8 @@ trainD2CP<-trainD2C
 load("./data/sequential.is.descendant.Rdata")
 trainD2CD<-trainD2C
 load("./data/sequential.is.ancestor.Rdata")
-
-verbose=FALSE
+trainD2CA<-trainD2C
+verbose=TRUE
 
 BACC<-NULL
 BACC2<-NULL
@@ -33,16 +33,18 @@ ACC2<-NULL
 NMSE2<-NULL
 NMSE0<-NULL
 ACC0<-NULL
+
+maxDY=5
 for (r in 1:100000){
   
   set.seed(r)
   
-  n=sample(10:20,1)
+  n=sample(50:100,1)
   # number of variables
   
-  wgt = runif(n = 1,min = 0.85,max = 1)
+  wgt = runif(n = 1,min = 0.5,max = 1)
   
-  rDAG<-gRbase::random_dag(1:n,maxpar = 3,wgt)
+  rDAG<-gRbase::random_dag(1:n,maxpar = sample(2:4,1),wgt)
   nodes(rDAG)<-as.character(1:n)
   
   Edges= gRbase::edgeList(rDAG) 
@@ -52,27 +54,42 @@ for (r in 1:100000){
   bestSP=0
   NX=NULL
   listN=NULL
+  maxnchY=0
   for (nn in Nodes){
     for (jj in setdiff(Nodes,nn)){
       SP=as.numeric(igraph::shortest.paths(irDAG, nn, jj, "out"))
-      if ((!is.infinite(SP)) & SP >0 ){
+      if ((!is.infinite(SP)) & SP >1 ){
         
         NX=nn
         NY=jj
-        nascX=0
+        ndescX=0
+        ## number descendants of NX
+        
+        nchY=0
+        ## number children of Y 
         for (nnn in Nodes){
           if (is.descendant(irDAG,nnn,NX)  ){
-            nascX<-nascX+1     
-          }}
-        
-        if (  SP>2 & nascX>3 )
-          listN=c(listN,list(c(NX,NY,SP,nascX)))
+            ndescX<-ndescX+1     
+          }
+          if ( is.ancestor(irDAG,NY,nnn) ){
+            nchY=nchY+1
+          }
+          
+          }
+       # cat(SP,":",ndescX,":",nchY,"\n")
+        if (  SP>1 & ndescX>2 & ndescX<10 & nchY>maxnchY){
+          maxnchY=nchY
+          listN=list(c(NX,NY,SP,ndescX,nchY))
+          
+        }
         
         
       }
     }
   } ## for nn
   
+  if (verbose)
+    cat("r=",r,"n=",n,"listN=",length(listN),"\n")
   ## listN: list of tuples (NX,NY) where NX is the traitment and NY is the outcome
   
   if (length(listN)>=1 ){
@@ -95,8 +112,9 @@ for (r in 1:100000){
       }
       
       if (verbose)
-      cat("r=", r, "rr=",rr, "NX=",NX,"NY=", NY,"LP=",listN[[rr]][3],
-          "NascX=",listN[[rr]][4], "PaY=",PaY, "ChY=",ChY,"DescX=",DescX,"\n")
+      cat("r=", r, "rr=",rr, "#nodes=",n,"NX=",NX,"NY=", NY,"LP=",listN[[rr]][3],
+          "nchY=",listN[[rr]][5],
+          "NdescX=",listN[[rr]][4], "PaY=",PaY, "ChY=",ChY,"DescX=",DescX,"\n")
       NY<-as.numeric(NY) 
       NX=as.numeric(NX)
       H1 = function() return(H_Rn(1))
@@ -111,29 +129,30 @@ for (r in 1:100000){
       ## Loop to create a counterfactual dataset such that the treatment variation has
       ## sufficient impact on outcome 
       
-      while (L<100 | max(abs(DY))>4){
+      while (L<100 | max(abs(DY))>maxDY){
         ## max(abs(DY)): it avoids ill conditioned configurations with excessive outcome variation 
-        maxN=sample(50:1000,1)
-        set.seed(r+cnt)
+        maxN=50
+        
         cnt=cnt+1
         HH=sample(c(Hs,H1,H2),1)[[1]]
         DAG = new("DAG.network",network=rDAG,
-                  additive=sample(c(TRUE,FALSE),1),
+                  additive=sample(c(FALSE,TRUE),1),
                   sdn=c(0.1,0.2),exosdn=runif(1,0.15,2),
-                  weights=c(0.5,2) ,H = HH)
+                  weights=c(0.5,2) ,H = H1,seed=sample(1:1000,1))
         
-        X=compute(DAG,maxN) 
+        X=compute(DAG,maxN,FALSE) 
         N=NROW(X)
         
         if (N>(maxN/3)){ ## check on the number of simulated samples
           if ( all(apply(X,2,sd)>0.01)) { ## check to avoid constant variables
-            set.seed(as.numeric(Sys.time())+cnt)
+            
             DX=runif(1,0.5,2)
             
             ## control
             delta0=sample(X[,NX],N,rep=TRUE)
-            Xc0=counterfact(DAG,X,delta=delta0, knocked=NX)
+            Xc0=counterfact(DAG,X,delta=X[,NX], knocked=NX)
             Y0=Xc0[,NY]
+            print(sum(abs(X-Xc0)))
             
             ## case
             delta1=X[,NX]+runif(N,DX,2*DX)*sample(c(-1,1),N,rep=TRUE)
@@ -161,7 +180,7 @@ for (r in 1:100000){
       
       
       
-      if (L>100 & max(abs(DY))<4){
+      if (L>100 & max(abs(DY))<maxDY){
         X=scale(X)
         Xc0=scale(Xc0,center=attr(X,'scaled:center'),scale=attr(X,'scaled:scale'))
         Xc1=scale(Xc1,center=attr(X,'scaled:center'),scale=attr(X,'scaled:scale'))
@@ -177,13 +196,14 @@ for (r in 1:100000){
         ## prediction by D2C
         for (i in 1:n){
           if (i!=NX)
-            ancX[i] = predict(trainD2CP,i,NX, X)$prob
+            ancX[i] = predict(trainD2CA,i,NX, X,rep=1)$prob
           if (i !=NY)
-            parY[i] = predict(trainD2CP,i,NY, X)$prob
+            parY[i] = predict(trainD2CP,i,NY, X,rep=1)$prob
           if (i !=NX)
-            descX[i] = predict(trainD2CD,i,NX, X)$prob
+            descX[i] = predict(trainD2CD,i,NX, X,rep=1)$prob
           
-          
+          if (verbose)
+            cat(".")
         }
         sX=union(setdiff(sort(parY*(1-descX),decr=TRUE,index=TRUE)$ix[1],c(NX,NY)),
                  setdiff(which(parY>0.5),c(NX,NY)))
