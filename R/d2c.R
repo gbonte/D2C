@@ -203,12 +203,12 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   }
   
   if (stabD){
-    DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]), skewness(D[,ca]), skewness(D[,ca])/skewness(D[,ef]),
+    DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]), skewness(D[,ca]), skewness(D[,ef]),
           stab(D[,ca],D[,ef]), stab(D[,ef],D[,ca]),De) 
-    names(DD)[1:8]=c('N', 'n/N','kurtosis1','kurtosis2','skewness1','skewnessR','stab1','stab2')
+    names(DD)[1:8]=c('N', 'n/N','kurtosis1','kurtosis2','skewness1','skewness2','stab1','stab2')
   } else {
-    DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),skewness(D[,ca]), skewness(D[,ca])/skewness(D[,ef]), De) 
-    names(DD)[1:6]=c('N', 'n/N','kurtosis1','kurtosis2','skewness1','skewnessR')
+    DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),skewness(D[,ca]), skewness(D[,ef]), De) 
+    names(DD)[1:6]=c('N', 'n/N','kurtosis1','kurtosis2','skewness1','skewness2')
   }
   if (errd)
     DD<-c(DD,eDe)
