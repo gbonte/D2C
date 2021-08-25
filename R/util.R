@@ -1,4 +1,17 @@
 
+## This function allows the use of existing packages (e.g. pcalg) for the generation of
+## random DAGs and related samples.
+gendataDAG<-function(N,n){
+  rDAG <- randomDAG(n, prob = runif(1,0.2,0.3), lB=0.1, uB=1)
+  trueDAG<-(rDAG)
+  ## generate N samples of DAG using standard normal with a cauchy                                                                                                                                                         
+  ## mixture of mix percent                                                                                                                                                                                                
+  observedData <- rmvDAG(N, rDAG, errDist="mix",mix=0.3)
+  list(DAG=trueDAG,data=observedData)
+  
+}
+
+
 is.parent<-function(DAG,n1,n2){
   ## n1 : character name of node 1
   ## n2 : character name of node 2

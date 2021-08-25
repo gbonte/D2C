@@ -31,6 +31,7 @@ exportMethods(counterfact)
 
 import(MASS)
 import(RBGL)
+import(pcalg)
 import(Rgraphviz)
 
 import(corpcor)

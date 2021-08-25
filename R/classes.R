@@ -1,4 +1,4 @@
-#' @import RBGL gRbase randomForest xgboost Rgraphviz methods foreach kernlab MASS igraph graph e1071
+#' @import RBGL gRbase randomForest xgboost Rgraphviz methods foreach kernlab MASS igraph graph e1071 pcalg
 
 
 
@@ -386,7 +386,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-              ##for (i in 1:NDAG){
+           ##   for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -406,106 +406,119 @@ setMethod("initialize",
               if (length(sdn)>1)
                 sdn.i<-runif(1,sdn[1],sdn[2])
               
-              functionType.i<-functionType
-              if (length(functionType.i)>1)
-                functionType.i<-sample(functionType,1)
-              
-              additive.i<-additive
-              if (length(additive)>1)
-                additive.i<-sample(additive,1)
-              
-              
-              sdn.ii=sdn.i
-              weights.i=weights
-              maxV.i=maxV
-              
-              HH<-NULL
-              for (functionType.i in functionType){
-                if(functionType.i=="linear"){
-                  H = function() return(H_Rn(1))
-                  
-                }else if(functionType.i=="quadratic"){
-                  H = function() return(H_Rn(2))
-                  
-                }else if(functionType.i=="sigmoid"){
-                  H = function() return(H_sigmoid(1))
-                  
-                } else if(functionType.i=="kernel"){
-                  H = function() return(H_kernel())
-                  
-                }
-                HH<-c(HH,H)
-              }
-              
-              cnt2=0
-              while(1){
-                V=1:max(4,noNodes.i-cnt2)
+              if (runif(1)<0.5){ 
+                ## it alternates the data generation with gendataDAG function
+                functionType.i<-functionType
+                if (length(functionType.i)>1)
+                  functionType.i<-sample(functionType,1)
                 
-                maxpar.pc.i<-pmin(0.99,maxpar.pc)
-                if (length(maxpar.pc.i)>1)
-                  maxpar.pc.i<-sample(maxpar.pc,1)
-                
-                maxpar = round(maxpar.pc.i*noNodes)
+                additive.i<-additive
+                if (length(additive)>1)
+                  additive.i<-sample(additive,1)
                 
                 
-                wgt = runif(n = 1,min = 0.85,max = 1)
+                sdn.ii=sdn.i
+                weights.i=weights
+                maxV.i=maxV
                 
-                
-                netwDAG<-random_dag(V,maxpar = maxpar,wgt)  
-                ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
-                
-                nodes(netwDAG)<-as.character(V)
-                
-                cnt<-1
-                while (sum(unlist(lapply(graph::edges(netwDAG),length)))<2 ){
-                  maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
-                  netwDAG<-random_dag(V,maxpar = maxpar,1)
-                  nodes(netwDAG)<-as.character(V)
-                  cnt<-cnt+1
-                  if (cnt>50){
-                    netwDAG<-new("graphNEL", nodes=as.character(1:noNodes.i), edgemode="directed")
-                    netwDAG <- addEdge("1", "3", netwDAG, 1)
-                    netwDAG <- addEdge("2", "3", netwDAG, 1)
+                HH<-NULL
+                for (functionType.i in functionType){
+                  if(functionType.i=="linear"){
+                    H = function() return(H_Rn(1))
+                    
+                  }else if(functionType.i=="quadratic"){
+                    H = function() return(H_Rn(2))
+                    
+                  }else if(functionType.i=="sigmoid"){
+                    H = function() return(H_sigmoid(1))
+                    
+                  } else if(functionType.i=="kernel"){
+                    H = function() return(H_kernel())
+                    
                   }
+                  HH<-c(HH,H)
                 }
                 
-                ## it iterates until there is a dataset sufficiently large
+                cnt2=0
+                while(1){
+                  V=1:max(4,noNodes.i-cnt2)
+                  
+                  maxpar.pc.i<-pmin(0.99,maxpar.pc)
+                  if (length(maxpar.pc.i)>1)
+                    maxpar.pc.i<-sample(maxpar.pc,1)
+                  
+                  maxpar = round(maxpar.pc.i*noNodes)
+                  
+                  
+                  wgt = runif(n = 1,min = 0.85,max = 1)
+                  
+                  
+                  netwDAG<-random_dag(V,maxpar = maxpar,wgt)  
+                  ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
+                  
+                  nodes(netwDAG)<-as.character(V)
+                  
+                  cnt<-1
+                  while (sum(unlist(lapply(graph::edges(netwDAG),length)))<2 ){
+                    maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
+                    netwDAG<-random_dag(V,maxpar = maxpar,1)
+                    nodes(netwDAG)<-as.character(V)
+                    cnt<-cnt+1
+                    if (cnt>50){
+                      netwDAG<-new("graphNEL", nodes=as.character(1:noNodes.i), edgemode="directed")
+                      netwDAG <- addEdge("1", "3", netwDAG, 1)
+                      netwDAG <- addEdge("2", "3", netwDAG, 1)
+                    }
+                  }
+                  
+                  ## it iterates until there is a dataset sufficiently large
+                  
+                  
+                  
+                  set.seed(as.numeric(Sys.time()))
+                  
+                  DAG = new("DAG.network",
+                            network=netwDAG,H=HH,additive=additive.i,
+                            sdn=sdn.ii,weights=weights.i,maxV=max(maxV.i,1))
+                  HH = function() return(H_Rn(1))
+                  sdn.ii=0.99*sdn.ii
+                  weights.i=0.99*weights.i
+                  maxV.i=maxV.i-1
+                  cnt2=cnt2+1
+                  
+                  observationsDAG = compute(DAG,N=max(20,N.i-cnt2))
+                  if (! (is.null(observationsDAG) | is.vector(observationsDAG)))
+                    if (NROW(observationsDAG)>max(10,round(N.i/2)-cnt2))
+                      break;
+                }
                 
+                if (quantize.i)
+                  observationsDAG<-apply(observationsDAG,2,quantization)
                 
+                if (any(is.na(observationsDAG) ))
+                  stop("simulatedDAG: NA in data generation")
+                if (any(is.infinite(observationsDAG)))
+                  stop("simulatedDAG: inf in data generation")
+                if (verbose){
+                  
+                  cat("simulatedDAG: DAG number:",i,"generated: #nodes=", length(V),
+                      "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", NROW(observationsDAG), "\n")
+                  
+                }
                 
-                set.seed(as.numeric(Sys.time()))
+              } else {
                 
-                DAG = new("DAG.network",
-                          network=netwDAG,H=HH,additive=additive.i,
-                          sdn=sdn.ii,weights=weights.i,maxV=max(maxV.i,1))
-                HH = function() return(H_Rn(1))
-                sdn.ii=0.99*sdn.ii
-                weights.i=0.99*weights.i
-                maxV.i=maxV.i-1
-                cnt2=cnt2+1
-                
-                observationsDAG = compute(DAG,N=max(20,N.i-cnt2))
-                if (! (is.null(observationsDAG) | is.vector(observationsDAG)))
-                  if (NROW(observationsDAG)>max(10,round(N.i/2)-cnt2))
-                    break;
+                g<-gendataDAG(N.i,noNodes.i)
+                netwDAG<-g$DAG
+                observedData <- g$data
+                if (verbose){
+                  
+                  cat("simulatedDAG gendataDAG: DAG number:",i,"generated: #nodes=", length(graph::edges(netwDAG)),
+                      "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", NROW(observationsDAG), "\n")
+                  
+                }
               }
-              
-              if (quantize.i)
-                observationsDAG<-apply(observationsDAG,2,quantization)
-              
-              if (any(is.na(observationsDAG) ))
-                stop("simulatedDAG: NA in data generation")
-              if (any(is.infinite(observationsDAG)))
-                stop("simulatedDAG: inf in data generation")
-              if (verbose){
-                
-                cat("simulatedDAG: DAG number:",i,"generated: #nodes=", length(V),
-                    "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", NROW(observationsDAG), "\n")
-                
-              }
-              
-              
-              
+              #browser()
               list(observationsDAG=observationsDAG,netwDAG=netwDAG)
               
             } ## foreach
@@ -759,7 +772,7 @@ setMethod("initialize",
             
             iter=1
             while ( iter <=sDAG@NDAG){
-             
+              
               iFF<-foreach (ii=iter:min(sDAG@NDAG,iter+npar-1)) %dopar%{
                 ##  FF<-foreach (ii=1:sDAG@NDAG) %op%{
                 ## for (ii in iter:min(sDAG@NDAG,iter+npar-1))  {   ### D2C
@@ -847,11 +860,11 @@ setMethod("initialize",
                   while(cnt < 5) {
                     cnt=cnt+1
                     observationsDAG=observationsDAG0[sample(NROW(observationsDAG0),
-                                                           round((10-cnt)*NROW(observationsDAG0)/10)),]
+                                                            round((10-cnt)*NROW(observationsDAG0)/10)),]
                     ## iteration over different dataset sizes
                     
-               
-                   
+                    
+                    
                     
                     if (rev){
                       for(j in 1:nEdges){
@@ -941,7 +954,7 @@ setMethod("initialize",
                           }else{
                             labelEdge =c(labelEdge,0)
                           }
-                       
+                        
                         
                       } ## for j
                       
