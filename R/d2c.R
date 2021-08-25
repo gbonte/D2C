@@ -24,8 +24,9 @@ epred<-function(X,Y,lin=TRUE,norm=TRUE){
     stop("Error in pred")
   if (lin)
     return(regrlin(XX,Y)$Y.hat)
-  
-  e<-Y-lazy.pred(XX,Y,XX,conPar=c(min(10,N-2),min(N,20)),
+  c1=max(3,min(10,N-2))
+  c2=max(c(c1,5,min(N,20)))
+  e<-Y-lazy.pred(XX,Y,XX,conPar=c(c1,c2),
                  linPar=NULL,class=FALSE,cmbPar=10)
   
   
@@ -93,7 +94,9 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
   }
   if (lin)
     return(max(1e-3,regrlin(XX,Y)$MSE.loo/(1e-3+var(Y))))
-  e<-Y-lazy.pred(XX,Y,XX,conPar=c(min(10,N-2),min(N,20)),
+  c1=max(3,min(10,N-2))
+  c2=max(c(c1,5,min(N,20)))
+  e<-Y-lazy.pred(XX,Y,XX,conPar=c(c1,c2),
                  linPar=NULL,class=FALSE,cmbPar=10)
   #  Itr=sample(1:N,min(50,round(2*N/3)))
   #  Its=setdiff(1:N,Itr)
