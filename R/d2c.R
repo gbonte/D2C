@@ -244,6 +244,10 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
   #### MB is obtained by first ranking the other nodes and then selecting a subset of size ns 
   #### with the algorithm mentioned in the "boot" variable
   
+  if (ca>n | ef>n){
+    cat("ca=",ca,"ef=",ef,"n=",n="\n")
+    stop("error in D2C.n")
+  }
   namesx<-NULL 
   x<-NULL
   

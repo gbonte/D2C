@@ -1,12 +1,17 @@
 
 ## This function allows the use of existing packages (e.g. pcalg) for the generation of
 ## random DAGs and related samples.
-gendataDAG<-function(N,n){
-  rDAG <- randomDAG(n, prob = runif(1,0.2,0.3), lB=0.1, uB=1)
-  trueDAG<-(rDAG)
-  ## generate N samples of DAG using standard normal with a cauchy                                                                                                                                                         
-  ## mixture of mix percent                                                                                                                                                                                                
-  observedData <- rmvDAG(N, rDAG, errDist="mix",mix=0.3)
+gendataDAG<-function(N,n,sdw=0.1){
+  trueDAG <- randomDAG(n, prob = runif(1,0.2,0.3), lB=0.1, uB=1)
+  
+  
+  observedData <- scale(rmvDAG(N, trueDAG, 
+                               errDist=sample(c("mix","cauchy","t4"),1),mix=0.3))+array(rnorm(N*n,sd=sdw),c(N,n))
+  
+  if (is.na(sum(observedData)))
+    stop("error in gendataDAG")
+  if (NCOL(observedData)!=length(nodes(trueDAG)))
+    stop("error 2 in gendataDAG")
   list(DAG=trueDAG,data=observedData)
   
 }
@@ -1626,7 +1631,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
     } ## for i
     if (! (any(is.nan(Y) | abs(Y)>10000)))
       break
-      
+    
     
   }## repeat
   

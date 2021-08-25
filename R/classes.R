@@ -386,7 +386,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-           ##   for (i in 1:NDAG){
+            ##  for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -508,17 +508,28 @@ setMethod("initialize",
                 
               } else {
                 
-                g<-gendataDAG(N.i,noNodes.i)
+                g<-gendataDAG(N.i,noNodes.i,sdn.i)
                 netwDAG<-g$DAG
-                observedData <- g$data
+                observationsDAG <- g$data
+                
                 if (verbose){
                   
                   cat("simulatedDAG gendataDAG: DAG number:",i,"generated: #nodes=", length(graph::edges(netwDAG)),
-                      "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", NROW(observationsDAG), "\n")
+                      "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", NROW(observationsDAG),
+                      "# cols=", NCOL(observationsDAG), "\n")
                   
                 }
               }
               #browser()
+             
+              wc=which(apply(observationsDAG,2,sd)<0.001)
+              if (length(wc)>0){
+                cat(" constant values in DAG data ")
+                observationsDAG=observationsDAG+array(rnorm(NROW(observationsDAG)*NCOL(observationsDAG),sd=0.1),
+                                                      c(NROW(observationsDAG),NCOL(observationsDAG)))
+              }
+              if (NCOL(observationsDAG)!=length(nodes(netwDAG)))
+                stop("error in gendata")
               list(observationsDAG=observationsDAG,netwDAG=netwDAG)
               
             } ## foreach
@@ -775,7 +786,7 @@ setMethod("initialize",
               
               iFF<-foreach (ii=iter:min(sDAG@NDAG,iter+npar-1)) %dopar%{
                 ##  FF<-foreach (ii=1:sDAG@NDAG) %op%{
-                ## for (ii in iter:min(sDAG@NDAG,iter+npar-1))  {   ### D2C
+                ##for (ii in iter:min(sDAG@NDAG,iter+npar-1))  {   ### D2C
                 
                 set.seed(ii)
                 
@@ -787,10 +798,10 @@ setMethod("initialize",
                   if (verbose)
                     cat("D2C:  DAG", ii, "/", sDAG@NDAG, "(N,n)=", dim(observationsDAG0), " ")
                   if (any(apply(observationsDAG0,2,sd)<0.001))
-                    cat(" constant values in DAG data ")
+                    cat(" constant values in DAG data \n")
                   
                   Nodes = nodes(DAG)
-                  
+                 
                   sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
                   keepNode = sort(sample(Nodes,
                                          size = sz ,
@@ -876,6 +887,7 @@ setMethod("initialize",
                                       struct=descr@struct,bivariate=descr@bivariate,
                                       pq=descr@pq,ns=descr@ns,maxs=descr@maxs,boot=descr@boot,
                                       errd=descr@residual, delta=descr@diff, stabD=descr@stabD)
+                        
                         
                         X.out = rbind(X.out,d)
                         ## update descriptor input matrix
