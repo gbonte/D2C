@@ -2,12 +2,16 @@
 ## This function allows the use of existing packages (e.g. pcalg) for the generation of
 ## random DAGs and related samples.
 gendataDAG<-function(N,n,sdw=0.1){
+  if (FALSE){
+    D=data.frame(array(rnorm(N*n),c(N,n)))
+  bn = gs(D)
+  observedData<-rbn(bn,N,D)
+  trueDAG<-as.graphNEL(bn)
+  } else {
   trueDAG <- randomDAG(n, prob = runif(1,0.2,0.3), lB=0.1, uB=1)
-  
-  
   observedData <- scale(rmvDAG(N, trueDAG, 
-                               errDist=sample(c("mix","cauchy","t4"),1),mix=0.3))+array(rnorm(N*n,sd=sdw),c(N,n))
-  
+                               errDist=sample(c("mix","cauchy","t4","mixt3"),1),mix=0.3))+array(rnorm(N*n,sd=sdw),c(N,n))
+  }
   if (is.na(sum(observedData)))
     stop("error in gendataDAG")
   if (NCOL(observedData)!=length(nodes(trueDAG)))
@@ -16,6 +20,11 @@ gendataDAG<-function(N,n,sdw=0.1){
   
 }
 
+## high order correlation
+HOC<-function(x,y,i,j){
+  return(mean((x-mean(x))^i*(y-mean(y))^j)/((sd(x)^i)*(sd(y)^j)))
+  
+}
 
 is.parent<-function(DAG,n1,n2){
   ## n1 : character name of node 1

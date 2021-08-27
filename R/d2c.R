@@ -193,8 +193,9 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     eDe=c(eDe, norminf(eef,D[,ca],D[,ef],lin=lin)-norminf(eef,D[,ca],lin=lin))
     eDe=c(eDe, norminf(eca,D[,ef],D[,ca],lin=lin)-norminf(eca,D[,ef],lin=lin))
     
+    eDe=c(eDe,HOC(eef,eca,1,2),HOC(eef,eca,2,1))
     
-    names(eDe)=c("M.e1","M.e2","M.e3","M.e4")
+    names(eDe)=c("M.e1","M.e2","M.e3","M.e4","HOC12.e","HOC21.e")
     
   }
   
@@ -207,11 +208,19 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   
   if (stabD){
     DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]), skewness(D[,ca]), skewness(D[,ef]),
+          HOC(D[,ca],D[,ef],1,2), HOC(D[,ca],D[,ef],2,1),
+          HOC(D[,ca],D[,ef],1,3), HOC(D[,ca],D[,ef],3,1),
           stab(D[,ca],D[,ef]), stab(D[,ef],D[,ca]),De) 
-    names(DD)[1:8]=c('N', 'n/N','kurtosis1','kurtosis2','skewness1','skewness2','stab1','stab2')
+    names(DD)[1:12]=c('N', 'n/N','kurtosis1','kurtosis2','skewness1','skewness2',
+                     'hoc12','hoc21','hoc13','hoc31',
+                     'stab1','stab2')
   } else {
-    DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),skewness(D[,ca]), skewness(D[,ef]), De) 
-    names(DD)[1:6]=c('N', 'n/N','kurtosis1','kurtosis2','skewness1','skewness2')
+    DD<-c(N,n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),skewness(D[,ca]), skewness(D[,ef]), 
+          HOC(D[,ca],D[,ef],1,2), HOC(D[,ca],D[,ef],2,1),
+          HOC(D[,ca],D[,ef],1,3), HOC(D[,ca],D[,ef],3,1),
+          De) 
+    names(DD)[1:10]=c('N', 'n/N','kurtosis1','kurtosis2','skewness1','skewness2',
+                     'hoc12','hoc21','hoc13','hoc31')
   }
   if (errd)
     DD<-c(DD,eDe)
