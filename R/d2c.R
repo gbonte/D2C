@@ -72,9 +72,15 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
   
   if (n>1){
     w.const<-which(apply(X,2,sd)<0.01)    
+    if (length(w.const)==n)
+      return(1)
+    
+    #print(dim(X))
     if (length(w.const)>0){
       X<-X[,-w.const]
     }
+    if (is.vector(X))
+      X=array(X,c(N,1))
     w.na<-which(is.na(apply(X,2,sum)))    
     if (length(w.na)>0){
       X<-X[,-w.na]
@@ -192,10 +198,14 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     eDe=c(eDe, norminf(eef,eca,D[,ef],lin=lin)-norminf(eef,eca,lin=lin))
     eDe=c(eDe, norminf(eef,D[,ca],D[,ef],lin=lin)-norminf(eef,D[,ca],lin=lin))
     eDe=c(eDe, norminf(eca,D[,ef],D[,ca],lin=lin)-norminf(eca,D[,ef],lin=lin))
+    eDe=c(eDe, norminf(eca,D[,ef],lin=lin))
+    eDe=c(eDe, norminf(eef,D[,ca],lin=lin))
     
-    eDe=c(eDe,HOC(eef,eca,1,2),HOC(eef,eca,2,1))
     
-    names(eDe)=c("M.e1","M.e2","M.e3","M.e4","HOC12.e","HOC21.e")
+    
+    eDe=c(eDe,HOC(eef,eca,1,2),HOC(eef,eca,2,1),skewness(eca),skewness(eef))
+    
+    names(eDe)=c("M.e1","M.e2","M.e3","M.e4","M.e5","M.e6","HOC12.e","HOC21.e","skew.ca","skew.ef")
     
   }
   
