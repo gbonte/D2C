@@ -1,14 +1,15 @@
 #' @import RBGL gRbase randomForest xgboost Rgraphviz methods foreach kernlab MASS igraph graph e1071 pcalg
 
 
-
+ 
 
 #########################################
 ########   class D2C.descriptor
+####
 #########################################
 
 ##' An S4 class to store the descriptor parameters
-setClass("D2C.descriptor",
+setClass("D2C.descriptor",     
          slots = list(lin="logical", acc="logical",
                       struct="logical",pq="numeric",
                       bivariate="logical",residual="logical",
@@ -1102,6 +1103,7 @@ setMethod("makeModel",
             }
             
             X<-scale(X)
+            N=NROW(X)
             object@scaled=attr(X,"scaled:scale")
             object@center=attr(X,"scaled:center")
             object@classifier=classifier
@@ -1110,19 +1112,21 @@ setMethod("makeModel",
             
             
             listRF<-list()
+            I=sample(1:N,min(N-1,20000))
             #featrank<-mrmr(X ,factor(Y),min(NCOL(X),3*max.features))
             if (classifier=="RF"){
-              RF <- randomForest(x =X ,y = factor(Y),importance=TRUE)
+              
+              RF <- randomForest(x =X[I,] ,y = factor(Y[I]),importance=TRUE)
               IM<-importance(RF)[,"MeanDecreaseAccuracy"]
             }
             if (classifier=="XGB.1"){
-              RF <- xgboost(data =X ,label = Y,nrounds=20,objective = "binary:logistic",eta=0.1)
+              RF <- xgboost(data =X[I,] ,label = Y[I],nrounds=20,objective = "binary:logistic",eta=0.1)
               IM<-numeric(NCOL(X))
               names(IM)=colnames(X)
               IM[xgb.importance(model = RF)[,1]]=xgb.importance(model = RF)[,2]
             }
             if (classifier=="XGB.2"){
-              RF <- xgboost(data =X ,label = Y,nrounds=20,objective = "binary:logistic",eta=0.2)
+              RF <- xgboost(data =X[I,] ,label = Y[I],nrounds=20,objective = "binary:logistic",eta=0.2)
               IM<-numeric(NCOL(X))
               names(IM)=colnames(X)
               IM[xgb.importance(model = RF)[,1]]=xgb.importance(model = RF)[,2]
