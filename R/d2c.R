@@ -186,11 +186,18 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   }
   
   if (errd){
-    mfs<-1:n
-    fs<-mfs[mimr(D[,mfs],D[,ef],nmax=2)]
+    mfs<-setdiff(1:n,ef)
+    if (boot=="mimr")
+      fs<-mfs[mimr(D[,mfs],D[,ef],nmax=3)]
+    if (boot=="rank")
+      fs<-mfs[rankrho(D[,mfs],D[,ef],nmax=3)]
     eef=epred(D[,fs],D[,ef],lin=lin)
     
-    fs<-mfs[mimr(D[,mfs],D[,ca],nmax=2)]
+    mfs<-setdiff(1:n,ca)
+    if (boot=="mimr")
+      fs<-mfs[mimr(D[,mfs],D[,ca],nmax=3)]
+    if (boot=="rank")
+      fs<-mfs[rankrho(D[,mfs],D[,ca],nmax=3)]
     eca=epred(D[,fs],D[,ca],lin=lin)
     eDe=NULL
     

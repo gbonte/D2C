@@ -1,0 +1,138 @@
+"N"  number of samples
+
+"n/N" ratio dimension/samplesize
+
+"kurtosis1"     "kurtosis2"  kurtosis    
+
+"skewness1"     "skewness2"     skewness
+
+"hoc12"         "hoc21"        "hoc13"         "hoc31" : HOC (Higher Order Correlations, DDA book p16)
+
+"M.pos.ca"    position of ca in the MBef
+
+"M.pos.ef"     position of ef in the MBca
+
+"M.sx.ca1"      "M.sx.ca2"      "M.sx.ca3"     quantiles position of variables of MBca in MBef 
+
+"M.sx.ef1"  "M.sx.ef2"      "M.sx.ef3"      quantiles position of variables of MBef in MBca 
+
+"M.comcau"     norminf(D[,ef],D[,ca],D[,CC],lin=lin) ## common cause assessment where CC<-intersect(MBca,MBef) ## potential common causes
+
+"M.delta"      norminf(D[,ef],D[,ca],D[,MBef],lin=lin) #I(zi;zj|Mj)
+
+"M.delta2"      norminf(D[,ca],D[,ef],D[,MBca],lin=lin) #I(zi;zj|Mi)
+
+"M.delta.i 1"   "M.delta.i 2"   "M.delta.i 3"   for (m in MBef)
+      delta.i<- c(delta.i,norminf(D[,ef],D[,ca],D[,c(m,MBca)],lin=lin)) #I(zj;zi|Mj^k)
+      
+"M.delta2.i 1"  "M.delta2.i 2"  "M.delta2.i 3"  "M.ca.ef"      
+ for (m in MBca)
+      delta2.i<- c(delta2.i,norminf(D[,ca],D[,ef],D[,c(m,MBef)],lin=lin)) #I(zi;zj|Mi^k)
+
+"M.ca.ef"  ca.ef<-norminf(D[,ca],D[,ef],lin=lin) #I(zi;zj) ## relevance of ef for ca
+
+"M.ef.ca"       ef.ca<-norminf(D[,ef],D[,ca],lin=lin) #I(zj;zi)
+
+"M.I1.i1"       "M.I1.i2"       "M.I1.i3"      ## Information of Mbef on ca (i)
+ for (j in 1:length(MBef)){
+      I1.i<-c(I1.i, (norminf(D[,MBef[j]],D[,ca],lin=lin)))  ## I(Mj^k;zi) equation (11)
+    }
+
+
+
+ "M.I1.j1"       "M.I1.j2"       "M.I1.j3"       ## Information of Mbca on ef  (j)
+    for (j in 1:length(MBca)){
+      I1.j<-c(I1.j, (norminf(D[,MBca[j]],D[,ef],lin=lin))) ## I(Mi^k;zj) equation (11)
+    }
+
+
+"M.I2.i1"      "M.I2.i2"       "M.I2.i3"       
+## Information of Mbef on ca given ef
+    for (j in 1:length(MBef)){
+      I2.i<-c(I2.i, norminf(D[,ca], D[,MBef[j]],D[,ef],lin=lin)) ## I(zi; Mj^k|zj) equation (8)
+    }
+
+
+"M.I2.j1"       "M.I2.j2"      "M.I2.j3"     ## Information of Mbca on ef given ca
+    for (j in 1:length(MBca)){
+      I2.j<-c(I2.j, norminf(D[,ef], D[,MBca[j]],D[,ca],lin=lin)) ## I(zj; Mi^k|zi) equation (8)
+    }
+
+
+"M.I3.i1"       "M.I3.i2"       "M.I3.i3"      ## Information of MBef on MBca given ca
+    for (r in 1:NROW(IJ)){
+      i=IJ[r,1]
+      j=IJ[r,2]
+      I3.i<-c(I3.i,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ca],lin=lin))) ## I(Mi^k; Mj^k|zi) equation (9-10)
+      
+
+
+
+
+"M.I3.j1"       "M.I3.j2"       "M.I3.j3"        ## Information of MBef on MBca given ef
+    for (r in 1:NROW(IJ)){
+      i=IJ[r,1]
+      j=IJ[r,2]
+      I3.j<-c(I3.j,(norminf(D[,MBca[i]],D[,MBef[j]],D[,ef],lin=lin))) ## I(Mi^k; Mj^k|zj) equation (9-10)
+  
+
+
+
+
+"M.Int3.i1"     "M.Int3.i2"     "M.Int3.i3"    ## Interaction of terms of Mbca
+Int3.i<-NULL
+   
+    for (r in 1:NROW(IJ)){
+      i=IJ[r,1]
+      j=IJ[r,2]
+      Int3.i<-c(Int3.i,(norminf(D[,MBca[i]],D[,MBca[j]],D[,ca],lin=lin)
+                        -norminf(D[,MBca[i]],D[,MBca[j]],lin=lin))) ## I(Mi^k; Mi^k|zi)-I(Mi^k; Mi^k)
+ 
+
+
+
+"M.Int3.j1"     "M.Int3.j2"    "M.Int3.j3"        ## Interaction of terms of Mbef
+    for (r in 1:NROW(IJ)){
+      i=IJ[r,1]
+      j=IJ[r,2]
+      Int3.j<-c(Int3.j,(norminf(D[,MBef[i]],D[,MBef[j]],D[,ef],lin=lin)
+                        -norminf(D[,MBef[i]],D[,MBef[j]],lin=lin))) ## I(Mj^k; Mj^k|zj)-I(Mj^k; Mj^k)
+    }
+
+
+E.ef=ecdf(D[,ef])(D[,ef]) ## empirical cdf of D[,ef]
+E.ca=ecdf(D[,ca])(D[,ca])
+
+"M.gini.delta"  norminf(D[,ef],E.ca,D[,MBef],lin=lin)
+
+"M.gini.delta2" norminf(D[,ca],E.ef,D[,MBca],lin=lin)
+
+
+
+"M.gini.ca.ef" ## gini relevance of ca for ef
+    gini.ca.ef<-norminf(D[,ca],E.ef,lin=lin)
+    
+"M.gini.ef.ca"   norminf(D[,ef],E.ca,lin=lin)
+
+
+
+"M.e1"          "M.e2"          "M.e3"         
+[61] "M.e4"          "M.e5"          "M.e6"          "HOC12.e"      
+[65] "HOC21.e"       "skew.ca"       "skew.ef"       "B.qx1"        
+[69] "B.qx2"         "B.qx3"         "B.qy1"         "B.qy2"        
+[73] "B.qy3"         "B.dv1"         "B.dv2"         "B.cop1"       
+[77] "B.cop2"        "B.cop3"        "B.cop4"        "B.cop5"       
+[81] "B.cop6"        "B.cop7"        "B.cop8"        "B.cop9"       
+[85] "B.N1"          "B.mx1"         "B.mx2"         "B.dx1"        
+[89] "B.my1"         "B.my2"         "B.dy1"         "B.qex1"       
+[93] "B.qex2"        "B.qex3"        "B.qex4"        "B.qex5"       
+[97] "B.qex6"        "B.qex7"        "B.qex8"        "B.qex9"       
+[101] "B.qey1"        "B.qey2"        "B.qey3"        "B.qey4"       
+[105] "B.qey5"        "B.qey6"        "B.qey7"        "B.qey8"       
+[109] "B.qey9"        "B.lux1"        "B.luy1"        "B.asxy1"      
+[113] "B.asxy2"       "B.asxy3"       "B.asxy4"       "B.asxy5"      
+[117] "B.asxy6"       "B.asxy7"       "B.asxy8"       "B.asex1"      
+[121] "B.asex2"       "B.asey1"       "B.asey2"       "B.aseyx1"     
+[125] "B.aseyx2"      "B.aseyy1"      "B.aseyy2"      "B.autx1"      
+[129] "B.autx2"       "B.autx3"       "B.autx4"       "B.auty1"      
+[133] "B.auty2"       "B.auty3"       "B.auty4"      
