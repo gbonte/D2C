@@ -210,15 +210,19 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     
     
     
-    eDe=c(eDe,HOC(eef,eca,1,2),HOC(eef,eca,2,1),skewness(eca),skewness(eef))
+    eDe=c(eDe,
+          cor(eef,D[,ca]),cor(eca,D[,ef]),
+          HOC(eef,eca,1,2),HOC(eef,eca,2,1),skewness(eca),skewness(eef))
     
-    names(eDe)=c("M.e1","M.e2","M.e3","M.e4","M.e5","M.e6","HOC12.e","HOC21.e","skew.eca","skew.eef")
+    names(eDe)=c("M.e1","M.e2","M.e3","M.e4","M.e5","M.e6",
+                 "M.cor.e1","M.cor.e2",
+                 "B.HOC12.e","B.HOC21.e","B.skew.eca","B.skew.eef")
     
   }
   
   
   if (bivariate){
-    De2= D2C.2(D[,ca],D[,ef])
+    De2= D2C.2(D[,ca],D[,ef],pq=pq)
     names(De2)=paste("B",names(De2),sep=".")
     
   }
@@ -228,16 +232,16 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
           HOC(D[,ca],D[,ef],1,2), HOC(D[,ca],D[,ef],2,1),
           HOC(D[,ca],D[,ef],1,3), HOC(D[,ca],D[,ef],3,1),
           stab(D[,ca],D[,ef]), stab(D[,ef],D[,ca]),De) 
-    names(DD)[1:13]=c('N', 'n','n/N','kurtosis1','kurtosis2','skewness1','skewness2',
-                     'hoc12','hoc21','hoc13','hoc31',
-                     'stab1','stab2')
+    names(DD)[1:13]=c('N', 'n','n/N','B.kurtosis1','B.kurtosis2','B.skewness1','B.skewness2',
+                     'B.hoc12','B.hoc21','B.hoc13','B.hoc31',
+                     'B.stab1','B.stab2')
   } else {
     DD<-c(N,n, n/N,kurtosis(D[,ca]), kurtosis(D[,ef]),skewness(D[,ca]), skewness(D[,ef]), 
           HOC(D[,ca],D[,ef],1,2), HOC(D[,ca],D[,ef],2,1),
           HOC(D[,ca],D[,ef],1,3), HOC(D[,ca],D[,ef],3,1),
           De) 
-    names(DD)[1:11]=c('N', 'n','n/N','kurtosis1','kurtosis2','skewness1','skewness2',
-                     'hoc12','hoc21','hoc13','hoc31')
+    names(DD)[1:11]=c('N', 'n','n/N','B.kurtosis1','B.kurtosis2','B.skewness1','B.skewness2',
+                     'B.hoc12','B.hoc21','B.hoc13','B.hoc31')
   }
   if (errd)
     DD<-c(DD,eDe)
@@ -649,9 +653,9 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
 
 
 
-D2C.2<-function(x,y,sdkmin=0.5,sdkmax=0.5,Ls=1){
+D2C.2<-function(x,y,sdkmin=0.25,sdkmax=0.25,Ls=1,pq= c(0.05,0.1,0.25,0.5,0.75,0.9,0.95)){
   
-  
+  qnt<-pq
   
   copula<-TRUE
   alpha<-FALSE
@@ -833,13 +837,13 @@ D2C.2<-function(x,y,sdkmin=0.5,sdkmax=0.5,Ls=1){
     
   }
   
-  mx<-c(median(Hx),max(Hx))
+  mx<-quantile(Hx,qnt)
   dx<-c(max(Hx)-min(Hx))
   
-  my<-c(median(Hy),max(Hy))
+  my<-quantile(Hy,qnt)
   dy<-c(max(Hy)-min(Hy))
   
-  qnt<-seq(0.05,0.99,length=3)
+  
   
   qx<-quantile(origx,qnt)
   qy<-quantile(origy,qnt)
