@@ -171,7 +171,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     stop("Error Inf in descriptor")
   }
   
-  
+  Icov<-ginv(cov(D))
   N<-NROW(D)
   n<-NCOL(D)
   De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
@@ -188,17 +188,20 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
   if (errd){
     mfs<-setdiff(1:n,ef)
     if (boot=="mimr")
-      fs<-mfs[mimr(D[,mfs],D[,ef],nmax=3)]
+      fsef<-mfs[mimr(D[,mfs],D[,ef],nmax=3)]
     if (boot=="rank")
-      fs<-mfs[rankrho(D[,mfs],D[,ef],nmax=3)]
-    eef=epred(D[,fs],D[,ef],lin=lin)
+      fsef<-mfs[rankrho(D[,mfs],D[,ef],nmax=3)]
+    eef=epred(D[,fsef],D[,ef],lin=lin)
     
     mfs<-setdiff(1:n,ca)
     if (boot=="mimr")
-      fs<-mfs[mimr(D[,mfs],D[,ca],nmax=3)]
+      fsca<-mfs[mimr(D[,mfs],D[,ca],nmax=3)]
     if (boot=="rank")
-      fs<-mfs[rankrho(D[,mfs],D[,ca],nmax=3)]
-    eca=epred(D[,fs],D[,ca],lin=lin)
+      fsca<-mfs[rankrho(D[,mfs],D[,ca],nmax=3)]
+    eca=epred(D[,fsca],D[,ca],lin=lin)
+    
+    Icov2<-ginv(cov(D[,unique(c(ca,ef,fsef,fsca))]))
+    
     eDe=NULL
     
     eDe=c(eDe, norminf(eef,eca,D[,ca],lin=lin)-norminf(eef,eca,lin=lin))
@@ -211,10 +214,12 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     
     
     eDe=c(eDe,
+          Icov[ca,ef],Icov2[1,2],
           cor(eef,D[,ca]),cor(eca,D[,ef]),
           HOC(eef,eca,1,2),HOC(eef,eca,2,1),skewness(eca),skewness(eef))
     
     names(eDe)=c("M.e1","M.e2","M.e3","M.e4","M.e5","M.e6",
+                 "M.Icov","M.Icov2",
                  "M.cor.e1","M.cor.e2",
                  "B.HOC12.e","B.HOC21.e","B.skew.eca","B.skew.eef")
     
