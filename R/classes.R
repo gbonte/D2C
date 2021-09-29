@@ -1073,12 +1073,13 @@ setGeneric("makeModel", def=function(object,...) {standardGeneric("makeModel")})
 #' @export
 setMethod("makeModel",
           "D2C",
-          function(object, max.features=30,
+          function(object, max.features=30, names.features=NULL,
                    classifier="RF",
                    EErep=5,verbose=TRUE,subset="all") {
             
             X<-object@origX
             Y<-object@Y
+            
             features=1:NCOL(X)
             
             if (subset=="bivar")
