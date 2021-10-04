@@ -212,8 +212,10 @@ setMethod("compute", signature="DAG.network",
             #D<-D[,topologicalOrder[order(col.numeric)]]
             Dmax<-apply(abs(D),1,max)
             wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
-            if (length(wtoo)>0 & bound)
+            if (length(wtoo)>0 & bound){
+              #browser()
               D=D[-wtoo,]
+            }
             
             
             assign(".Random.seed", save.seed, .GlobalEnv)
@@ -359,7 +361,7 @@ setMethod("initialize",
                    quantize=FALSE,maxpar.pc=0.05,
                    verbose=TRUE,N=sample(100:500,size=1),
                    seed=1234,sdn=0.5, goParallel=FALSE,additive=FALSE,
-                   weights=c(0.5,1),maxV=5)
+                   weights=c(0.5,1),maxV=10)
           {
             
             ##generate a training set
@@ -474,22 +476,22 @@ setMethod("initialize",
                   
                   ## it iterates until there is a dataset sufficiently large
                   
-                  
-                  
                   set.seed(as.numeric(Sys.time()))
                   
                   DAG = new("DAG.network",
                             network=netwDAG,H=HH,additive=additive.i,
-                            sdn=sdn.ii,weights=weights.i,maxV=max(maxV.i,1))
+                            sdn=sdn.ii,exosdn=sdn.ii, weights=weights.i,
+                            maxV=max(maxV.i,1))
                   HH = function() return(H_Rn(1))
-                  sdn.ii=0.99*sdn.ii
-                  weights.i=0.99*weights.i
-                  maxV.i=maxV.i-1
-                  cnt2=cnt2+1
+                  sdn.ii=max(0.05,0.95*sdn.ii)
+                  weights.i=0.9*weights.i
+                  maxV.i=2*(maxV.i)
+                  cnt2=cnt2+10
                   
-                  observationsDAG = compute(DAG,N=max(20,N.i-cnt2))
+                  observationsDAG = compute(DAG,N=max(20,N.i))
+                  
                   if (! (is.null(observationsDAG) | is.vector(observationsDAG)))
-                    if (NROW(observationsDAG)>max(10,round(N.i/2)-cnt2))
+                    if (NROW(observationsDAG)>max(10,N.i-cnt2))
                       break;
                 }
                 
