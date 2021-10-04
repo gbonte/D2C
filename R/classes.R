@@ -819,7 +819,7 @@ setMethod("initialize",
                   
                   ##choose which edge to train / predict and find the right label
                   nEdge = length(edgeList(DAG))
-                  sz=max(1,round(nEdge*ratioEdges))
+                  sz=min(100,max(1,round(nEdge*ratioEdges)))  
                   N0=0
                   N1=0
                   
