@@ -171,7 +171,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
     stop("Error Inf in descriptor")
   }
   
-  Icov<-ginv(cov(D))
+  Icov<-ginv(cov(D),tol=0.01)
   N<-NROW(D)
   n<-NCOL(D)
   De=D2C.n(D,ca,ef,ns,lin,acc,struct,pq=pq,boot=boot,maxs=maxs)
@@ -200,7 +200,7 @@ descriptor<-function(D,ca,ef,ns=min(4,NCOL(D)-2),
       fsca<-mfs[rankrho(D[,mfs],D[,ca],nmax=3)]
     eca=epred(D[,fsca],D[,ca],lin=lin)
     
-    Icov2<-ginv(cov(D[,unique(c(ca,ef,fsef,fsca))]))
+    Icov2<-ginv(cov(D[,unique(c(ca,ef,fsef,fsca))]),tol=0.01)
     
     eDe=NULL
     
