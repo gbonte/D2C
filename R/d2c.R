@@ -115,7 +115,13 @@ npred<-function(X,Y,lin=TRUE,norm=TRUE){
   return(mean(e^2))
 }
 
-
+coeff<- function(y,x1,x2=NULL){
+  Y=y
+  X=cbind(x1,x2)
+  return(coefficients(lm(Y~X))[2])
+  
+}
+  
 norminf<-function(y,x1,x2=NULL,lin=TRUE){
   ## Normalized conditional information of x1 to y given x2
   ## I(x1;y| x2)= (H(y|x2)-H(y | x1,x2))/H(y|x2)
@@ -399,6 +405,9 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
     if (length(CC)>0)
       comcau<-norminf(D[,ef],D[,ca],D[,CC],lin=lin) ## common cause assessment
     
+    effca<-coeff(D[,ef],D[,ca],D[,MBef])
+    effef<-coeff(D[,ca],D[,ef],D[,MBca])
+    
     ## relevance of ca for ef
     ca.ef<-norminf(D[,ca],D[,ef],lin=lin) #I(zi;zj)
     ## relevance of ef for ca
@@ -605,7 +614,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
         }
     } ## if FALSE
     
-    x<-c(x,comcau,delta,delta2,
+    x<-c(x,effca,effef, comcau,delta,delta2,
          quantile(delta.i,probs=pq,na.rm=TRUE),
          quantile(delta2.i,probs=pq,na.rm=TRUE),ca.ef,ef.ca,
          quantile(I1.i,probs=pq,na.rm=TRUE),quantile(I1.j,probs=pq,na.rm=TRUE),
@@ -622,7 +631,7 @@ D2C.n<-function(D,ca,ef,ns=min(4,NCOL(D)-2),maxs=20,
          #quantile(E3.i,probs=pq,na.rm=TRUE),quantile(E3.j,probs=pq,na.rm=TRUE)
     )
     
-    namesx<-c(namesx,"comcau","delta","delta2",
+    namesx<-c(namesx,"effca","effef","comcau","delta","delta2",
               paste("delta.i",1:length(pq)),
               paste("delta2.i",1:length(pq)),
               "ca.ef","ef.ca",
