@@ -168,7 +168,9 @@ setMethod("compute", signature="DAG.network",
             colnames(D) <- 1:nNodes
             
             
-            for (i in topologicalOrder){
+            for (ii in 1:length(topologicalOrder)){
+              
+              i=topologicalOrder[ii]
               bias = nodeData(DAG,n=i,attr="bias")[[1]]
               sigma = nodeData(DAG,n=i,attr="sigma")[[1]]
               seed = nodeData(DAG,n=i,attr="seed")[[1]]
@@ -202,7 +204,7 @@ setMethod("compute", signature="DAG.network",
                     D[,i]<-  H(apply(Xin,1,sum))
                   
                 }
-                set.seed(seed+i)
+                set.seed(seed+ii)
                 
                 D[,i] <- (D[,i] + replicate(N,sigma()))  ## additive random noise
                 
@@ -293,7 +295,7 @@ setMethod("counterfact", signature="DAG.network",
                       D[,i]<-  H(apply(Xin,1,sum))
                     #  browser()
                   }
-                  set.seed(seed+i) 
+                  set.seed(seed+ii) 
                   
                   D[,i] <- (D[,i] + replicate(N,sigma()))  ## use of sigmoid function to saturate + additive random noise
                   
