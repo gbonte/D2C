@@ -202,7 +202,7 @@ setMethod("compute", signature="DAG.network",
                     D[,i]<-  H(apply(Xin,1,sum))
                   
                 }
-                set.seed(seed)
+                set.seed(seed+i)
                 
                 D[,i] <- (D[,i] + replicate(N,sigma()))  ## additive random noise
                 
@@ -293,7 +293,7 @@ setMethod("counterfact", signature="DAG.network",
                       D[,i]<-  H(apply(Xin,1,sum))
                     #  browser()
                   }
-                  set.seed(seed) 
+                  set.seed(seed+i) 
                   
                   D[,i] <- (D[,i] + replicate(N,sigma()))  ## use of sigmoid function to saturate + additive random noise
                   
@@ -301,7 +301,7 @@ setMethod("counterfact", signature="DAG.network",
               } # if beforeknock
             } 
             
-            
+          
             assign(".Random.seed", save.seed, .GlobalEnv)
             return(D)
             
