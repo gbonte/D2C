@@ -177,7 +177,7 @@ setMethod("compute", signature="DAG.network",
               inEdg <-  inEdges(node=i,object=DAG)[[1]]
               
               if (length(inEdg)==0 ){
-                set.seed(seed)
+                set.seed(seed+ii+1)
                 dr=rnorm(N,sd=object@exosdn)
                 D[,i]<-bias + dr  #replicate(N,sigma())
               } else  {
