@@ -268,7 +268,7 @@ setMethod("counterfact", signature="DAG.network",
                     D[,i]<-DN[,i] 
                   }
                   if (is.element(i,knocked))
-                    D[,i]<-delta
+                    D[,i]<-delta[,match(i,knocked)]
                 } else  {  ##  if (length(inEdg)==0
                   D[,i]<-bias
                   Xin<-NULL
