@@ -28,7 +28,7 @@ noNodes<-c(5,6)
 N<-c(200,300)
 ## range of number of samples
 
-NDAG=50
+NDAG=10
 ## number of DAGs to be created and simulated
 NDAG.test=20
 nseries=5
@@ -71,7 +71,7 @@ if (TRUE){
   trainD2C.1<-joinD2C(trainD2C,trainD2C.2)
   print(NROW(trainD2C.1@origX))
     
-  
+  trainD2C.1<-makeModel(trainD2C.1,classifier="RF",EErep=2)
   
   testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
                seed=101,sdn=sdev,goParallel=goParallel,nseries=round(nseries/2),
@@ -113,7 +113,7 @@ for ( r in 1:testDAG@NDAG){
   cat("Dim test dataset"=dim(observedData),"\n")
   
   ## inference of networks with bnlearn package
-  Ahat.IAMB<-(amat(iamb(data.frame(observedData),optimized=TRUE,
+  Ahat.IAMB<-(amat(iamb(data.frame(observedData),#optimized=TRUE,
                         alpha=0.01,max.sx=3)))
   print("Done IAMB")
   Ahat.PC<-(amat(si.hiton.pc(data.frame(observedData),alpha=0.01)))
