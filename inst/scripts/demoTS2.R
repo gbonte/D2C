@@ -29,7 +29,7 @@ noNodes<-c(5)
 N<-c(30,50)
 ## range of number of samples
 
-NDAG=3
+NDAG=20
 ## number of DAGs to be created and simulated
 NDAG.test=20
 nseries=3
@@ -155,23 +155,31 @@ for ( r in 1:testDAG@NDAG){
     for(jj in 1:NROW(subset.edges)){
       i =as(subset.edges[jj,1],"numeric");
       j =as(subset.edges[jj,2],"numeric") ;
-      pred.D2C = predict(trainD2C.1,i,j, observedData)
-      pred.D2C.1 = pred.D2C #predict(trainD2C.1,i,j, observedData)
-      pred.GRANGER=1-grangertest(observedData[,i],observedData[,j], order = 1)$"Pr(>F)"[2]
-      Yhat.GRA<-c(Yhat.GRA,as.numeric(pred.GRANGER>0.5) )
-      Yhat.D2C<-c(Yhat.D2C,pred.D2C$response)
-      Yhat.D2C.1<-c(Yhat.D2C.1,pred.D2C.1$response)
-      Yhat.IAMB<-c(Yhat.IAMB,is.what(igraph.IAMB,i,j))
-      Yhat.GS<-c(Yhat.GS,is.what(igraph.GS,i,j))
-      Yhat.PC<-c(Yhat.PC,is.what(igraph.PC,i,j))
-      Yhat.KPC<-c(Yhat.KPC,is.what(igraph.KPC,i,j))
-      Ytrue<-c(Ytrue,is.what(igraph.TRUE,i,j)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
-      
-      cat(".")
+      if (abs(is.what(igraph.TRUE,i,j))<5){
+        pred.D2C = predict(trainD2C.1,i,j, observedData)
+        pred.D2C.1 = pred.D2C #predict(trainD2C.1,i,j, observedData)
+        pred.GRANGER=1-grangertest(observedData[,i],observedData[,j], order = 1)$"Pr(>F)"[2]
+        Yhat.GRA<-c(Yhat.GRA,as.numeric(pred.GRANGER>0.5) )
+        Yhat.D2C<-c(Yhat.D2C,pred.D2C$response)
+        Yhat.D2C.1<-c(Yhat.D2C.1,pred.D2C.1$response)
+        Yhat.IAMB<-c(Yhat.IAMB,is.what(igraph.IAMB,i,j))
+        Yhat.GS<-c(Yhat.GS,is.what(igraph.GS,i,j))
+        Yhat.PC<-c(Yhat.PC,is.what(igraph.PC,i,j))
+        Yhat.KPC<-c(Yhat.KPC,is.what(igraph.KPC,i,j))
+        Ytrue<-c(Ytrue,is.what(igraph.TRUE,i,j)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
+        
+        cat(".")
+      }
     }
-    
     if (type=="is.distance"){
-      browser()
+      
+      BER.D2C<-mean((Ytrue-Yhat.D2C)^2)/var(Ytrue)
+      BER.D2C.1<-mean((Ytrue-Yhat.D2C.1)^2)/var(Ytrue)
+      BER.IAMB<-mean((Ytrue-Yhat.IAMB)^2)/var(Ytrue)
+      BER.GS<-mean((Ytrue-Yhat.GS)^2)/var(Ytrue)
+      BER.PC<-mean((Ytrue-Yhat.PC)^2)/var(Ytrue)
+      BER.KPC<-mean((Ytrue-Yhat.KPC)^2)/var(Ytrue)
+      BER.GRA<-mean((Ytrue-Yhat.GRA)^2)/var(Ytrue)
     }
     else {
       ## computation of Balanced Error Rate
@@ -182,12 +190,13 @@ for ( r in 1:testDAG@NDAG){
       BER.PC<-BER(Ytrue,Yhat.PC)
       BER.KPC<-BER(Ytrue,Yhat.KPC)
       BER.GRA<-BER(Ytrue,Yhat.GRA)
-      cat("\n r=",r," BER.D2C=",mean(BER.D2C), " BER.D2C.1=",mean(BER.D2C.1),
-          "BER.IAMB=",mean(BER.IAMB),"BER.GRA=",mean(BER.GRA),
-          "BER.GS=",mean(BER.GS),"BER.PC=",mean(BER.PC),"BER.KPC=",mean(BER.KPC),
-          "#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
-      
     }
+    cat("\n r=",r," BER.D2C=",mean(BER.D2C), " BER.D2C.1=",mean(BER.D2C.1),
+        "BER.IAMB=",mean(BER.IAMB),"BER.GRA=",mean(BER.GRA),
+        "BER.GS=",mean(BER.GS),"BER.PC=",mean(BER.PC),"BER.KPC=",mean(BER.KPC),
+        "#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
+    
   }
+  
 }
 

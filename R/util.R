@@ -41,6 +41,19 @@ is.child<-function(DAG,n1,n2){
   return(s==1)
 }
 
+dagdistance<-function(DAG,n1,n2){
+  
+  dout=distances(DAG,n1,n2,mode="out")
+  din=distances(DAG,n1,n2,mode="in")
+  if (is.infinite(dout) & is.infinite(din) )
+    return(sample(c(-5,5),1))
+  if (is.infinite(dout) & is.finite(din) )
+    return(-din)
+  if (is.finite(dout) & is.infinite(din) )
+    return(dout)
+}
+
+
 is.ancestor<-function(DAG,n1,n2){
   
   s=shortest.paths(DAG,n1,n2,"out")

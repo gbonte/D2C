@@ -1,7 +1,7 @@
 #' @import RBGL gRbase randomForest xgboost Rgraphviz methods foreach kernlab MASS igraph graph e1071 pcalg
 
 
- 
+
 
 #########################################
 ########   class D2C.descriptor
@@ -303,7 +303,7 @@ setMethod("counterfact", signature="DAG.network",
               } # if beforeknock
             } 
             
-          
+            
             assign(".Random.seed", save.seed, .GlobalEnv)
             return(D)
             
@@ -391,7 +391,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-            ##  for (i in 1:NDAG){
+              ##  for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -526,7 +526,7 @@ setMethod("initialize",
                 }
               }
               #browser()
-             
+              
               wc=which(apply(observationsDAG,2,sd)<0.001)
               if (length(wc)>0){
                 cat(" constant values in DAG data ")
@@ -806,7 +806,7 @@ setMethod("initialize",
                     cat(" constant values in DAG data \n")
                   
                   Nodes = nodes(DAG)
-                 
+                  
                   sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
                   keepNode = sort(sample(Nodes,
                                          size = sz ,
@@ -856,6 +856,12 @@ setMethod("initialize",
                           edgesM = rbind(edgesM,c(n1,n2)) 
                         }
                         
+                        if (type=="is.distance"){
+                          if (abs(dagdistance(iDAG2,n1,n2))<3  )
+                            added=added+1
+                          edgesM = rbind(edgesM,c(n1,n2)) 
+                        }
+                        
                         if (added>sz)  
                           break;
                       }
@@ -896,6 +902,11 @@ setMethod("initialize",
                         
                         X.out = rbind(X.out,d)
                         ## update descriptor input matrix
+                        if (type=="is.distance"){
+                          labelEdge =c(labelEdge,
+                                       dagdistance(iDAG2,edgesM[j,1],edgesM[j,2]))
+                        }
+                        
                         
                         if (type=="is.parent")
                           if (is.parent(iDAG2,edgesM[j,1],edgesM[j,2])){
@@ -941,6 +952,11 @@ setMethod("initialize",
                         
                         X.out = rbind(X.out,d)
                         
+                        if (type=="is.distance"){
+                          labelEdge =c(labelEdge,dagdistance(iDAG2,edgesM[j,2],edgesM[j,1]))
+                          
+                          
+                        }
                         if (type=="is.parent")
                           if (is.parent(iDAG2,edgesM[j,2],edgesM[j,1])){
                             labelEdge =c(labelEdge,1)
@@ -995,6 +1011,9 @@ setMethod("initialize",
                             }else{
                               labelEdge =c(labelEdge,0)
                             }
+                          if (type=="is.distance"){
+                            labelEdge =c(labelEdge,dagdistance(iDAG2,edgesM[j,1],edgesM[j,2]))
+                          }
                           if (type=="is.child")
                             if (is.child(iDAG2,edgesM[j,1],edgesM[j,2])){
                               labelEdge =c(labelEdge,1)
@@ -1120,9 +1139,13 @@ setMethod("makeModel",
             I=sample(1:N,min(N-1,20000))
             #featrank<-mrmr(X ,factor(Y),min(NCOL(X),3*max.features))
             if (classifier=="RF"){
-              
-              RF <- randomForest(x =X[I,] ,y = factor(Y[I]),importance=TRUE)
-              IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+              if (object@type=="is.distance"){
+                RF <- randomForest(x =X[I,] ,y = Y[I],importance=TRUE)
+                IM<-importance(RF)[,"%IncMSE"]
+              } else {
+                RF <- randomForest(x =X[I,] ,y = factor(Y[I]),importance=TRUE)
+                IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+              }
             }
             if (classifier=="XGB.1"){
               RF <- xgboost(data =X[I,] ,label = Y[I],nrounds=20,objective = "binary:logistic",eta=0.1)
@@ -1160,8 +1183,12 @@ setMethod("makeModel",
               rank<-featrank
               rank<-rank[1:min(max.features,length(rank))]
               Xb=Xb[,rank]
-              if (classifier=="RF")
-                RF <- randomForest(x =Xb ,y = factor(Yb))
+              if (classifier=="RF"){
+                if (object@type=="is.distance")
+                  RF <- randomForest(x =X[,rank] ,y = Y)
+                else
+                  RF <- randomForest(x =Xb ,y = factor(Yb))
+              }
               if (classifier=="XGB.1")
                 RF=xgboost(data =Xb ,label = Yb,nrounds=5,objective = "binary:logistic",eta=0.1)
               if (classifier=="XGB.2")
@@ -1247,15 +1274,24 @@ setMethod("predict", signature="D2C",
                 mod=object@mod[[r]]$mod
                 fs=object@mod[[r]]$feat
                 #Response = c( Response, predict(mod, X_descriptor[fs], type="response"))
-                if (object@classifier=="RF")
-                  Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])
+                if (object@classifier=="RF"){
+                  if (object@type=="is.distance"){
+                   
+                    Prob = c(Prob,predict(mod, X_descriptor[fs]))
+                  } else
+                    Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])
+                }
                 if (length(grep("XGB",object@classifier))>=1)
                   Prob = c(Prob,predict(mod, array(X_descriptor[fs],c(1,length(fs)))))
                 
               }
             }
-            out[["response"]] =round(mean(Prob))
-            out[["prob"]]=mean(Prob)
+            if (object@type=="is.distance"){
+              out[["response"]] =mean(Prob)
+            } else{
+              out[["response"]] =round(mean(Prob))
+              out[["prob"]]=mean(Prob)
+            }
             return(out)
           })
 
@@ -1295,29 +1331,33 @@ setMethod(f="joinD2C",
             object@Y=Y
             max.features=object@max.features
             
-            listRF<-list()
-            for (rep in 1:10){
-              w0<-which(Y==0)
-              w1<-which(Y==1)
-              if (length(w0)>length(w1))
-                w0<-sample(w0,length(w1))
-              
-              if (length(w1)>length(w0))
-                w1<-sample(w1,length(w0))
-              Xb<-X[c(w0,w1),]
-              Yb<-Y[c(w0,w1)]
-              
-              
-              RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
-              IM<-importance(RF)[,"MeanDecreaseAccuracy"]
-              rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(Xb))]
-              Xb=Xb[,rank]
-              RF <- randomForest(x =Xb ,y = factor(Yb))
-              
-              listRF<-c(listRF,list(list(mod=RF,feat=rank)))
-            }
+            #listRF<-list()
+            #for (rep in 1:10){
+            #  w0<-which(Y==0)
+            #  w1<-which(Y==1)
+            #  if (length(w0)>length(w1))
+            #    w0<-sample(w0,length(w1))
             
-            object@mod=listRF
+            #  if (length(w1)>length(w0))
+            #    w1<-sample(w1,length(w0))
+            #  Xb<-X[c(w0,w1),]
+            #  Yb<-Y[c(w0,w1)]
+            
+            #  browser()
+            #  if (object.type=="is.distance")
+            #    RF <- randomForest(x =X ,y = Y,importance=TRUE)
+            #  else 
+            #    RF <- randomForest(x =Xb ,y = factor(Yb),importance=TRUE)
+            #  IM<-importance(RF)[,"MeanDecreaseAccuracy"]
+            #  rank<-sort(IM,decr=TRUE,ind=TRUE)$ix[1:min(max.features,NCOL(Xb))]
+            #  Xb=Xb[,rank]
+            
+            #  RF <- randomForest(x =Xb ,y = factor(Yb))
+            
+            #  listRF<-c(listRF,list(list(mod=RF,feat=rank)))
+            #}
+            
+            # object@mod=listRF
             
             object
           }
