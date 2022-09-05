@@ -5,19 +5,21 @@ require(RBGL)
 require(gRbase)
 require(igraph)
 require(graph)
+require(pcalg)
+ 
 
 set.seed(0)
 
 noNodes<-c(5,20)
 ## range of number of nodes
 
-N<-c(150,1000)
+N<-c(50,100)
 ## range of number of samples
 
 sd.noise<-c(0.1,0.25)
 ## range of values for standard deviation of additive noise 
 
-NDAG=10
+NDAG=15
 ## number of DAGs to be created and simulated
 
 type="is.parent"
@@ -36,14 +38,14 @@ print(trainDAG@list.DAGs[[1]])
 print(dim(trainDAG@list.observationsDAGs[[1]]))
 
 ## ----echo=TRUE,eval=TRUE-------------------------------------------------
-descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE)
+descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE,residual=TRUE)
 
-D2C<-new("D2C",sDAG=trainDAG, 
+D2C<-new("D2C",sDAG=trainDAG, npar=10,
          descr=descr.example,ratioEdges=0.15,max.features=30,type=type,
          verbose=TRUE)
 
 
-trainD2C<-makeModel(D2C,classifier="RF")
+trainD2C<-makeModel(D2C,classifier="RF",EErep=15)
 
 ## ----echo=TRUE,results=FALSE---------------------------------------------
 print(dim(trainD2C@X))
@@ -54,7 +56,7 @@ print(trainD2C@mod)
 
 
 ## ----echo=TRUE-----------------------------------------------------------
-NDAG.test=100
+NDAG.test=10
 
 
 testDAG<-new("simulatedDAG",NDAG=NDAG.test, N=N, noNodes=noNodes,
@@ -68,15 +70,23 @@ if (!require(bnlearn)){
   install.packages("bnlearn", repos="http://cran.rstudio.com/")
   library(bnlearn)
 }
+gendata=FALSE
 Yhat.D2C<-NULL
 Yhat.IAMB<-NULL
 Yhat.GS<-NULL
 Ytrue<-NULL
 for (r in 1:testDAG@NDAG){
   set.seed(r)
-  observedData<-testDAG@list.observationsDAGs[[r]]
-  if (NROW(observedData)>20){
+  if (gendata){
+    g<-gendataDAG(100,sample(noNodes[1]:noNodes[2],1))
+    trueDAG<-g$DAG
+    observedData <- g$data
+  } else {
+    observedData<-testDAG@list.observationsDAGs[[r]]
     trueDAG<-testDAG@list.DAGs[[r]]
+  }
+  if (NROW(observedData)>20){
+    #
     
     ## inference of networks with bnlearn package
     Ahat.GS<-amat(gs(data.frame(observedData),alpha=0.01))

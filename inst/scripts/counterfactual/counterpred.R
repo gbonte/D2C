@@ -39,7 +39,7 @@ for (r in 1:100000){
   
   set.seed(r)
   
-  n=sample(50:100,1)
+  n=sample(5:10,1)
   # number of variables
   
   wgt = runif(n = 1,min = 0.5,max = 1)
@@ -142,7 +142,7 @@ for (r in 1:100000){
         
         X=compute(DAG,maxN,FALSE) 
         N=NROW(X)
-        
+       
         if (N>(maxN/3)){ ## check on the number of simulated samples
           if ( all(apply(X,2,sd)>0.01)) { ## check to avoid constant variables
             
@@ -165,7 +165,7 @@ for (r in 1:100000){
             L=length(unique(round(DY,2)))
             ## measure of variability of the outcome
             
-            if (L>100 & verbose)
+            if (L>10 & verbose)
               cat("L=",L,"DX=",DX,"summary(DY)=",summary(DY),"\n")
             
           }
@@ -180,7 +180,7 @@ for (r in 1:100000){
       
       
       
-      if (L>100 & max(abs(DY))<maxDY){
+      if (L>10 & max(abs(DY))<maxDY){
         X=scale(X)
         Xc0=scale(Xc0,center=attr(X,'scaled:center'),scale=attr(X,'scaled:scale'))
         Xc1=scale(Xc1,center=attr(X,'scaled:center'),scale=attr(X,'scaled:scale'))
@@ -200,7 +200,7 @@ for (r in 1:100000){
           if (i !=NY)
             parY[i] = predict(trainD2CP,i,NY, X,rep=1)$prob
           if (i !=NX)
-            descX[i] = predict(trainD2CD,i,NX, X,rep=1)$prob
+            descX[i] = 0.5 #predict(trainD2CD,i,NX, X,rep=1)$prob
           
           if (verbose)
             cat(".")

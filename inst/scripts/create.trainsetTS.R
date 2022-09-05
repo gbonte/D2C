@@ -1,5 +1,6 @@
 rm(list=ls())
-
+library(devtools)
+install_github("gbonte/D2C")
 require(gbcode)
 library(D2C)
 library(doParallel)
@@ -22,23 +23,23 @@ is.what<-function(iDAG,i,j){
 }
 
 set.seed(0)
-noNodes<-20
+noNodes<-c(15,100)
 
-N<-150 #c(150,200)
+N<-c(50,100)
 ## range of number of samples
 
 sdev<-c(0.1,0.5)
-goParallel=FALSE
+goParallel=TRUE
 
 nfeat=20
 maxs=10
 ncores=1
 
 
-NDAG=100 ## total number of DAGS
+NDAG=50000000 ## total number of DAGS
 dN=5   ## number of DAGs per iteration
 if (goParallel){
-  ncores=20
+  ncores=10
   cl <- makeForkCluster(ncores)
   registerDoParallel(cl)
   dN=3*ncores
@@ -52,20 +53,26 @@ while ( iter <=NDAG){
   
   set.seed(iter)
 
+  if (rep%%2==0)
   trainDAG<-new("simulatedDAG",NDAG=dN, N=N, noNodes=noNodes,
               functionType = c("linear","quadratic","sigmoid"),
               seed=iter,sdn=sdev,verbose=TRUE,
               additive=c(TRUE,FALSE),goParallel=goParallel)
-  cat("Computed trainDAG \n")
+  else
+  trainDAG<-new("simulatedTS",NDAG=dN, N=N+100, noNodes=c(5,10),
+              seed=iter,sdn=sdev,verbose=TRUE,typeser=1:23,
+              goParallel=goParallel,nseries=10)
+	      
+cat("Computed trainDAG \n")
   
   
-  descr<-new("D2C.descriptor",bivariate=TRUE,ns=8,maxs=maxs,
-             acc=TRUE,diff=TRUE,resid=TRUE,
-             lin=TRUE,struct=TRUE, boot="mimr",pq=c(0.1,0.5,0.9))
+  descr<-new("D2C.descriptor",bivariate=FALSE,ns=8,maxs=maxs,resid=TRUE,
+             acc=TRUE,diff=FALSE,boot="rank",
+             lin=TRUE,struct=FALSE,pq=c(0.1,0.5,0.9))
 
   
   D2C<-new("D2C",sDAG=trainDAG,
-           descr=descr,ratioEdges=0.2,
+           descr=descr,ratioEdges=0.003,
            max.features=nfeat, type=type,goParallel=goParallel,
            verbose=TRUE,npar=min(NDAG,ncores))
 
@@ -81,8 +88,8 @@ while ( iter <=NDAG){
 
   iter=iter+dN
 
-    namefile<-paste("./data/trainD2Cp",NDAG,max(noNodes),type,"RData",sep=".")
-    trainD2C<-makeModel(allD2C,classifier="RF",EErep=2)
+    namefile<-paste("./data/trainD2Cp",length(allD2C@Y),max(noNodes),type,"RData",sep=".")
+    trainD2C<-makeModel(allD2C,classifier="RF",EErep=5,max.features=50)
     save(file=namefile,list=c("trainD2C","allD2C","descr"))
     cat("SAVED ", namefile, "\n")
   
@@ -92,7 +99,7 @@ while ( iter <=NDAG){
 
 
 namefile<-paste("./data/trainD2Cp",NDAG,max(noNodes),type,"RData",sep=".")
-trainD2C<-makeModel(allD2C,classifier="RF",EErep=2)
+trainD2C<-makeModel(allD2C,classifier="RF",EErep=10)
 save(file=namefile,list=c("trainD2C","allD2C","descr"))
 cat("SAVED ", namefile, "\n")
 

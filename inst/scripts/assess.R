@@ -95,6 +95,18 @@ for (ii in  1:length(testDAG@list.observationsDAGs) ){
   if (!any(is.nan(observedData))){
     trueDAG<-testDAG@list.DAGs[[ii]]
     
+    
+    if (remNodes>0){
+      n=NCOL(observedData)
+      torem=sample(1:n,remNodes)
+      toremch=as.character(torem)
+      for (r in 1:remNodes)
+        trueDAG<-graph::removeNode(toremch[r],trueDAG)
+      observedData=observedData[,-torem]
+      graph::nodes(trueDAG)<-as.character(1:NCOL(observedData))
+      
+    }
+    
     cat("Dim test dataset",dim(observedData),"\n")
     
     ## inference of networks with bnlearn package
