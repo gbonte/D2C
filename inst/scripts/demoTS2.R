@@ -4,9 +4,9 @@ require(bnlearn)
 library(pcalg)
 #library(kpcalg)
 library(lmtest)
-type="is.distance"
+type="is.ancestor"
 
-is.what<-function(iDAG,i,j){
+is.what<-function(iDAG,i,j,type){
   if (type=="is.mb")
     return(as.numeric(is.mb(iDAG,i,j)))
   if (type=="is.parent")
@@ -23,16 +23,16 @@ is.what<-function(iDAG,i,j){
     return(dagdistance(iDAG,i,j))
 }
 
-noNodes<-c(5)
+noNodes<-c(7)
 ## range of number of nodes
 
-N<-c(30,50)
+N<-c(50,100)
 ## range of number of samples
 
-NDAG=20
+NDAG=50
 ## number of DAGs to be created and simulated
 NDAG.test=20
-nseries=3
+nseries=10
 sdev<-c(0.1,0.3)
 
 goParallel=FALSE
@@ -40,45 +40,31 @@ savefile<-FALSE
 namefile<-"../D2Cdata2/traintestSTAR.200.100.RData"
 if (TRUE){
   
-  testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
-               seed=3101,sdn=sdev,
-               goParallel=goParallel,typeser=15:23,
-               nseries=nseries)
+  
   
   trainDAG<-new("simulatedTS",NDAG=NDAG, N=N, noNodes=noNodes,
-                seed=10,sdn=sdev,goParallel=goParallel,nseries=nseries,typeser=c(15:23))
+                seed=10,sdn=sdev,goParallel=goParallel,
+                nseries=nseries,typeser=c(15:23))
   
   
-  descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,maxs=10,acc=TRUE,lin=FALSE,
-                     struct=FALSE, boot="rank")
+  descr.example<-new("D2C.descriptor",bivariate=TRUE,
+                     ns=5,maxs=10,acc=TRUE,lin=TRUE,
+                     struct=TRUE, boot="mimr")
   
   
   trainD2C<-new("D2C",sDAG=trainDAG,
-                descr=descr.example,ratioEdges=0.15,
+                descr=descr.example,ratioEdges=0.5,
                 max.features=20, type=type,goParallel=goParallel,
-                
                 verbose=TRUE)
   
-  
-  
-  
-  trainD2C.2<-new("D2C",sDAG=trainDAG,
-                  descr=descr.example,ratioEdges=0.05,
-                  max.features=20, type=type,goParallel=goParallel,
-                  
-                  verbose=TRUE)
   print(NROW(trainD2C@origX))
-  print(NROW(trainD2C.2@origX))
-  trainD2C.1<-joinD2C(trainD2C,trainD2C.2)
-  print(NROW(trainD2C.1@origX))
   
-  trainD2C.1<-makeModel(trainD2C.1,classifier="RF",EErep=2)
+  trainD2C.1<-makeModel(trainD2C,classifier="RF",EErep=2)
   
   testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
-               seed=101,sdn=sdev,goParallel=goParallel,nseries=round(nseries/2),
-               typeser=setdiff(9:18,14))
-  
-  
+               seed=101,sdn=sdev,goParallel=goParallel,
+               nseries=nseries,
+               typeser=15:23)
   
   if (savefile)
     save(file=namefile,list=c("trainD2C","testDAG"))
@@ -146,7 +132,8 @@ for ( r in 1:testDAG@NDAG){
     ## selection of a balanced subset of edges for the assessment
     Nodes=graph::nodes(trueDAG)
     max.edges<-min(100,length(gRbase::edgeList(trueDAG)))
-    subset.edges = matrix(unlist(sample(gRbase::edgeList(trueDAG),size = max.edges,replace = F)),
+    subset.edges = matrix(unlist(sample(gRbase::edgeList(trueDAG),
+                                        size = max.edges,replace = F)),
                           ncol=2,byrow = TRUE)
     subset.edges = rbind(subset.edges,t(replicate(n =max.edges ,
                                                   sample(Nodes,size=2,replace = FALSE))))
@@ -155,21 +142,22 @@ for ( r in 1:testDAG@NDAG){
     for(jj in 1:NROW(subset.edges)){
       i =as(subset.edges[jj,1],"numeric");
       j =as(subset.edges[jj,2],"numeric") ;
-      if (abs(is.what(igraph.TRUE,i,j))<5){
-        pred.D2C = predict(trainD2C.1,i,j, observedData)
-        pred.D2C.1 = pred.D2C #predict(trainD2C.1,i,j, observedData)
-        pred.GRANGER=1-grangertest(observedData[,i],observedData[,j], order = 1)$"Pr(>F)"[2]
-        Yhat.GRA<-c(Yhat.GRA,as.numeric(pred.GRANGER>0.5) )
-        Yhat.D2C<-c(Yhat.D2C,pred.D2C$response)
-        Yhat.D2C.1<-c(Yhat.D2C.1,pred.D2C.1$response)
-        Yhat.IAMB<-c(Yhat.IAMB,is.what(igraph.IAMB,i,j))
-        Yhat.GS<-c(Yhat.GS,is.what(igraph.GS,i,j))
-        Yhat.PC<-c(Yhat.PC,is.what(igraph.PC,i,j))
-        Yhat.KPC<-c(Yhat.KPC,is.what(igraph.KPC,i,j))
-        Ytrue<-c(Ytrue,is.what(igraph.TRUE,i,j)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
-        
-        cat(".")
-      }
+      
+      pred.D2C = predict(trainD2C.1,i,j, observedData)
+      pred.D2C.1 = pred.D2C #predict(trainD2C.1,i,j, observedData)
+      pred.GRANGER=1-grangertest(observedData[,i],observedData[,j], order = 1)$"Pr(>F)"[2]
+      Yhat.GRA<-c(Yhat.GRA,as.numeric(pred.GRANGER>0.5) )
+      Yhat.D2C<-c(Yhat.D2C,pred.D2C$response)
+      Yhat.D2C.1<-c(Yhat.D2C.1,pred.D2C.1$response)
+      Yhat.IAMB<-c(Yhat.IAMB,is.what(igraph.IAMB,i,j,type))
+      Yhat.GS<-c(Yhat.GS,is.what(igraph.GS,i,j,type))
+      Yhat.PC<-c(Yhat.PC,is.what(igraph.PC,i,j,type))
+      Yhat.KPC<-c(Yhat.KPC,is.what(igraph.KPC,i,j,type))
+      
+      Ytrue<-c(Ytrue,is.what(igraph.TRUE,i,j,type)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
+      
+      cat(".")
+      
     }
     if (type=="is.distance"){
       

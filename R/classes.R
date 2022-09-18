@@ -827,17 +827,23 @@ setMethod("initialize",
                   
                   edgesM = matrix(unlist(sample(edgeList(DAG2),
                                                 size = sz,replace = F)),ncol=2,byrow = TRUE)
+                  added=0
                   if (type=="is.parent") {
                     edgesM = rbind(edgesM,t(replicate(n =2*sz ,
                                                       sample(keepNode,size=2,replace = FALSE)))) ## random edges
                     
                   }else {
-                    added=0
+                    
                     for (n1 in Nodes){
                       for (n2 in setdiff(Nodes,n1)){
                         if (type=="is.ancestor"){
                           if (is.ancestor(iDAG2,n1,n2) & (!is.parent(iDAG2,n1,n2))){
                             edgesM = rbind(edgesM,c(n1,n2))
+                            added=added+1
+                            cat("+") 
+                          }
+                          if (is.ancestor(iDAG2,n2,n1) & (!is.parent(iDAG2,n2,n1))){
+                            edgesM = rbind(edgesM,c(n2,n1))
                             added=added+1
                             cat("+") 
                           }
@@ -849,11 +855,21 @@ setMethod("initialize",
                             added=added+1
                             cat("+")
                           }
+                          if (is.descendant(iDAG2,n2,n1) & (!is.parent(iDAG2,n1,n2)) ){
+                            edgesM = rbind(edgesM,c(n2,n1)) 
+                            added=added+1
+                            cat("+")
+                          }
                         }
                         if (type=="is.mb"){
-                          if (is.mb(iDAG2,n1,n2)  )
+                          if (is.mb(iDAG2,n1,n2)  ){
                             added=added+1
-                          edgesM = rbind(edgesM,c(n1,n2)) 
+                            edgesM = rbind(edgesM,c(n1,n2)) 
+                          }
+                          if (is.mb(iDAG2,n2,n1)  ){
+                            added=added+1
+                            edgesM = rbind(edgesM,c(n2,n1)) 
+                          }
                         }
                         
                         if (type=="is.distance"){
@@ -872,21 +888,18 @@ setMethod("initialize",
                   nEdges =  NROW(edgesM)
                   
                   if (verbose)
-                    cat("nEdges=", nEdges, " ")
+                    cat("nEdges=", nEdges, " ", "added=",added,"\n")
                   
                   labelEdge = NULL
                   ##compute the descriptor for the edges
                   X.out = NULL
                   
                   cnt=0
-                  while(cnt < 5) {
+                  while(cnt < 1) {
                     cnt=cnt+1
                     observationsDAG=observationsDAG0[sample(NROW(observationsDAG0),
                                                             round((10-cnt)*NROW(observationsDAG0)/10)),]
                     ## iteration over different dataset sizes
-                    
-                    
-                    
                     
                     if (rev){
                       for(j in 1:nEdges){
@@ -953,8 +966,8 @@ setMethod("initialize",
                         X.out = rbind(X.out,d)
                         
                         if (type=="is.distance"){
-                          labelEdge =c(labelEdge,dagdistance(iDAG2,edgesM[j,2],edgesM[j,1]))
-                          
+                          labelEdge =c(labelEdge,
+                                       dagdistance(iDAG2,edgesM[j,2],edgesM[j,1]))
                           
                         }
                         if (type=="is.parent")
@@ -1276,7 +1289,7 @@ setMethod("predict", signature="D2C",
                 #Response = c( Response, predict(mod, X_descriptor[fs], type="response"))
                 if (object@classifier=="RF"){
                   if (object@type=="is.distance"){
-                   
+                    
                     Prob = c(Prob,predict(mod, X_descriptor[fs]))
                   } else
                     Prob = c(Prob,predict(mod, X_descriptor[fs], type="prob")[,"1"])

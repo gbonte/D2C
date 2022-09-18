@@ -1,3 +1,7 @@
+## igraph
+## g <- make_empty_graph(n = 5) %>%
+##     add_edges(c(1,2, 3,2)) 
+
 
 ## This function allows the use of existing packages (e.g. pcalg) for the generation of
 ## random DAGs and related samples.
@@ -1295,8 +1299,8 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       y=numeric(n)
       if (num==1){
         nfs=2
-        for (i in 1:n){
-          neigh=i+doNeigh[[i]]
+        for (i in 1:n){ ## number of time series
+          neigh=i+doNeigh[[i]] ## to which series the antecedents belong 
           
           e=rnorm(1)
           y[i]=-0.4*(3-mean(Y[N-fs[1],neigh])^2)/(1+mean(Y[N-fs[1],neigh])^2)+
@@ -1671,16 +1675,18 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
   if (NCOL(M$inp)!=(n*nn))
     stop("genstar NCOL(M$inp)!=(n*nn)")
   fs=sort(fs)
-  for (i in 1:n){
-    for (j in 1:nn){
-      for (f in fs){
+  for (i in 1:n){ ## for each series
+    for (j in 1:nn){ ## for each node in the series
+      for (f in fs){ ## for each parent
         if ((j+f)<nn){
-          Neigh=i+doNeigh[[i]]
+          Neigh=i+doNeigh[[i]] ## it defines the series where the parent is 
           
-          for (neigh in Neigh){
+          for (neigh in Neigh){ ## for each parent
             netwDAG <- addEdge(as.character((neigh-1)*nn+j+f+1), as.character((i-1)*nn+j), netwDAG, 1)
-            if (verbose)
+            if (verbose){
+             
               cat((neigh-1)*nn+j+f+1,"->",(i-1)*nn+j,"\n")
+            }
           }
         }
       }

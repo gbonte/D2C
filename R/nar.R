@@ -277,27 +277,3 @@ genstar<-function(N,n,s=0.1,number=1,loc=4,linear=TRUE,mix=mix){
   return(Y[(NROW(Y)-N+1):NROW(Y),])
 }
 
-
-n=20
-Y=rnorm(10)
-fs<-sample(0:9,4)
-for (i in 1:1000){
-  N=length(Y)
-  #Y=c(Y,-0.4*(3-Y[N-fs[1]]^2)/(1+Y[N-fs[1]]^2)+0.6*(3-(Y[N-fs[2]]-0.5)^3)/(1+(Y[N-fs[2]]-0.5)^4)+rnorm(1))
-  Y=c(Y,(0.4-2*exp(-50*Y[N-fs[1]]^2))*Y[N-fs[1]]+(0.5-0.5*exp(-50*Y[N-fs[2]]^2))*Y[N-fs[2]]+rnorm(1))
-  Y=c(Y,1.5 *sin(pi/2*Y[N-fs[1]])-sin(pi/2*Y[N-fs[2]])+sin(pi/2*Y[N-fs[3]])+rnorm(1))
-  
-}
-
-library(graph)
-netwDAG<-new("graphNEL", nodes=as.character(1:n), edgemode="directed")
-
-for (j in 1:(n-max(fs))){
-  for (f in fs)
-    netwDAG <- addEdge(as.character(j+f), as.character(j), netwDAG, 1)
-  
-}
-
-edgeList(netwDAG)
-
-plot(Y)

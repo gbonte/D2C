@@ -4,7 +4,7 @@ require(bnlearn)
 library(pcalg)
 #library(kpcalg)
 library(lmtest)
-type="is.distance"
+type="is.ancestor"
 
 is.what<-function(iDAG,i,j){
   if (type=="is.mb")
@@ -23,15 +23,15 @@ is.what<-function(iDAG,i,j){
     return(dagdistance(iDAG,i,j))
 }
 
-noNodes<-c(5)
+noNodes<-c(15,50)
 ## range of number of nodes
 
-N<-c(30,50)
+N<-c(50,100)
 ## range of number of samples
 
-NDAG=3
+NDAG=50
 ## number of DAGs to be created and simulated
-NDAG.test=20
+NDAG.test=100
 nseries=3
 sdev<-c(0.1,0.3)
 
@@ -40,10 +40,7 @@ savefile<-FALSE
 namefile<-"../D2Cdata2/traintestSTAR.200.100.RData"
 if (TRUE){
   
-  testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
-               seed=3101,sdn=sdev,
-               goParallel=goParallel,typeser=15:23,
-               nseries=nseries)
+  
   
   trainDAG<-new("simulatedTS",NDAG=NDAG, N=N, noNodes=noNodes,
                 seed=10,sdn=sdev,goParallel=goParallel,nseries=nseries,typeser=c(15:23))
@@ -54,29 +51,21 @@ if (TRUE){
   
   
   trainD2C<-new("D2C",sDAG=trainDAG,
-                descr=descr.example,ratioEdges=0.15,
+                descr=descr.example,ratioEdges=0.5,
                 max.features=20, type=type,goParallel=goParallel,
                 
                 verbose=TRUE)
   
-  
-  
-  
-  trainD2C.2<-new("D2C",sDAG=trainDAG,
-                  descr=descr.example,ratioEdges=0.05,
-                  max.features=20, type=type,goParallel=goParallel,
-                  
-                  verbose=TRUE)
-  print(NROW(trainD2C@origX))
-  print(NROW(trainD2C.2@origX))
-  trainD2C.1<-joinD2C(trainD2C,trainD2C.2)
+
+  trainD2C.1<-trainD2C
   print(NROW(trainD2C.1@origX))
-  
+  print(NROW(trainD2C@origX))
+ 
   trainD2C.1<-makeModel(trainD2C.1,classifier="RF",EErep=2)
   
   testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
                seed=101,sdn=sdev,goParallel=goParallel,nseries=round(nseries/2),
-               typeser=setdiff(9:18,14))
+               typeser=1:13)
   
   
   
@@ -135,13 +124,22 @@ for ( r in 1:testDAG@NDAG){
     #                   verbose=FALSE,p=NCOL(observedData),m.max=3)
     Ahat.KPC<-Ahat.GS ##as(kpag, "matrix")
     print("Done kpc")
+    graphTRUE<- gRbase::as.adjMAT(trueDAG)
+    igraph.TRUE<-igraph::graph.adjacency(graphTRUE[as.character(1:NCOL(graphTRUE)),as.character(1:NCOL(graphTRUE))])
+    
+    colnames(Ahat.IAMB)=colnames(graphTRUE)
+    rownames(Ahat.IAMB)=rownames(graphTRUE)
+    colnames(Ahat.GS)=colnames(graphTRUE)
+    rownames(Ahat.GS)=rownames(graphTRUE)
+    colnames(Ahat.PC)=colnames(graphTRUE)
+    rownames(Ahat.PC)=rownames(graphTRUE)
+    colnames(Ahat.KPC)=colnames(graphTRUE)
+    rownames(Ahat.KPC)=rownames(graphTRUE)
     igraph.GS<-igraph::graph.adjacency(Ahat.GS)
     igraph.IAMB<-igraph::graph.adjacency(Ahat.IAMB)
     igraph.PC<-igraph::graph.adjacency(Ahat.PC)
     igraph.KPC<-igraph::graph.adjacency(Ahat.KPC)
     
-    graphTRUE<- gRbase::as.adjMAT(trueDAG)
-    igraph.TRUE<-igraph::graph.adjacency(graphTRUE[as.character(1:NCOL(graphTRUE)),as.character(1:NCOL(graphTRUE))])
     
     ## selection of a balanced subset of edges for the assessment
     Nodes=graph::nodes(trueDAG)
