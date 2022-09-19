@@ -812,13 +812,17 @@ setMethod("initialize",
                   
                   Nodes = nodes(DAG)
                   
-                  sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
-                  keepNode = sort(sample(Nodes,
-                                         size = sz ,
-                                         replace = F))
-                  
-                  DAG2 =subGraph(keepNode, DAG) ## subGraph {graph}
-                  
+                  if (type=="is.parent"){
+                    sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
+                    keepNode = sort(sample(Nodes,
+                                           size = sz ,
+                                           replace = F))
+                    
+                    DAG2 =subGraph(keepNode, DAG) ## subGraph {graph}
+                  } else {
+                    keepNode = Nodes
+                    DAG2=DAG
+                  }
                   
                   iDAG2=graph.adjacency(as(DAG2,"matrix"))  ## as(DAG2,"matrix"): adjacency matrix of graphNEL DAG
                   ##  transforms the graphNEL adjacency matrix into igraph object
