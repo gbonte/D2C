@@ -293,7 +293,7 @@ setMethod("counterfact", signature="DAG.network",
                       D[,i]<-  H(Xin)
                     else
                       D[,i]<-  H(apply(Xin,1,sum))
-                   
+                    
                   }
                   set.seed(seed+ii) 
                   
@@ -525,7 +525,7 @@ setMethod("initialize",
                   
                 }
               }
-             
+              
               
               wc=which(apply(observationsDAG,2,sd)<0.001)
               if (length(wc)>0){
@@ -651,7 +651,7 @@ setMethod("initialize",
                 cat("num=",num,"nseries.i=",nseries.i,"N.i=",N.i,
                     "noNodes.i=",noNodes.i,
                     "sdn.i=",sdn.i,"\n")
-             
+              
               if (nseries.i>1)
                 G<-genSTAR(n=nseries.i,nn=noNodes.i,NN=N.i,
                            sd=sdn.i,num=num,loc=1)
@@ -833,11 +833,11 @@ setMethod("initialize",
                   edgesM = matrix(unlist(sample(edgeList(DAG2),
                                                 size = sz,replace = F)),ncol=2,byrow = TRUE)
                   added=0
-                  if (type=="is.parent") {
-                    edgesM = rbind(edgesM,t(replicate(n =2*sz ,
-                                                      sample(keepNode,size=2,replace = FALSE)))) ## random edges
-                    
-                  }else {
+                  
+                  edgesM = rbind(edgesM,t(replicate(n =2*sz ,
+                                                    sample(keepNode,size=2,replace = FALSE)))) ## random edges
+                  
+                  if (type!="is.parent") {
                     
                     for (n1 in Nodes){
                       for (n2 in setdiff(Nodes,n1)){
@@ -892,7 +892,7 @@ setMethod("initialize",
                   }
                   nEdges =  NROW(edgesM)
                   
-                 
+                  
                   if (verbose)
                     cat("nEdges=", nEdges, " ", "added=",added,"\n")
                   
