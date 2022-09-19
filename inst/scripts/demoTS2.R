@@ -23,21 +23,21 @@ is.what<-function(iDAG,i,j,type){
     return(dagdistance(iDAG,i,j))
 }
 
-noNodes<-c(7)
+noNodes<-c(7,8)
 ## range of number of nodes
 
-N<-c(50,100)
+N<-c(150,200)
 ## range of number of samples
 
-NDAG=50
+NDAG=1000
 ## number of DAGs to be created and simulated
-NDAG.test=20
-nseries=10
-sdev<-c(0.1,0.3)
+NDAG.test=500
+nseries=20
+sdev<-c(0.1,0.2)
 
 goParallel=FALSE
-savefile<-FALSE
-namefile<-"../D2Cdata2/traintestSTAR.200.100.RData"
+savefile<-TRUE
+namefile<-"../data/demoTS2.RData"
 if (TRUE){
   
   
@@ -67,7 +67,7 @@ if (TRUE){
                typeser=15:23)
   
   if (savefile)
-    save(file=namefile,list=c("trainD2C","testDAG"))
+    save(file=namefile,list=c("trainD2C.1","testDAG"))
 }
 ##stopCluster(cl)
 

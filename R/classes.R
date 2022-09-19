@@ -647,9 +647,15 @@ setMethod("initialize",
               
               
               num=sample(typeser,1)
-              
+              if (verbose)
+                cat("num=",num,"nseries.i=",nseries.i,"N.i=",N.i,
+                    "noNodes.i=",noNodes.i,
+                    "sdn.i=",sdn.i,"\n")
+              #if (i>=231 )
+               # browser()
               if (nseries.i>1)
-                G<-genSTAR(n=nseries.i,nn=noNodes.i,NN=N.i,sd=sdn.i,num=num,loc=1)
+                G<-genSTAR(n=nseries.i,nn=noNodes.i,NN=N.i,
+                           sd=sdn.i,num=num,loc=1)
               else
                 G<-genTS(nn=noNodes.i,N=N.i,sd=sdn.i,num=num)
               

@@ -1292,8 +1292,10 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
   ## subset of lags 
   state=0
   print(num)
+  Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
+  rep=0
   repeat{
-    Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
+    
     for (ii in 1:NN){
       N=NROW(Y)
       y=numeric(n)
@@ -1655,9 +1657,16 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
       
       
     } ## for i
-    if (! (any(is.nan(Y) | abs(Y)>10000)))
+    if (! (any(is.nan(Y) | abs(Y)>10000))){
       break
-    
+    } else  {
+      rep=rep+1
+      Y=array(rnorm(n*nn,sd=0.1/rep),c(nn,n))
+      if (rep>5)
+        num<-sample(1:5,1)
+     
+    }
+   
     
   }## repeat
   
