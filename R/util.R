@@ -1288,7 +1288,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
   eold=numeric(n)
   eold2=numeric(n)
   th0=rnorm(1)
-  fs<-sample(0:(nn-2),4)
+  fs<-1:4 #sample(0:(nn-2),4)
   ## subset of lags 
   state=0
   print(num)

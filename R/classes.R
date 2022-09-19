@@ -215,7 +215,7 @@ setMethod("compute", signature="DAG.network",
             Dmax<-apply(abs(D),1,max)
             wtoo<-union(which(Dmax>maxV),which(is.na(Dmax)))
             if (length(wtoo)>0 & bound){
-              #browser()
+              
               D=D[-wtoo,]
             }
             
@@ -293,7 +293,7 @@ setMethod("counterfact", signature="DAG.network",
                       D[,i]<-  H(Xin)
                     else
                       D[,i]<-  H(apply(Xin,1,sum))
-                    #  browser()
+                   
                   }
                   set.seed(seed+ii) 
                   
@@ -525,7 +525,7 @@ setMethod("initialize",
                   
                 }
               }
-              #browser()
+             
               
               wc=which(apply(observationsDAG,2,sd)<0.001)
               if (length(wc)>0){
@@ -651,8 +651,7 @@ setMethod("initialize",
                 cat("num=",num,"nseries.i=",nseries.i,"N.i=",N.i,
                     "noNodes.i=",noNodes.i,
                     "sdn.i=",sdn.i,"\n")
-              #if (i>=231 )
-               # browser()
+             
               if (nseries.i>1)
                 G<-genSTAR(n=nseries.i,nn=noNodes.i,NN=N.i,
                            sd=sdn.i,num=num,loc=1)
@@ -893,6 +892,7 @@ setMethod("initialize",
                   }
                   nEdges =  NROW(edgesM)
                   
+                 
                   if (verbose)
                     cat("nEdges=", nEdges, " ", "added=",added,"\n")
                   
