@@ -812,7 +812,8 @@ setMethod("initialize",
                   
                   Nodes = nodes(DAG)
                   
-                  if (type=="is.parent"){
+                  if (type=="is.parent" & ratioMissingNode >0){
+                    ratioMissingNode=max(min(ratioMissingNode,1),0)
                     sz=max(2,ceiling(length(Nodes)*(1-ratioMissingNode)))
                     keepNode = sort(sample(Nodes,
                                            size = sz ,
@@ -820,29 +821,34 @@ setMethod("initialize",
                     
                     DAG2 =subGraph(keepNode, DAG) ## subGraph {graph}
                   } else {
-                    keepNode = Nodes
+                    
                     DAG2=DAG
                   }
-                  
+                  Nodes=nodes(DAG2)
                   iDAG2=graph.adjacency(as(DAG2,"matrix"))  ## as(DAG2,"matrix"): adjacency matrix of graphNEL DAG
                   ##  transforms the graphNEL adjacency matrix into igraph object
                   # Use as_graphnel to transform an igraph into graphNEL
                   
                   ##choose which edge to train / predict and find the right label
-                  nEdge = length(edgeList(DAG))
+                  nEdge = length(edgeList(DAG2))
                   sz=min(100,max(1,round(nEdge*ratioEdges)))  
-                  N0=0
-                  N1=0
+                  
                   
                   edgesM = matrix(unlist(sample(edgeList(DAG2),
-                                                size = sz,replace = F)),ncol=2,byrow = TRUE)
-                  added=0
+                                                size = sz,replace = F)),ncol=2,byrow = TRUE) 
+                  ## random pairs of nodes associated to edges (useful for learning parent relationships)
+                  
                   
                   edgesM = rbind(edgesM,t(replicate(n =2*sz ,
-                                                    sample(keepNode,size=2,replace = FALSE)))) ## random edges
+                                                    sample(Nodes,size=2,replace = FALSE)))) 
+                  ## random pairs of nodes 
+                  
+                  added=0
+                  ## number of additional pairs of nodes to learn ancestor/descendant/mb relationships
                   
                   if (type!="is.parent") {
                     
+                    ## loop over all node pairs
                     for (n1 in Nodes){
                       for (n2 in setdiff(Nodes,n1)){
                         if (type=="is.ancestor"){
@@ -857,7 +863,8 @@ setMethod("initialize",
                             cat("+") 
                           }
                           
-                        }
+                        } #if (type=="is.ancestor")
+                        
                         if (type=="is.descendant"){
                           if (is.descendant(iDAG2,n1,n2) & (!is.parent(iDAG2,n2,n1)) ){
                             edgesM = rbind(edgesM,c(n1,n2)) 
@@ -870,6 +877,7 @@ setMethod("initialize",
                             cat("+")
                           }
                         }
+                        
                         if (type=="is.mb"){
                           if (is.mb(iDAG2,n1,n2)  ){
                             added=added+1
@@ -887,7 +895,7 @@ setMethod("initialize",
                           edgesM = rbind(edgesM,c(n1,n2)) 
                         }
                         
-                        if (added>sz)  
+                        if (added>(2*sz))  
                           break;
                       }
                     }
@@ -898,17 +906,22 @@ setMethod("initialize",
                   
                   
                   if (verbose)
-                    cat("nEdges=", nEdges, " ", "added=",added,"\n")
+                    cat("nPairs=", nEdges, " ", "added=",added,"\n")
                   
                   labelEdge = NULL
                   ##compute the descriptor for the edges
                   X.out = NULL
                   
                   cnt=0
-                  while(cnt < 1) {
+                  MaxIt=1
+                  ## max number of iterations over different resampled datasets
+                  while(cnt < MaxIt) {
                     cnt=cnt+1
-                    observationsDAG=observationsDAG0[sample(NROW(observationsDAG0),
-                                                            round((10-cnt)*NROW(observationsDAG0)/10)),]
+                    if (MaxIt==1)
+                      observationsDAG=observationsDAG0
+                    else
+                      observationsDAG=observationsDAG0[sample(NROW(observationsDAG0),
+                                                              round((10-cnt)*NROW(observationsDAG0)/10)),]
                     ## iteration over different dataset sizes
                     
                     if (rev){
@@ -1188,7 +1201,7 @@ setMethod("makeModel",
             
             ratio=3
             if (classifier=="RF")
-              ratio=1
+              ratio=1.5
             
             
             for (rep in 1:EErep){
