@@ -4,9 +4,10 @@ require(bnlearn)
 library(pcalg)
 #library(kpcalg)
 library(lmtest)
+library(doParallel)
 type="is.ancestor"
 
-is.what<-function(iDAG,i,j){
+is.what<-function(iDAG,i,j,type){
   if (type=="is.mb")
     return(as.numeric(is.mb(iDAG,i,j)))
   if (type=="is.parent")
@@ -23,55 +24,58 @@ is.what<-function(iDAG,i,j){
     return(dagdistance(iDAG,i,j))
 }
 
-noNodes<-c(15,50)
+noNodes<-c(7,8)
 ## range of number of nodes
 
-N<-c(50,100)
+N<-c(150,200)
 ## range of number of samples
 
-NDAG=50
+NDAG=10
 ## number of DAGs to be created and simulated
-NDAG.test=100
-nseries=3
-sdev<-c(0.1,0.3)
+NDAG.test=50
+nseries=5
+sdev<-c(0.1,0.2)
 
 goParallel=FALSE
-savefile<-FALSE
-namefile<-"../D2Cdata2/traintestSTAR.200.100.RData"
-if (TRUE){
-  
-  
-  
-  trainDAG<-new("simulatedTS",NDAG=NDAG, N=N, noNodes=noNodes,
-                seed=10,sdn=sdev,goParallel=goParallel,nseries=nseries,typeser=c(15:23))
-  
-  
-  descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,maxs=10,acc=TRUE,lin=FALSE,
-                     struct=FALSE, boot="rank")
-  
-  
-  trainD2C<-new("D2C",sDAG=trainDAG,
-                descr=descr.example,ratioEdges=0.5,
-                max.features=20, type=type,goParallel=goParallel,
-                
-                verbose=TRUE)
-  
-
-  trainD2C.1<-trainD2C
-  print(NROW(trainD2C.1@origX))
-  print(NROW(trainD2C@origX))
- 
-  trainD2C.1<-makeModel(trainD2C.1,classifier="RF",EErep=2)
-  
-  testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
-               seed=101,sdn=sdev,goParallel=goParallel,nseries=round(nseries/2),
-               typeser=1:13)
-  
-  
-  
-  if (savefile)
-    save(file=namefile,list=c("trainD2C","testDAG"))
+savefile<-TRUE
+namefile<-"../data/demoTS2.RData"
+if (goParallel){
+  ncores=10
+  cl <- makeForkCluster(ncores)
+  registerDoParallel(cl)
+  dN=3*ncores
 }
+
+
+
+
+trainDAG<-new("simulatedTS",NDAG=NDAG, N=N, noNodes=noNodes,
+              seed=10,sdn=sdev,goParallel=goParallel,
+              nseries=nseries,typeser=c(15:23))
+
+
+descr.example<-new("D2C.descriptor",bivariate=TRUE,
+                   ns=5,maxs=10,acc=TRUE,lin=TRUE,
+                   struct=TRUE, boot="mimr")
+
+
+trainD2C<-new("D2C",sDAG=trainDAG,
+              descr=descr.example,ratioEdges=1,
+              max.features=20, type=type,goParallel=goParallel,
+              verbose=TRUE)
+
+print(NROW(trainD2C@origX))
+
+trainD2C.1<-makeModel(trainD2C,classifier="RF",EErep=5,verbose=TRUE)
+
+testDAG<-new("simulatedTS",NDAG=NDAG.test, N=N, noNodes=noNodes,
+             seed=101,sdn=sdev,goParallel=goParallel,
+             nseries=nseries,
+             typeser=1:14)
+
+if (savefile)
+  save(file=namefile,list=c("trainD2C.1","testDAG"))
+
 ##stopCluster(cl)
 
 ## number of DAGs used for testing
@@ -79,7 +83,7 @@ if (savefile)
   load(namefile)
 
 
-print(colnames(trainD2C.1@X))
+print(dim(trainD2C.1@origX))
 BER.D2C<-NULL
 BER.D2C.1<-NULL
 BER.IAMB<-NULL
@@ -100,7 +104,7 @@ for ( r in 1:testDAG@NDAG){
   n<-NCOL(observedData)
   trueDAG<-testDAG@list.DAGs[[r]]
   
-  cat("Dim test dataset"=dim(observedData),"\n")
+  cat("Dim test dataset=",dim(observedData),"\n")
   
   ## inference of networks with bnlearn package
   Ahat.IAMB<-(amat(iamb(data.frame(observedData),#optimized=TRUE,
@@ -124,27 +128,19 @@ for ( r in 1:testDAG@NDAG){
     #                   verbose=FALSE,p=NCOL(observedData),m.max=3)
     Ahat.KPC<-Ahat.GS ##as(kpag, "matrix")
     print("Done kpc")
-    graphTRUE<- gRbase::as.adjMAT(trueDAG)
-    igraph.TRUE<-igraph::graph.adjacency(graphTRUE[as.character(1:NCOL(graphTRUE)),as.character(1:NCOL(graphTRUE))])
-    
-    colnames(Ahat.IAMB)=colnames(graphTRUE)
-    rownames(Ahat.IAMB)=rownames(graphTRUE)
-    colnames(Ahat.GS)=colnames(graphTRUE)
-    rownames(Ahat.GS)=rownames(graphTRUE)
-    colnames(Ahat.PC)=colnames(graphTRUE)
-    rownames(Ahat.PC)=rownames(graphTRUE)
-    colnames(Ahat.KPC)=colnames(graphTRUE)
-    rownames(Ahat.KPC)=rownames(graphTRUE)
     igraph.GS<-igraph::graph.adjacency(Ahat.GS)
     igraph.IAMB<-igraph::graph.adjacency(Ahat.IAMB)
     igraph.PC<-igraph::graph.adjacency(Ahat.PC)
     igraph.KPC<-igraph::graph.adjacency(Ahat.KPC)
     
+    graphTRUE<- gRbase::as.adjMAT(trueDAG)
+    igraph.TRUE<-igraph::graph.adjacency(graphTRUE[as.character(1:NCOL(graphTRUE)),as.character(1:NCOL(graphTRUE))])
     
     ## selection of a balanced subset of edges for the assessment
     Nodes=graph::nodes(trueDAG)
     max.edges<-min(100,length(gRbase::edgeList(trueDAG)))
-    subset.edges = matrix(unlist(sample(gRbase::edgeList(trueDAG),size = max.edges,replace = F)),
+    subset.edges = matrix(unlist(sample(gRbase::edgeList(trueDAG),
+                                        size = max.edges,replace = F)),
                           ncol=2,byrow = TRUE)
     subset.edges = rbind(subset.edges,t(replicate(n =max.edges ,
                                                   sample(Nodes,size=2,replace = FALSE))))
@@ -153,23 +149,32 @@ for ( r in 1:testDAG@NDAG){
     for(jj in 1:NROW(subset.edges)){
       i =as(subset.edges[jj,1],"numeric");
       j =as(subset.edges[jj,2],"numeric") ;
+      
       pred.D2C = predict(trainD2C.1,i,j, observedData)
       pred.D2C.1 = pred.D2C #predict(trainD2C.1,i,j, observedData)
       pred.GRANGER=1-grangertest(observedData[,i],observedData[,j], order = 1)$"Pr(>F)"[2]
       Yhat.GRA<-c(Yhat.GRA,as.numeric(pred.GRANGER>0.5) )
       Yhat.D2C<-c(Yhat.D2C,pred.D2C$response)
       Yhat.D2C.1<-c(Yhat.D2C.1,pred.D2C.1$response)
-      Yhat.IAMB<-c(Yhat.IAMB,is.what(igraph.IAMB,i,j))
-      Yhat.GS<-c(Yhat.GS,is.what(igraph.GS,i,j))
-      Yhat.PC<-c(Yhat.PC,is.what(igraph.PC,i,j))
-      Yhat.KPC<-c(Yhat.KPC,is.what(igraph.KPC,i,j))
-      Ytrue<-c(Ytrue,is.what(igraph.TRUE,i,j)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
+      Yhat.IAMB<-c(Yhat.IAMB,is.what(igraph.IAMB,i,j,type))
+      Yhat.GS<-c(Yhat.GS,is.what(igraph.GS,i,j,type))
+      Yhat.PC<-c(Yhat.PC,is.what(igraph.PC,i,j,type))
+      Yhat.KPC<-c(Yhat.KPC,is.what(igraph.KPC,i,j,type))
+      
+      Ytrue<-c(Ytrue,is.what(igraph.TRUE,i,j,type)) ##graphTRUE[subset.edges[jj,1],subset.edges[jj,2]])
       
       cat(".")
+      
     }
-    
     if (type=="is.distance"){
-      browser()
+      
+      BER.D2C<-mean((Ytrue-Yhat.D2C)^2)/var(Ytrue)
+      BER.D2C.1<-mean((Ytrue-Yhat.D2C.1)^2)/var(Ytrue)
+      BER.IAMB<-mean((Ytrue-Yhat.IAMB)^2)/var(Ytrue)
+      BER.GS<-mean((Ytrue-Yhat.GS)^2)/var(Ytrue)
+      BER.PC<-mean((Ytrue-Yhat.PC)^2)/var(Ytrue)
+      BER.KPC<-mean((Ytrue-Yhat.KPC)^2)/var(Ytrue)
+      BER.GRA<-mean((Ytrue-Yhat.GRA)^2)/var(Ytrue)
     }
     else {
       ## computation of Balanced Error Rate
@@ -180,12 +185,13 @@ for ( r in 1:testDAG@NDAG){
       BER.PC<-BER(Ytrue,Yhat.PC)
       BER.KPC<-BER(Ytrue,Yhat.KPC)
       BER.GRA<-BER(Ytrue,Yhat.GRA)
-      cat("\n r=",r," BER.D2C=",mean(BER.D2C), " BER.D2C.1=",mean(BER.D2C.1),
-          "BER.IAMB=",mean(BER.IAMB),"BER.GRA=",mean(BER.GRA),
-          "BER.GS=",mean(BER.GS),"BER.PC=",mean(BER.PC),"BER.KPC=",mean(BER.KPC),
-          "#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
-      
     }
+    cat("\n r=",r," BER.D2C=",mean(BER.D2C), " BER.D2C.1=",mean(BER.D2C.1),
+        "BER.IAMB=",mean(BER.IAMB),"BER.GRA=",mean(BER.GRA),
+        "BER.GS=",mean(BER.GS),"BER.PC=",mean(BER.PC),"BER.KPC=",mean(BER.KPC),
+        "#0=",length(which(Ytrue==0))/length(Ytrue),"\n")
+    
   }
 }
+
 
