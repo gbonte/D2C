@@ -1,3 +1,9 @@
+### D2C Code related to the D2C algorithm 
+## from "From Dependency to Causality: A Machine Learning Approach" in http://jmlr.org/papers/v16/bontempi15a.html
+## 
+## Gianluca Bontempi, mlg.ulb.ac.be
+
+
 ## igraph
 ## g <- make_empty_graph(n = 5) %>%
 ##     add_edges(c(1,2, 3,2)) 

@@ -1,3 +1,8 @@
+### D2C Code related to the D2C algorithm 
+## from "From Dependency to Causality: A Machine Learning Approach" in http://jmlr.org/papers/v16/bontempi15a.html
+## 
+## Gianluca Bontempi, mlg.ulb.ac.be
+
 #' @import RBGL gRbase randomForest xgboost Rgraphviz methods foreach kernlab MASS igraph graph e1071 pcalg
 
 
