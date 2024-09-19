@@ -99,13 +99,16 @@ setMethod("initialize", signature="DAG.network",
                        function(x) return(H_Rn(2))),
                    additive= TRUE,
                    weights=c(0.8,2),maxV=5,seed=NULL){
+            
+            
             DAG = network
             .Object@additive=additive
             .Object@maxV=maxV
             .Object@exosdn=exosdn
-            if(!is.DAG(DAG)) {
+            if(!(class(network)=="graphNEL")) {
               stop("it is not a DAG")
             } else  {
+              
               nodeDataDefaults(DAG,"bias") <-0
               nodeDataDefaults(DAG,"sigma") <-sigma
               nodeDataDefaults(DAG,"seed") <-NA
@@ -119,6 +122,7 @@ setMethod("initialize", signature="DAG.network",
                 nodeData(DAG,n=n,"sigma")<-function(x) {
                   return(rnorm(n = 1,sd = runif(1,0.9*sdn,sdn)))}
               }
+              
               for( edge in edgeList(DAG)){
                 edgeData(DAG, from=edge[1], to=edge[2], attr="weight") <- runif(1,weights[1],weights[2])*sample(c(-1,1),1)
                 ## setting of random linear weights within the specified bounds
@@ -134,7 +138,7 @@ setMethod("initialize", signature="DAG.network",
               }
             }
             .Object@network <- DAG
-            
+           
             return(.Object)
           }
 )
@@ -391,7 +395,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-              ##  for (i in 1:NDAG){
+           ##     for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -427,6 +431,7 @@ setMethod("initialize",
                 maxV.i=maxV
                 
                 HH<-NULL
+                
                 for (functionType.i in functionType){
                   if(functionType.i=="linear"){
                     H = function() return(H_Rn(1))
@@ -446,7 +451,8 @@ setMethod("initialize",
                 
                 cnt2=0
                 while(1){
-                  V=1:max(4,noNodes.i-cnt2)
+                  
+                  VV=1:max(4,noNodes.i-cnt2)
                   
                   maxpar.pc.i<-pmin(0.99,maxpar.pc)
                   if (length(maxpar.pc.i)>1)
@@ -458,16 +464,18 @@ setMethod("initialize",
                   wgt = runif(n = 1,min = 0.85,max = 1)
                   
                   
-                  netwDAG<-random_dag(V,maxpar = maxpar,wgt)  
+                  netwDAG<-as_graphnel(random_dag(VV,maxpar = maxpar,wgt)  )
                   ### random_dag {gRbase}: generate a graphNEL random directed acyclic graph (DAG)
                   
-                  nodes(netwDAG)<-as.character(V)
+                  nodes(netwDAG)<-as.character(VV)
                   
                   cnt<-1
+                  
                   while (sum(unlist(lapply(graph::edges(netwDAG),length)))<2 ){
                     maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
-                    netwDAG<-random_dag(V,maxpar = maxpar,1)
-                    nodes(netwDAG)<-as.character(V)
+                    netwDAG<-as_graphnel((random_dag(VV,maxpar = maxpar,1)))
+                   
+                    nodes(netwDAG)<-as.character(VV)
                     cnt<-cnt+1
                     if (cnt>50){
                       netwDAG<-new("graphNEL", nodes=as.character(1:noNodes.i), edgemode="directed")
@@ -506,7 +514,7 @@ setMethod("initialize",
                   stop("simulatedDAG: inf in data generation")
                 if (verbose){
                   
-                  cat("simulatedDAG: DAG number:",i,"generated: #nodes=", length(V),
+                  cat("simulatedDAG: DAG number:",i,"generated: #nodes=", length(VV),
                       "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", NROW(observationsDAG), "\n")
                   
                 }
@@ -526,7 +534,7 @@ setMethod("initialize",
                 }
               }
               
-              
+             
               wc=which(apply(observationsDAG,2,sd)<0.001)
               if (length(wc)>0){
                 cat(" constant values in DAG data ")
@@ -539,7 +547,7 @@ setMethod("initialize",
               
             } ## foreach
             
-            
+           
             .Object@list.DAGs=lapply(FF,"[[",2)
             .Object@list.observationsDAGs=lapply(FF,"[[",1)
             
@@ -661,7 +669,7 @@ setMethod("initialize",
               if (any(is.na(G$D) | is.infinite(G$D)))
                 stop("error in data generation")
               netwDAG<-G$DAG 
-              nodes(netwDAG)<-as.character(1:NCOL(G$D))
+              graph::nodes(netwDAG)<-as.character(1:NCOL(G$D))
               observationsDAG = G$D
               fsTS=G$fs
               Y=G$Y
@@ -1379,7 +1387,7 @@ setMethod(f="joinD2C",
             #  Xb<-X[c(w0,w1),]
             #  Yb<-Y[c(w0,w1)]
             
-            #  browser()
+            #  
             #  if (object.type=="is.distance")
             #    RF <- randomForest(x =X ,y = Y,importance=TRUE)
             #  else 
