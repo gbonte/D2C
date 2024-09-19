@@ -107,8 +107,8 @@ for (r in 1:testDAG@NDAG){
     
     ## selection of a balanced subset of edges for the assessment
     Nodes=graph::nodes(trueDAG)
-    max.edges<-min(10,length(edgeList(trueDAG)))
-    subset.edges = matrix(unlist(sample(edgeList(trueDAG),
+    max.edges<-min(10,length(edgeList(as(trueDAG,'matrix'))))
+    subset.edges = matrix(unlist(sample(edgeList(as(trueDAG,'matrix')),
                                         size = max.edges,replace = F)),ncol=2,byrow = TRUE)
     subset.edges = rbind(subset.edges,t(replicate(n =max.edges,
                                                   sample(Nodes,size=2,replace = FALSE))))
