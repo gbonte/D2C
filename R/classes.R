@@ -122,8 +122,8 @@ setMethod("initialize", signature="DAG.network",
                 nodeData(DAG,n=n,"sigma")<-function(x) {
                   return(rnorm(n = 1,sd = runif(1,0.9*sdn,sdn)))}
               }
-              
-              for( edge in edgeList(DAG)){
+             
+              for( edge in edgeList(as(DAG,'matrix'))) {
                 edgeData(DAG, from=edge[1], to=edge[2], attr="weight") <- runif(1,weights[1],weights[2])*sample(c(-1,1),1)
                 ## setting of random linear weights within the specified bounds
                 
@@ -395,7 +395,7 @@ setMethod("initialize",
             
             
             FF<-foreach (i=1:NDAG) %op%{
-           ##     for (i in 1:NDAG){
+           ##    for (i in 1:NDAG){
               set.seed(seed+i)
               
               N.i<-N
@@ -470,8 +470,8 @@ setMethod("initialize",
                   nodes(netwDAG)<-as.character(VV)
                   
                   cnt<-1
-                  
-                  while (sum(unlist(lapply(graph::edges(netwDAG),length)))<2 ){
+                 
+                  while (sum(unlist(lapply(edges(netwDAG),length)))<2 ){
                     maxpar = sample(1:max(3,round(noNodes.i/3)),size=1)
                     netwDAG<-as_graphnel((random_dag(VV,maxpar = maxpar,1)))
                    
@@ -515,7 +515,7 @@ setMethod("initialize",
                 if (verbose){
                   
                   cat("simulatedDAG: DAG number:",i,"generated: #nodes=", length(VV),
-                      "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", NROW(observationsDAG), "\n")
+                      "# edges=",sum(unlist(lapply(edges(netwDAG),length))), "# samples=", NROW(observationsDAG), "\n")
                   
                 }
                 
@@ -527,8 +527,10 @@ setMethod("initialize",
                 
                 if (verbose){
                   
-                  cat("simulatedDAG gendataDAG: DAG number:",i,"generated: #nodes=", length(graph::edges(netwDAG)),
-                      "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", NROW(observationsDAG),
+                  cat("simulatedDAG gendataDAG: DAG number:",i,
+                      "generated: #nodes=", length(edges(netwDAG)),
+                      "# edges=",sum(unlist(lapply(edges(netwDAG),length))), 
+                      "# samples=", NROW(observationsDAG),
                       "# cols=", NCOL(observationsDAG), "\n")
                   
                 }
@@ -551,7 +553,7 @@ setMethod("initialize",
             .Object@list.DAGs=lapply(FF,"[[",2)
             .Object@list.observationsDAGs=lapply(FF,"[[",1)
             
-            to.remove=which(unlist(lapply(lapply(.Object@list.DAGs,edgeList),length))==0)
+            to.remove=which(unlist(lapply(lapply(lapply(.Object@list.DAGs,as,'matrix'),edgeList),length))==0)
             if (length(to.remove)>0){
               .Object@list.DAGs=.Object@list.DAGs[-to.remove]
               .Object@list.observationsDAGs=.Object@list.observationsDAGs[-to.remove]
@@ -669,7 +671,7 @@ setMethod("initialize",
               if (any(is.na(G$D) | is.infinite(G$D)))
                 stop("error in data generation")
               netwDAG<-G$DAG 
-              graph::nodes(netwDAG)<-as.character(1:NCOL(G$D))
+              nodes(netwDAG)<-as.character(1:NCOL(G$D))
               observationsDAG = G$D
               fsTS=G$fs
               Y=G$Y
@@ -678,7 +680,7 @@ setMethod("initialize",
               if (verbose){
                 
                 cat("simulatedTS: TS number:",i,":",num," generated: #nodes=", NCOL(observationsDAG),
-                    "# edges=",sum(unlist(lapply(graph::edges(netwDAG),length))), "# samples=", N.i, "\n")
+                    "# edges=",sum(unlist(lapply(edges(netwDAG),length))), "# samples=", N.i, "\n")
                 
               }
               
@@ -693,7 +695,7 @@ setMethod("initialize",
             .Object@list.fs=lapply(FF,"[[",4)
             .Object@list.Y=lapply(FF,"[[",5)
             .Object@list.doNeigh=lapply(FF,"[[",6)
-            to.remove=which(unlist(lapply(lapply(.Object@list.DAGs,edgeList),length))==0)
+            to.remove=which(unlist(lapply(lapply(lapply(.Object@list.DAGs,as,'matrix'),edgeList),length))==0)
             if (length(to.remove)>0){
               .Object@list.DAGs=.Object@list.DAGs[-to.remove]
               .Object@list.observationsDAGs=.Object@list.observationsDAGs[-to.remove]
@@ -838,11 +840,11 @@ setMethod("initialize",
                   # Use as_graphnel to transform an igraph into graphNEL
                   
                   ##choose which edge to train / predict and find the right label
-                  nEdge = length(edgeList(DAG2))
+                  nEdge = length(edgeList(as(DAG2,'matrix')))
                   sz=min(100,max(1,round(nEdge*ratioEdges)))  
                   
                   
-                  edgesM = matrix(unlist(sample(edgeList(DAG2),
+                  edgesM = matrix(unlist(sample(edgeList(as(DAG2,'matrix')),
                                                 size = sz,replace = F)),ncol=2,byrow = TRUE) 
                   ## random pairs of nodes associated to edges (useful for learning parent relationships)
                   
@@ -1446,10 +1448,10 @@ setMethod(f="updateD2C",
               
               
               ##choose wich edge to train / predict and find the right label
-              nEdge = length(edgeList(DAG))
+              nEdge = length(edgeList(as(DAG,'matrix')))
               sz=max(1,round(nEdge*ratioEdges))
               
-              edgesM = matrix(unlist(sample(edgeList(DAG2),
+              edgesM = matrix(unlist(sample(edgeList(as(DAG2,'matrix')),
                                             size = sz,replace = F)),ncol=2,byrow = TRUE)
               edgesM = rbind(edgesM,t(replicate(n =sz ,
                                                 sample(keepNode,size=2,replace = FALSE))))

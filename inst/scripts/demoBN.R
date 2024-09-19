@@ -19,7 +19,7 @@ N<-c(50,100)
 sd.noise<-c(0.1,0.25)
 ## range of values for standard deviation of additive noise 
 
-NDAG=50
+NDAG=20
 ## number of DAGs to be created and simulated
 
 type="is.parent"
@@ -43,10 +43,10 @@ descr.example<-new("D2C.descriptor",bivariate=FALSE,ns=5,acc=TRUE,lin=FALSE,resi
 
 D2C<-new("D2C",sDAG=trainDAG, npar=10,
          descr=descr.example,ratioEdges=0.15,max.features=30,type=type,
-         verbose=TRUE)
+         verbose=FALSE)
 
 
-trainD2C<-makeModel(D2C,classifier="RF",EErep=15)
+trainD2C<-makeModel(D2C,classifier="RF",EErep=15,verbose=FALSE)
 
 ## ----echo=TRUE,results=FALSE---------------------------------------------
 print(dim(trainD2C@X))
