@@ -24,8 +24,9 @@ NDAG=50
 
 type="is.parent"
 trainDAG<-new("simulatedDAG",NDAG=NDAG, N=N, noNodes=noNodes,
-              functionType = c("linear","quadratic","sigmoid"), 
-              seed=1,sdn=0,additive=c(TRUE,FALSE),verbose=TRUE,maxV=3,weights=c(0.5,1))
+              functionType = c("linear","quadratic"), 
+              seed=1,sdn=sd.noise,additive=c(TRUE,FALSE),verbose=TRUE,
+              maxV=3,weights=c(0.5,1))
 
 
 
