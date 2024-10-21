@@ -1297,7 +1297,7 @@ genSTAR<-function(n, nn,NN,sdev=0.5,num=1,loc=2,verbose=FALSE){
   fs<-1:4 #sample(0:(nn-2),4)
   ## subset of lags 
   state=0
-  print(num)
+  
   Y=array(rnorm(n*nn,sd=0.1),c(nn,n))
   rep=0
   repeat{
